@@ -1,0 +1,105 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+blockify: mute spotify commercials (only works on the wine version)
+  requires wmctrl to be installed.
+  
+  when you find a commercial that is not yet recognized, you need to add it to ad_list.
+  find out the name with wmctrl -l when the ad is playing.
+  you only need the part after "Spotify - "
+  
+  after adding a new entry you need to restart blockify manually or with:
+  pkill -USR1 -f blockify
+  cheers
+"""
+
+import subprocess, time, sys, os, signal
+
+ad_list = [
+  "Spotify",
+  "Universal Music",
+  "Sony Music",
+  "Warner Music",
+  "Finetunes",
+  "Kontor",
+  "Digster",
+  "Fox Film Company",
+  "Visions Verlag",
+  "Preis24.de",
+  "AUDI AG",
+  "EA Games",
+  "IKEA",
+  "Telekom",
+  "Abräum-Advent",
+  "Ab 5. Dezember",
+  "Die Tanzsensation",
+  "Jetzt hier",
+  "BlaBlaCar",
+  "New Yorker Fashion",
+  "SUOL",
+  "Jack & Jones"
+]
+ad_list = ["Spotify - " + s for s in ad_list]
+
+def mute():
+  subprocess.Popen(['amixer', '-q', 'set', 'Master', 'mute'])
+  global is_muted
+  is_muted = True
+
+def unmute():
+  subprocess.Popen(['amixer', '-q', 'set', 'Master', 'unmute'])
+  global is_muted
+  is_muted = False
+  
+def restart():
+  python = sys.executable
+  os.execl(python, python, * sys.argv)
+
+def signal_handler(signum, frame):
+    print 'Restarting'
+    restart()
+
+signal.signal(signal.SIGUSR1, signal_handler)
+
+def get_windows():
+  pipe = get_windows_pipe()
+  separator = ""
+  return separator.join(pipe_readlines(pipe))
+  
+def get_windows_pipe():
+  pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
+  return pipe
+
+def pipe_readlines(pipe):
+  try:
+    return pipe.readlines()
+  except:
+    return ""
+
+def main():
+
+  global is_muted    
+  is_muted = False
+  unmute()
+  
+  while(True):
+      
+    found = False
+    windows = get_windows()
+            
+    for ad in ad_list:
+      if (windows.find(ad.strip('\n')) >= 0):
+        found = True
+        break
+        
+    if found:
+      if (not is_muted):
+        mute()
+        print 'Muting'
+    elif is_muted:
+      unmute()
+                  
+    time.sleep(1)
+
+if __name__ == "__main__":
+  main()
