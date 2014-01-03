@@ -20,6 +20,7 @@ blockify:
 import subprocess, time, sys, os, signal
 spotify = "Spotify -"
 track_list_filename = "track_list.txt"
+mute_state = False
 
 # Method for loading track_list from a file
 def load_track_list():
@@ -53,16 +54,23 @@ def modify_track_list(artist_album):
 # When the program starts, the track_list is read
 track_list = load_track_list()
 
-
-def mute():
-    subprocess.Popen(['amixer', '-q', 'set', 'Master', 'mute'])
-    global is_muted
-    is_muted = True
-
-def unmute():
-    subprocess.Popen(['amixer', '-q', 'set', 'Master', 'unmute'])
-    global is_muted
-    is_muted = False
+# Set the mute state, default is to unmute because that
+# is used more often
+def set_mute(set_mute_state = False):
+    global mute_state
+    
+    if mute_state != set_mute_state:
+        if set_mute_state:
+            state = 'mute'
+            print "Muting"
+        else:
+            state = 'unmute'
+            print "Unmuting"
+        
+        subprocess.Popen(['amixer', '-q', 'set', 'Master', state])
+        
+        mute_state = set_mute_state
+        
   
 def restart():
     python = sys.executable
@@ -71,7 +79,7 @@ def restart():
 def signal_handler(signum, frame):
     if signum == 2:
         print 'Exiting'
-        unmute()
+        set_mute()
         sys.exit(0)
     else:
         print signum, 'Restarting'
@@ -99,17 +107,12 @@ def check_tracklist(windows):
     found = False
     
     for track in track_list:
-        if (windows.find(track.strip('\n')) >= 0):
+        if 0 <= windows.find(track):
             found = True
             break
-      
-    if found:
-        if (not is_muted):
-            mute()
-            print 'Muting'
-    elif is_muted:
-        unmute()
-        
+    
+    # if found mute, else unmute
+    set_mute(found)
     return found
 
 def get_playing(windows, artist_album=""):
@@ -128,7 +131,7 @@ def get_playing(windows, artist_album=""):
 def main():
     global is_muted    
     is_muted = False
-    unmute()
+    set_mute()
   
     while(True):
         windows = get_windows()

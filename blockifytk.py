@@ -12,7 +12,7 @@ import tkMessageBox
 
 
 import blockify as blockify
-blockify.unmute()
+blockify.set_mute()
 
 # Create TK App
 app = Tk()
@@ -60,9 +60,9 @@ def update_gui():
             else:
                 button_add_track.config(text="Block This Track")
         else:
-            blockify.unmute()
+            blockify.set_mute()
     else:
-        blockify.unmute()
+        blockify.set_mute()
     
     app.after(1000, update_gui) #Get title every 2 seconds
 
@@ -75,4 +75,4 @@ app.mainloop()
 
 
 # Unmute on exit
-blockify.unmute()
+blockify.set_mute()
