@@ -72,6 +72,15 @@ def set_mute(set_mute_state = False):
         
         mute_state = set_mute_state
         
+def check_mute():
+    result = os.popen("amixer get Master | grep -o off").read()
+    if "off" in result:
+        actual_mute=True
+    else:
+        actual_mute=False
+        
+    return (actual_mute, mute_state)
+        
   
 def restart():
     python = sys.executable
