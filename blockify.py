@@ -19,7 +19,8 @@ blockify:
 
 import subprocess, time, sys, os, signal
 spotify = "Spotify -"
-track_list_filename = "track_list.txt"
+base_path = os.path.dirname(__file__)
+track_list_filename = os.path.join(base_path, "track_list.txt")
 mute_state = False
 
 # Method for loading track_list from a file
