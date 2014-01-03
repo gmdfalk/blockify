@@ -27,6 +27,13 @@ def load_track_list():
     track_list = track_list_file.read()
     track_list_file.close()
     track_list = track_list.split("\n")
+    
+    clean_list = []
+    for item in track_list:
+        if len(item.strip()):
+            clean_list.append(item)
+
+    track_list = clean_list
     track_list = [spotify + " " + s for s in track_list]
     return track_list
 
