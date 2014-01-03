@@ -1,0 +1,154 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+blockify:
+    Mute Spotify tracks (only works on the wine version)
+    requires wmctrl to be installed.
+    
+    When you find a track you want to mute, you need to add it to
+    track_list. Find out the name with wmctrl -l when the track is playing.
+    you only need the part after "Spotify - " and you can shorten if you
+    want, e.g. Spotify - Bloodhound Gang – Along Comes Mary becomes
+    Bloodhound, which would mute all tracks that start with Bloodhound
+    
+    After adding a new entry you need to restart blockify manually or with:
+    pkill -USR1 -f blockify
+    
+    cheers
+"""
+
+import subprocess, time, sys, os, signal
+spotify = "Spotify -"
+base_path = os.path.dirname(__file__)
+track_list_filename = os.path.join(base_path, "track_list.txt")
+mute_state = False
+
+# Method for loading track_list from a file
+def load_track_list():
+    track_list_file = open(track_list_filename, "r")
+    track_list = track_list_file.read()
+    track_list_file.close()
+    track_list = track_list.split("\n")
+    
+    clean_list = []
+    for item in track_list:
+        if len(item.strip()):
+            clean_list.append(item)
+
+    track_list = clean_list
+    track_list = [spotify + " " + s for s in track_list]
+    return track_list
+
+# Method to add to the track_list file
+def modify_track_list(artist_album):
+    track_list_file = open(track_list_filename, "r")
+    current_track_list = track_list_file.read()
+    track_list_file.close()
+    
+    track_list = current_track_list + "\n" + artist_album
+    track_list_file = open(track_list_filename, "w")
+    track_list_file.write(track_list)
+    track_list_file.close()
+    
+    return load_track_list()
+
+# When the program starts, the track_list is read
+track_list = load_track_list()
+
+# Set the mute state, default is to unmute because that
+# is used more often
+def set_mute(set_mute_state = False):
+    global mute_state
+    
+    if mute_state != set_mute_state:
+        if set_mute_state:
+            state = 'mute'
+            print "Muting"
+        else:
+            state = 'unmute'
+            print "Unmuting"
+        
+        subprocess.Popen(['amixer', '-q', 'set', 'Master', state])
+        
+        mute_state = set_mute_state
+        
+def check_mute():
+    result = os.popen("amixer get Master | grep -o off").read()
+    if "off" in result:
+        actual_mute=True
+    else:
+        actual_mute=False
+        
+    return (actual_mute, mute_state)
+        
+  
+def restart():
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
+
+def signal_handler(signum, frame):
+    if signum == 2:
+        print 'Exiting'
+        set_mute()
+        sys.exit(0)
+    else:
+        print signum, 'Restarting'
+        restart()
+
+signal.signal(signal.SIGUSR1, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
+def get_windows():
+    pipe = get_windows_pipe()
+    separator = ""
+    return separator.join(pipe_readlines(pipe))
+  
+def get_windows_pipe():
+    pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
+    return pipe
+
+def pipe_readlines(pipe):
+    try:
+        return pipe.readlines()
+    except:
+        return ""
+    
+def check_tracklist(windows):
+    found = False
+    
+    for track in track_list:
+        if 0 <= windows.find(track):
+            found = True
+            break
+    
+    # if found mute, else unmute
+    set_mute(found)
+    return found
+
+def get_playing(windows, artist_album=""):
+    window_list = windows.split("\n")
+    
+    try:       
+        for item in window_list:
+            if spotify in item:
+                window_title = item[item.find(spotify):].split("-")
+                artist_album = window_title[1].strip()
+    except:
+        pass
+    
+    return artist_album
+
+def main():
+    global is_muted    
+    is_muted = False
+    set_mute()
+  
+    while(True):
+        windows = get_windows()
+        check_tracklist(windows)
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    print "Starting Blockify"
+    main()
