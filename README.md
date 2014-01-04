@@ -1,18 +1,19 @@
 blockify
 ========
 
-mute spotify tracks (only works on the wine version)
-requires wmctrl to be installed.
+Mute songs on spotify (wine version only), requires wmctrl.
 
-when you find a track you want to mute, you need to add it to track_list.
-find out the name with wmctrl -l when the track is playing.
-you only need the part after "Spotify - " and you can shorten if you want,
-e.g. Spotify - Bloodhound Gang – Along Comes Mary becomes Bloodhound,
-which would mute all tracks that start with Bloodhound
+When you find a song you want to mute, you need to add it to
+~/.blockify_list either manually (find out the name with wmctrl -l) or via:
+pkill -USR1 -f python2.*blockify
+After adding a new entry you need to restart blockify manually or with:
+pkill -USR2 -f python2.*blockify
+Aliasing/Binding these commands works well for me.
 
-after adding a new entry you need to restart blockify manually or with:
-pkill -USR1 -f blockify
+Optionally, there is a ui you can use, credit goes to
+Rod Persky (https://github.com/Rod-Persky/blockify)
 
-cheers
+Cheers,
+mikar
 
 To use media keys with Wine Spotify use [spotify_cmd](https://code.google.com/p/spotifycmd/).

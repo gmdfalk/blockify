@@ -1,108 +1,176 @@
 #!/usr/bin/env python2
-# -*- coding: utf-8 -*-
+
+"""blockify:
+
+    Mute songs on spotify (wine version only), requires wmctrl.
+
+    When you find a song you want to mute, you need to add it to
+    ~/.blockify_list either manually (find out the name with wmctrl -l) or via:
+    pkill -USR1 -f python2.*blockify
+    After adding a new entry you need to restart blockify manually or with:
+    pkill -USR2 -f python2.*blockify
+    Aliasing/Binding these commands works well for me.
+
+    Optionally, there is a ui you can use, credit goes to
+    Rod Persky (https://github.com/Rod-Persky/blockify)
+
+    Cheers,
+    mikar
+
 """
-blockify: mute spotify tracks (only works on the wine version)
-  requires wmctrl to be installed.
-  
-  when you find a track you want to mute, you need to add it to track_list.
-  find out the name with wmctrl -l when the track is playing.
-  you only need the part after "Spotify - " and you can shorten if you want,
-  e.g. Spotify - Bloodhound Gang – Along Comes Mary becomes Bloodhound,
-  which would mute all tracks that start with Bloodhound
 
-  after adding a new entry you need to restart blockify manually or with:
-  pkill -USR1 -f blockify
-  
-  cheers
-"""
+import subprocess
+import time
+import sys
+import os
+import signal
+from os.path import expanduser
 
-import subprocess, time, sys, os, signal
+spotify = "Spotify - "
+home = expanduser("~")
+SONGFILE = os.path.join(home, ".blockify_list")
 
-track_list = [
-  "Spotify",
-  "Universal Music",
-  "Sony Music",
-  "Warner Music",
-  "Finetunes",
-  "Kontor",
-  "Digster",
-  "Fox Film Company",
-  "Visions Verlag",
-  "Preis24.de",
-  "AUDI AG",
-  "EA Games",
-  "IKEA",
-  "Telekom",
-  "Abräum-Advent",
-  "Ab 5. Dezember",
-  "Die Tanzsensation",
-  "Jetzt hier",
-  "BlaBlaCar",
-  "New Yorker Fashion",
-  "SUOL",
-  "Jack & Jones"
-]
-track_list = ["Spotify - " + s for s in track_list]
+def load_song_list():
+    song_file = open(SONGFILE, "r")
+    song_list = song_file.read()
+    song_file.close()
+    song_list = song_list.split("\n")
+    
+    clean_list = []
+    for item in song_list:
+        if len(item.strip()):
+            clean_list.append(item)
+
+    song_list = clean_list
+    song_list = [spotify + s for s in song_list]
+    return song_list
+
+song_list = load_song_list()
+
+
+def add_to_list(new_song):
+    print 'Adding', new_song, 'to', SONGFILE
+
+    song_file = file(SONGFILE, "a+")
+    song_list = []
+   
+    for existing_song in song_file:
+        song_list.append(existing_song)
+
+       
+    if (song_list.count(new_song) == 0):
+        song_file.write(new_song + "\n")
+   
+    song_file.close()
+
+def block_current():
+    pipe = get_windows_pipe()
+       
+    for line in pipe_readlines(pipe):
+        if (line.find(spotify) >= 0):
+            window_title = " ".join(line.split()[5:])
+            song_list.append(window_title)
+            add_to_list(window_title)
+            break
 
 def mute():
-  subprocess.Popen(['amixer', '-q', 'set', 'Master', 'mute'])
-  global is_muted
-  is_muted = True
+    subprocess.Popen(['amixer', '-q', 'set', 'Master', 'mute'])
+    global is_muted
+    is_muted = True
 
 def unmute():
-  subprocess.Popen(['amixer', '-q', 'set', 'Master', 'unmute'])
-  global is_muted
-  is_muted = False
-  
+    subprocess.Popen(['amixer', '-q', 'set', 'Master', 'unmute'])
+    global is_muted
+    is_muted = False
+
+def check_mute():
+    result = os.popen("amixer get Master | grep -o off").read()
+    if "off" in result:
+        actual_mute=True
+    else:
+        actual_mute=False
+        
+    return (actual_mute, mute_state)
+
 def restart():
-  python = sys.executable
-  os.execl(python, python, * sys.argv)
+    print 'Restarting Blockify'
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
 
-def signal_handler(signum, frame):
-    print 'Restarting'
-    restart()
+def trap_exit():
+    print 'Stopping Blockify'
+    unmute()
+    sys.exit()
 
-signal.signal(signal.SIGUSR1, signal_handler)
+def get_playing(windows, artist_album=""):
+    window_list = windows.split("\n")
+    
+    try:       
+        for item in window_list:
+            if spotify in item:
+                window_title = item[item.find(spotify):].split("-")
+                artist_album = window_title[1].strip()
+    except:
+        pass
+    
+    return artist_album
+
+signal.signal(signal.SIGUSR1, lambda sig, hdl: block_current())
+signal.signal(signal.SIGUSR2, lambda sig, hdl: restart())
+signal.signal(signal.SIGTERM, lambda sig, hdl: trap_exit())
+signal.signal(signal.SIGINT, lambda sig, hdl: trap_exit())
 
 def get_windows():
-  pipe = get_windows_pipe()
-  separator = ""
-  return separator.join(pipe_readlines(pipe))
+    pipe = get_windows_pipe()
+    separator = ""
+    return separator.join(pipe_readlines(pipe))
+
   
 def get_windows_pipe():
-  pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
-  return pipe
+    pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
+    return pipe
 
 def pipe_readlines(pipe):
-  try:
-    return pipe.readlines()
-  except:
-    return ""
+    try:
+        return pipe.readlines()
+    except:
+        return ""
+
+def check_songlist(windows):
+    found = False
+    
+    for song in song_list:
+        if 0 <= windows.find(song):
+            found = True
+            break
+      
+    if found:
+        if (not is_muted):
+            mute()
+            print 'Muting', song
+    elif is_muted:
+        unmute()
+        print 'Unmuting'
+        
+    return found
 
 def main():
+    if (not os.path.exists(SONGFILE)):
+            open(SONGFILE, 'w').close()
 
-  global is_muted    
-  is_muted = False
-  unmute()
-  
-  while(True):
-      
-    found = False
-    windows = get_windows()
-            
-    for track in track_list:
-      if (windows.find(track.strip('\n')) >= 0):
-        found = True
-        break
-        
-    if found:
-      if (not is_muted):
-        mute()
-        print 'Muting'
-    elif is_muted:
-      unmute()
-                  
-    time.sleep(1)
+    global is_muted    
+    is_muted = False
+    unmute()
+
+    global song_list
+    song_list = load_song_list()
+
+    while(True):
+        windows = get_windows()
+        check_songlist(windows)
+        time.sleep(1)
+
 
 if __name__ == "__main__":
-  main()
+    print "Starting Blockify"
+    main()
