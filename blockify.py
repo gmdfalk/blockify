@@ -38,7 +38,7 @@ from os.path import expanduser
 spotify = "Spotify - "
 home = expanduser("~")
 SONGFILE = os.path.join(home, ".blockify_list")
-global is_muted    
+    
 is_muted = False
 
 #########################################
@@ -47,6 +47,8 @@ is_muted = False
 
 def load_song_list():
     # Read song list
+    global song_list
+
     try:
         song_file = open(SONGFILE, "r")
 
@@ -79,12 +81,12 @@ def add_to_list(new_song):
 
     # Read in the old .blockify_list
     song_list_file = open(SONGFILE, "r")
-    current_song_list = track_list_file.read()
+    current_song_list = song_list_file.read()
     song_list_file.close()
     
     # Add item to song list
     new_list = current_song_list + "\n" + new_song
-    song_list_file = open(song_list_filename, "w")
+    song_list_file = open(SONGFILE, "w")
     song_list_file.write(new_list)
     song_list_file.close()
     
@@ -103,7 +105,7 @@ def get_windows():
     # If Wine isn't installed OSError tends to happen
     except OSError:
         print "Wine needs to be installed"
-        return [spotify + "asdf"]
+        return [spotify + "Wine is not running / Installed"]
 
  
 ######################################

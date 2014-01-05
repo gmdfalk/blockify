@@ -2,21 +2,18 @@
 # -*- coding: utf-8 -*-
 """
 blockify-tk:
-This is a TKinter interface which looks like the windows version
-of Blockify.
+    This is a TKinter interface which looks like the windows version
+    of Blockify.
 """
 
-import sys
-import inspect
-sys.dont_write_bytecode = True
+import sys, os, inspect
 from Tkinter import *
 import tkMessageBox
-from subprocess import Popen
-from subprocess import check_output
-import re
-#FIXME use imp to import without .py extension
-import blockify
-blockify.unmute()
+
+
+import blockify as blockify
+blockify.toggle_mute()
+blockify.load_song_list()
 
 # Create TK App
 app = Tk()
@@ -24,83 +21,85 @@ app.title("Blockify")
 
 # Song Title Label
 string_artist_album = StringVar()
-string_artist_album.set("Hey!? How are you doing?")
-label_artist_album = Label(app, textvariable=string_artist_album, font=("sans", 11))
+string_artist_album.set("")
+label_artist_album = Label(app, textvariable=string_artist_album, font=("sans", 14))
 label_artist_album.grid(row=1, column=1, columnspan=2)
 
-def restart():
-    blockify.restart()
+# Mute track_list check box
+bool_mute_tracks = IntVar()
+bool_mute_tracks.set(1)
+check_mute_tracks = Checkbutton(app, text = "Mute Tracks",\
+                     variable=bool_mute_tracks, onvalue=1, offvalue=0)
+check_mute_tracks.grid(row=2, column=2)
 
-def check_blockify():
-    #FIXME check on startup to correct button
-    global result
-    s = check_output(['ps', 'aux'])
-    result = re.search(r'python2.*blockify$', s, re.MULTILINE)
-    if result:
-        button_toggle_blockify.config(text="Stopped")
-    else:
-        button_toggle_blockify.config(text="Running")
-              
-def toggle_blockify():
-    check_blockify()
-    if result:
-        Popen(["pkill", "-f", "python2.*blockify$"])
-    else:
-        Popen(["blockify"])
+# Auto Mute track_list check box
+bool_auto_add_tracks = IntVar()
+bool_auto_add_tracks.set(0)
+check_auto_add_tracks = Checkbutton(app, text = "Auto Add Tracks",\
+                        variable=bool_auto_add_tracks, onvalue=1, offvalue=0)
+check_auto_add_tracks.grid(row=3, column=2)
 
-def exit_ui():
-    blockify.unmute()
-    Popen(['pkill', '-f', 'python2.*blockify$'])
-    sys.exit()
+# Block currently playing
+button_add_track = Button(app, text="Block This Track")
+button_add_track.grid(row=2, column=1, rowspan=2)
 
-button_toggle_blockify = Button(app, text="Start/Stop")
-button_toggle_blockify.grid(row=2, column=1)
-button_toggle_blockify.config(command=check_blockify)
-
-button_add_song = Button(app, text="Block This Song")
-button_add_song.grid(row=2, column=2)
-
-button_restart = Button(app, text="Exit", command=exit_ui)
-button_restart.grid(row=3, column=1)
-
-button_restart = Button(app, text="Restart", command=restart)
-button_restart.grid(row=3, column=2)
 
 def toggle_block_current():
-    window_list = blockify.get_windows()
-    artist_album = blockify.get_playing(window_list)
+    current_song = blockify.get_current_song()
         
     action = tkMessageBox.askquestion("Confirm",
-            "Add {} to your block file?".format(artist_album))
+            "Add {} to your block file?".format(current_song))
     
     if action == "yes":
-        blockify.block_current()
-        
-# All functions
-def update_gui():
-    window_list = blockify.get_windows()
-    artist_album = blockify.get_playing(window_list)
-    
-    string_artist_album.set(artist_album)
+        blockify.track_list = blockify.add_to_list(current_song)
+        return True
+    return False
 
-    if artist_album is not "":
-        if blockify.check_songlist(window_list):
-                button_add_song.config(text=" Blocked ")
-        else:
-                button_add_song.config(text="Block This Song")
-    else:
-        string_artist_album.set("not playing")
-        blockify.mute()
+def auto_block(current_song):
+    if not bool_auto_add_tracks.get():
+        return
     
-    app.after(1000, update_gui) #Get title every 2 seconds
+    mute_states = blockify.check_mute()
+    if not mute_states[0] == mute_states[1]:
+        if not toggle_block_current():
+            bool_auto_add_tracks.set(0)
+
+# Main callback
+def update_gui():
+    # Set current song label to current song
+    current_song = blockify.get_current_song()
+    string_artist_album.set(current_song)
+
+    # If there is a song running
+    if current_song is not "":
+
+        # And mute is enabled
+        if bool_mute_tracks.get():
+
+            # And a song on the blocklist was found
+            if blockify.check_songlist():
+               
+                # Set mute button to show blocked
+                button_add_track.config(text="    Blocked     ")
+
+            # Otherwise offer to block track or autoblock
+            else:
+                button_add_track.config(text="Block This Track")
+                auto_block(current_song);
+        else:
+            blockify.toggle_mute() # unmute
+    else:
+        blockify.toggle_mute()     # unmute
+    
+    app.after(1000, update_gui) # Get title every second
 
 # Callbacks
-button_add_song.config(command=toggle_block_current)
-button_toggle_blockify.config(command=toggle_blockify)
+button_add_track.config(command=toggle_block_current)
 app.after(10, update_gui)
 
 # Start App
 app.mainloop()
 
+
 # Unmute on exit
-#~ blockify.unmute()
+blockify.toggle_mute()
