@@ -83,9 +83,9 @@ def add_to_list(new_song):
     song_list_file.close()
     
     # Add item to song list
-    song_list = current_song_list + "\n" + new_song
+    new_list = current_song_list + "\n" + new_song
     song_list_file = open(song_list_filename, "w")
-    song_list_file.write(song_list)
+    song_list_file.write(new_list)
     song_list_file.close()
     
     # Reload song list, and return new song list
