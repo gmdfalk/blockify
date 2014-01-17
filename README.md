@@ -33,7 +33,7 @@ Aliasing/Binding this to your shell/WM/DE is probably the most
 comfortable and safe way to deal with it. For example, you can do:
 
 ``` bash
-echo "alias blockify_add pkill -USR1 -f python2.*blockify >> ~/.bash_rc
+echo alias blockify_add="pkill -USR1 -f python2.*blockify" >> ~/.bash_rc
 ```
 
 Which will append this alias to your bash profile. You will have to
