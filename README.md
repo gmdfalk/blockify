@@ -3,25 +3,54 @@ blockify
 
 Mute songs on spotify (wine version only), requires wmctrl.
 
-Optionally, there is a ui you can use, credit goes to  
-Rod Persky (https://github.com/Rod-Persky/blockify)  
+Optionally, there is a ui you can use, by calling ./blockify-ui
 
-Installation:  
-Keep blockify and its symlink to blockify.py as well as blockify-ui in the  
-same directory, ideally in your users $PATH.  
-Copy list_example.txt to ~/.blockify_list  
+Installation
+-------------
 
-Usage:  
-When you find a song you want to mute, you need to add it to  
-~/.blockify_list either manually (find out the name with wmctrl -l) or via:  
-`pkill -USR1 -f python2.*blockify`  
-After adding a new entry you need to restart blockify manually or with:  
-`pkill -USR2 -f python2.*blockify`  
-Aliasing/Binding these commands in your shell/WM/DE is probably the most  
-comfortable.
+Blockify can be installed anywhere, and is super easy to get started!
+Simply clone or download this repository into any folder and run
+`./blockify`. Initially no block list that is 'shipped' will install
+by default, however we do have an example in blockify_list. This example
+Blockify list can be installed by calling (from the Blockify folder)
+
+``` bash
+cp blockify_list ~/.blockify_list
+```
+
+
+Usage
+------ 
+
+When you find a song you want to mute, you need to add it to
+~/.blockify_list either manually or via: 
+ 
+``` bash
+pkill -USR1 -f python2.*blockify
+```
+
+Aliasing/Binding this to your shell/WM/DE is probably the most
+comfortable and safe way to deal with it. For example, you can do:
+
+``` bash
+echo alias blockify_add="pkill -USR1 -f python2.*blockify" >> ~/.bash_rc
+```
+
+Which will append this alias to your bash profile. You will have to
+manually remove it if you no longer want it by finding the line in
+your `~/.bash_rc` file and deleting it.
+
+
+GUI Interface
+-------------
 
 The UI is pretty self-explanatory. Closing the UI will currently end all  
-running instances of blockify. Might get changed.  
+running instances of blockify, operating in much the same way that the
+windows version of blockify does. You can enable the auto add function
+which will then enable you to add tracks by pressing mute when anything
+comes up which you don't like - Once it is added you'll need to enable
+the auto add function; also the auto add function turns off when you
+hit no as you might actually be muting audio for another reason.
   
 Cheers,  
 mikar  
