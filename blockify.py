@@ -123,6 +123,11 @@ def get_current_song():
     # Search through list of windows from get_windows()
     # if spotify is contained, remove spotify from window
     # title and any extra space
+    #~ for item in window_list:
+        #~ if spotify in item:
+            #~ window_title = item[item.find(spotify):].split("-")
+            #~ artist_album = window_title[1].strip()
+            #~ window_title = " ".join(line.split()[5:])
 
     for window_title in get_windows():
         if 0 <= window_title.find(spotify):
@@ -132,8 +137,7 @@ def get_current_song():
     # Return the currently playing song or ""
     return current_song
 
-
-def check_songlist(current_song = ""):
+def check_songlist(current_song = ""):    
     # Can check songlist without having to get_current_song()
     if current_song == "":
         current_song = get_current_song()
@@ -241,10 +245,17 @@ def main():
     # Load the song list
     global song_list
     song_list = load_song_list()
-
+    # Initialize timestamp of SONGFILE to see when/if we need to reload it
+    initial_timestamp = os.path.getmtime(SONGFILE)
+    
     # Start the main loop
     while(True):
         check_songlist()
+        # Reload songlist if it changed
+        current_timestamp = os.path.getmtime(SONGFILE)
+        if initial_timestamp != current_timestamp:
+            song_list = load_song_list()
+            initial_timestamp = current_timestamp
         time.sleep(1)
 
 
