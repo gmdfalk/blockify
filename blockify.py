@@ -42,7 +42,7 @@ SONGFILE = os.path.join(home, ".blockify_list")
 is_muted = True
 
 # Spotify names it's window based on the song playing with the prefix
-spotify = "Spotify - "
+spotify = ""
 
 #########################################
 # Functions that work with the SONGFILE #
@@ -103,7 +103,7 @@ def add_to_list(new_song):
 def get_windows():   
     try:
         pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
-        return pipe_readlines(pipe).split("\n")
+        return pipe.read().split("\n")
  
     # If Wine isn't installed OSError tends to happen, also the function
     # needs to return data in the expected format (a list)
