@@ -162,9 +162,19 @@ def block_current():
 # Functions that work with amixer (from alsa-utils) #
 #####################################################
 
+def check_channels():
+    global speaker_channel
+    speaker_channel=False
+    # Check if we need to use the Speaker Channel in addition to Master
+    amixer_output = subprocess.Popen(['amixer'], stdout=subprocess.PIPE).communicate()[0]
+    for line in amixer_output:
+        if line.endswith("'Speaker',0'"):
+            speaker_channel=True
+    return speaker_channel
+
 def toggle_mute(mute = False):
-    global state
     global is_muted
+    check_channels()
 
     # Only send the un/mute command on state change
     if is_muted != mute:
@@ -179,10 +189,14 @@ def toggle_mute(mute = False):
         # channel when muting the master channel, but they
         # don't unmute automatically. Thus, we work with that
         # channel too.
-    for channel in ['Master', 'Speaker']:
-            subprocess.Popen(['amixer', '-q', 'set', channel, state])
+        if speaker_channel:
+            for channel in ['Master', 'Speaker']:
+                subprocess.Popen(['amixer', '-q', 'set', channel, state])
+        else:
+            for channel in ['Master']:
+                subprocess.Popen(['amixer', '-q', 'set', channel, state])
         
-    is_muted = mute
+        is_muted = mute
 
 def check_mute():
     global is_muted
