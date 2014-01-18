@@ -42,7 +42,7 @@ SONGFILE = os.path.join(home, ".blockify_list")
 is_muted = True
 
 # Spotify names it's window based on the song playing with the prefix
-spotify = ""
+spotify = "Spotify - "
 
 #########################################
 # Functions that work with the SONGFILE #
