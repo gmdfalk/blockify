@@ -33,9 +33,8 @@ import time
 import sys
 import os
 import signal
-from os.path import expanduser
 
-home = expanduser("~")
+home = os.path.expanduser("~")
 SONGFILE = os.path.join(home, ".blockify_list")
 
 # Initial global mute state, lets assume we start muted
@@ -194,11 +193,27 @@ def toggle_mute(mute = False):
         
         is_muted = mute
 
+def check_channels():
+    global speaker_channel
+    speaker_channel=False
+    # Check if we need to use the Speaker Channel in addition to Master
+    amixer_output = subprocess.Popen(['amixer'], stdout=subprocess.PIPE).communicate()[0]
+    for line in amixer_output:
+        if line.endswith("'Speaker',0'"):
+            speaker_channel=True
+    return speaker_channel
+    
 def check_mute():
     global is_muted
     # Read the actual mute status from amixer
-    result = os.popen("amixer get Master | grep -o off").read()
-    if "off" in result:
+
+    p1 = Popen(["amixer", "get", "Master"], stdout=PIPE)
+    p2 = Popen(["grep", "-o", "off"], stdin=p1.stdout, stdout=PIPE)
+    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
+    muted_output = p2.communicate()[0]
+    
+    #result = os.popen("amixer get Master | grep -o off").read()
+    if "off" in muted_output:
         actual_mute=True
     else:
         actual_mute=False

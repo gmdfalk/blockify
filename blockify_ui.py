@@ -12,8 +12,16 @@ import tkMessageBox
 
 
 import blockify as blockify
+
+# Duplicated from blockify.py. For some reason not working if imported
+home = os.path.expanduser("~")
+SONGFILE = os.path.join(home, ".blockify_list")
+initial_timestamp = os.path.getmtime(SONGFILE)
+
 blockify.toggle_mute()
 blockify.load_song_list()
+
+
 
 # Create TK App
 app = Tk()
@@ -90,7 +98,14 @@ def update_gui():
             blockify.toggle_mute() # unmute
     else:
         blockify.toggle_mute()     # unmute
-    
+
+    # Duplicate from blockify.py, for some reason not working if imported
+    global initial_timestamp
+    current_timestamp = os.path.getmtime(SONGFILE)
+    if initial_timestamp != current_timestamp:
+        song_list = blockify.load_song_list()
+        initial_timestamp = current_timestamp
+        
     app.after(1000, update_gui) # Get title every second
 
 # Callbacks
