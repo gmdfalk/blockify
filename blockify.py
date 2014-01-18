@@ -109,7 +109,8 @@ def get_windows():
     # needs to return data in the expected format (a list)
     except OSError:
         print "wmctrl needs to be installed"
-        return [spotify + "wmctrl is not installed"]
+        sys.exit(1)
+        #return [spotify + "wmctrl is not installed"]
 
  
 ######################################
@@ -142,8 +143,8 @@ def check_songlist(current_song = ""):
     if current_song is not "":
         for song in song_list:    
             if current_song.find(song) == 0:
-	        toggle_mute(True) # Song was found, set mute to True
-	        return True
+                toggle_mute(True) # Song was found, set mute to True
+                return True
 
     # Control reaches here when not found, not running
     # or no song provided
@@ -162,6 +163,7 @@ def block_current():
 #####################################################
 
 def toggle_mute(mute = False):
+    global state
     global is_muted
 
     # Only send the un/mute command on state change
@@ -177,10 +179,10 @@ def toggle_mute(mute = False):
         # channel when muting the master channel, but they
         # don't unmute automatically. Thus, we work with that
         # channel too.
-	for channel in ['Master', 'Speaker']:
+    for channel in ['Master', 'Speaker']:
             subprocess.Popen(['amixer', '-q', 'set', channel, state])
         
-        is_muted = mute
+    is_muted = mute
 
 def check_mute():
     global is_muted
