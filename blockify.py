@@ -35,11 +35,14 @@ import os
 import signal
 from os.path import expanduser
 
-spotify = "Spotify - "
 home = expanduser("~")
 SONGFILE = os.path.join(home, ".blockify_list")
-    
-is_muted = False
+
+# Initial global mute state, lets assume we start muted
+is_muted = True
+
+# Spotify names it's window based on the song playing with the prefix
+spotify = "Spotify - "
 
 #########################################
 # Functions that work with the SONGFILE #
@@ -102,10 +105,11 @@ def get_windows():
         pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
         return pipe_readlines(pipe).split("\n")
  
-    # If Wine isn't installed OSError tends to happen
+    # If Wine isn't installed OSError tends to happen, also the function
+    # needs to return data in the expected format (a list)
     except OSError:
-        print "Wine needs to be installed"
-        return [spotify + "Wine is not running / Installed"]
+        print "wmctrl needs to be installed"
+        return [spotify + "wmctrl is not installed"]
 
  
 ######################################
@@ -138,11 +142,12 @@ def check_songlist(current_song = ""):
     if current_song is not "":
         for song in song_list:    
             if current_song.find(song) == 0:
-	        toggle_mute(True)
+	        toggle_mute(True) # Song was found, set mute to True
 	        return True
 
-    # Control reaches here when not found
-    toggle_mute(False)
+    # Control reaches here when not found, not running
+    # or no song provided
+    toggle_mute(False) # No song, set mute to False
 
 
 def block_current():
@@ -168,18 +173,25 @@ def toggle_mute(mute = False):
             state = 'unmute'
             print "Unmuting"
 
-
-        subprocess.Popen(['amixer', '-q', 'set', 'Master', state])
-
+        # It was found that some computers mute the 'Speaker' 
+        # channel when muting the master channel, but they
+        # don't unmute automatically. Thus, we work with that
+        # channel too.
+	for channel in ['Master', 'Speaker']:
+            subprocess.Popen(['amixer', '-q', 'set', channel, state])
+        
         is_muted = mute
 
 def check_mute():
+    global is_muted
+    # Read the actual mute status from amixer
     result = os.popen("amixer get Master | grep -o off").read()
     if "off" in result:
         actual_mute=True
     else:
         actual_mute=False
-        
+    
+    # Return what we have the state as, and the actual state
     return (actual_mute, is_muted)
 
 ############################################
