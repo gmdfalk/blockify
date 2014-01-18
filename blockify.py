@@ -120,18 +120,10 @@ def get_windows():
 def get_current_song():
     current_song = ""
 
-    # Search through list of windows from get_windows()
-    # if spotify is contained, remove spotify from window
-    # title and any extra space
-    #~ for item in window_list:
-        #~ if spotify in item:
-            #~ window_title = item[item.find(spotify):].split("-")
-            #~ artist_album = window_title[1].strip()
-            #~ window_title = " ".join(line.split()[5:])
-
-    for window_title in get_windows():
-        if 0 <= window_title.find(spotify):
-            current_song = window_title[len(spotify):].strip()
+    pipe = get_windows()
+    for line in pipe:
+        if (line.find(spotify) >= 0):
+            current_song = " ".join(line.split()[5:])
             break
 
     # Return the currently playing song or ""
@@ -160,7 +152,7 @@ def block_current():
 
     # If the length is 0 then skip    
     if current_song is not "":
-        add_to_list(window_title)
+        add_to_list(current_song)
 
 #####################################################
 # Functions that work with amixer (from alsa-utils) #
@@ -251,11 +243,13 @@ def main():
     # Start the main loop
     while(True):
         check_songlist()
+        
         # Reload songlist if it changed
         current_timestamp = os.path.getmtime(SONGFILE)
         if initial_timestamp != current_timestamp:
             song_list = load_song_list()
             initial_timestamp = current_timestamp
+        
         time.sleep(1)
 
 
