@@ -135,9 +135,9 @@ def check_songlist(current_song = ""):
 
     # If there was a spotify song found, and
     # If the current_song *starts* with an item in the song list
+    global song
     if current_song is not "":
         for song in song_list:
-            global song
             if current_song.find(song) == 0:
                 toggle_mute(True) # Song was found, set mute to True
                 return True
