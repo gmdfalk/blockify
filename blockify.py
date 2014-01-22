@@ -197,10 +197,11 @@ def toggle_mute(mute = False):
     
 def check_mute():
     global is_muted
+    global actual_mute
     # Read the actual mute status from amixer
 
-    p1 = Popen(["amixer", "get", "Master"], stdout=PIPE)
-    p2 = Popen(["grep", "-o", "off"], stdin=p1.stdout, stdout=PIPE)
+    p1 = subprocess.Popen(["amixer", "get", "Master"], stdout=subprocess.PIPE)
+    p2 = subprocess.Popen(["grep", "-o", "off"], stdin=p1.stdout, stdout=subprocess.PIPE)
     p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
     muted_output = p2.communicate()[0]
     
@@ -224,7 +225,16 @@ def restart():
 
 def trap_exit():
     print '\nStopping Blockify'
-    toggle_mute()
+    check_mute()
+    if actual_mute == True:
+        check_channels()
+        if speaker_channel:
+            for channel in ['Master', 'Speaker']:
+                subprocess.Popen(['amixer', '-q', 'set', channel, 'unmute'])
+        else:
+            for channel in ['Master']:
+                subprocess.Popen(['amixer', '-q', 'set', channel, 'unmute'])
+        print 'Unmuted. Bye'
     sys.exit()
 
 signal.signal(signal.SIGUSR1, lambda sig, hdl: block_current())
