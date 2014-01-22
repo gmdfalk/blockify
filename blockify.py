@@ -119,6 +119,7 @@ def get_windows():
 def get_current_song():
     current_song = ""
 
+    # Check if a Spotify window exists and return the current songname
     pipe = get_windows()
     for line in pipe:
         if (line.find(spotify) >= 0):
@@ -163,9 +164,9 @@ def check_channels():
     speaker_channel=False
     # Check if we need to use the Speaker Channel in addition to Master
     amixer_output = subprocess.Popen(['amixer'], stdout=subprocess.PIPE).communicate()[0]
-    for line in amixer_output:
-        if line.endswith("'Speaker',0'"):
-            speaker_channel=True
+    if "'Speaker',0" in amixer_output:
+        speaker_channel=True
+        return speaker_channel
     return speaker_channel
 
 def toggle_mute(mute = False):
@@ -193,16 +194,6 @@ def toggle_mute(mute = False):
                 subprocess.Popen(['amixer', '-q', 'set', channel, state])
         
         is_muted = mute
-
-def check_channels():
-    global speaker_channel
-    speaker_channel=False
-    # Check if we need to use the Speaker Channel in addition to Master
-    amixer_output = subprocess.Popen(['amixer'], stdout=subprocess.PIPE).communicate()[0]
-    for line in amixer_output:
-        if line.endswith("'Speaker',0'"):
-            speaker_channel=True
-    return speaker_channel
     
 def check_mute():
     global is_muted
