@@ -1,31 +1,12 @@
 #!/usr/bin/env python2
 
 """blockify:
-
-    Mute songs on spotify (wine version only), requires wmctrl.
-
-    Optionally, there is a ui you can use, this is called though
-    ./blockify-ui
-
-    Installation:
-    Keep blockify and its symlink to blockify.py as well as blockify-ui in the
-    same directory, ideally in your users $PATH.
-    Copy list_example.txt to ~/.blockify_list
+    Mute adverts on spotify (wine version only)
 
     Usage:
-    When you find a song you want to mute, you need to add it to
+    When you find an advert you want to mute, you need to add it to
     ~/.blockify_list either manually (find out the name with wmctrl -l) or via:
     pkill -USR1 -f python2.*blockify
-    After adding a new entry you need to restart blockify manually or with:
-    pkill -USR2 -f python2.*blockify
-    Aliasing/Binding these commands works well for me.
-
-    The UI is pretty self-explanatory. Closing the UI will currently end all
-    running instances of blockify. Might get changed.
-
-    Cheers,
-    mikar
-
 """
 
 import subprocess
@@ -33,6 +14,20 @@ import time
 import sys
 import os
 import signal
+use_wnck = False
+try:
+    import wnck
+    import gtk
+    import pygtk
+    pygtk.require('2.0')
+    use_wnck = True
+except ImportError:
+    try:
+        devnull = open(os.devnull)
+        subprocess.Popen(["wmctrl"], stdout=devnull, stderr=devnull).communicate()
+    except OSError:
+        print "Please install wnck or wmctrl first."
+        sys.exit(1)
 
 home = os.path.expanduser("~")
 SONGFILE = os.path.join(home, ".blockify_list")
@@ -55,7 +50,7 @@ def load_song_list():
         song_file = open(SONGFILE, "r")
 
     except IOError:
-        # If SONGFILE didn't exist SONGFILE
+        # If SONGFILE didn't exist create it
         song_file = open(SONGFILE, "w")
         song_file.write("")
         song_file.close()
@@ -99,18 +94,25 @@ def add_to_list(new_song):
 # Functions that retrieve the song from wine #
 ##############################################
 
-def get_windows():   
-    try:
+def get_windows():
+    if use_wnck:
+        # Get the current screen
+        screen = wnck.screen_get_default()
+
+        while gtk.events_pending():
+            gtk.main_iteration(False)
+
+        # Object list of windows
+        windows = screen.get_windows()
+        # Actual window list
+        window_list = []
+        if len(windows) > 0:
+            for win in windows:
+                window_list.extend(win.get_name().split("\n"))
+        return window_list
+    else:
         pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
         return pipe.read().split("\n")
- 
-    # If Wine isn't installed OSError tends to happen, also the function
-    # needs to return data in the expected format (a list)
-    except OSError:
-        print "wmctrl needs to be installed"
-        sys.exit(1)
-        #return [spotify + "wmctrl is not installed"]
-
  
 ######################################
 # Functions that get the actual song #
@@ -123,7 +125,11 @@ def get_current_song():
     pipe = get_windows()
     for line in pipe:
         if (line.find(spotify) >= 0):
-            current_song = " ".join(line.split()[5:])
+            # Remove "Spotify - " and assign the name
+            if use_wnck:
+                current_song = " ".join(line.split()[2:])
+            else:
+                current_song = " ".join(line.split()[5:])
             break
 
     # Return the currently playing song or ""
@@ -225,6 +231,7 @@ def restart():
 
 def trap_exit():
     print '\nStopping Blockify'
+    # FIXME: this should not be necessary, fix toggle_mute()
     check_mute()
     if actual_mute == True:
         check_channels()
@@ -271,5 +278,5 @@ def main():
 
 
 if __name__ == "__main__":
-    print "please use ./blockify to run blockify"
+    print "please use ./blockify to run blockify.py"
     main()
