@@ -10,7 +10,7 @@ The code is tiny, check it out yourself if you feel like it.
 
 
 TODO:
-=====
+-----
 So, this gets all messed up if you try to seek forward or back in the
 song you're listening to, and that song then leads into an ad. I'm not
 sure there's much I can do about it, but I'm keeping an eye on it.
