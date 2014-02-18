@@ -2,6 +2,8 @@
 
 from spotify import Spotify
 
+import time
+
 def blockify(spotify):
     spotify.prev()
 

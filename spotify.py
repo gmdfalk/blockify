@@ -2,7 +2,6 @@
 
 import subprocess
 import dbus
-import time
 import re
 
 class Spotify():
