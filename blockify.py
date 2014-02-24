@@ -97,11 +97,7 @@ def get_windows():
         # Object list of windows in screen.
         windows = screen.get_windows()
         # Actual window list.
-        #window_list = []
-        #if len(windows) > 0:
-            #for win in windows:
-                #window_list.extend(win.get_name().split("\n"))
-        return [win.get_name().split("\n") for win in windows if len(windows) > 0]
+        return [win.get_name() for win in windows if len(windows)]
     else:
         pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
         return pipe.read().split("\n")
