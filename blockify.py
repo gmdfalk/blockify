@@ -100,6 +100,7 @@ def get_windows():
         return [win.get_name() for win in windows if len(windows)]
     else:
         pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
+        # Split the lines into a window list.
         return pipe.read().split("\n")
  
 ######################################
