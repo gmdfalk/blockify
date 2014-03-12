@@ -1,43 +1,50 @@
 #!/usr/bin/env python3
 
 import dbus
+import re
 
 class Spotify(object):
     '''Wrapper for Spotify's DBus interface'''
-    prop_path = 'org.freedesktop.DBus.Properties'
-    player_path = 'org.mpris.MediaPlayer2.Player'
-    spotify_path = 'org.mpris.MediaPlayer2.spotify'
-    running = False
 
-    session_bus = None
-    proxy = None
-    properties = None
-    player = None
+    def __init__(self, bus=None):
+        self.obj_path = '/org/mpris/MediaPlayer2'
+        self.prop_path = 'org.freedesktop.DBus.Properties'
+        self.player_path = 'org.mpris.MediaPlayer2.Player'
+        self.spotify_path = None
 
-    def __init__(self):
-        self.session_bus = dbus.SessionBus()
-        try:
+        if not bus:
+            bus = dbus.SessionBus()
+        self.session_bus = bus
+
+        for name in bus.list_names():
+            if re.match(r'.*mpris.*spotify', name):
+                self.spotify_path = str(name)
+
+        if self.spotify_path:
             self.proxy = self.session_bus.get_object(self.spotify_path,
-                                                     '/org/mpris/MediaPlayer2')
-        except:
-            self.proxy = None
-            print("Is Spotify not runnung?")
-
-        if self.proxy:
-            self.running = True
+                                                     self.obj_path)
             self.properties = dbus.Interface(self.proxy, self.prop_path)
             self.player = dbus.Interface(self.proxy, self.player_path)
+        else:
+            self.proxy = None
+            print("Is Spotify not runnung?")
 
 
     def is_running(self):
         '''TODO: Make this not redundant'''
-        return self.running
+        return True
 
 
     def get_property(self, key):
         '''Gets the value from any available property'''
         if self.properties:
             return self.properties.Get(self.player_path, key)
+
+
+    def set_property(self, key, value):
+        '''Sets the value for any available property'''
+        if self.properties:
+            return self.properties.Set(self.player_path, key, value)
 
 
     def toggle_pause(self):
