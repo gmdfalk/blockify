@@ -32,7 +32,7 @@ except ImportError:
         sys.exit(1)
 
 # Globals
-VERSION = 0.5
+VERSION = 0.6
 spotify = "Spotify - "
 is_muted = True
 home = os.path.expanduser("~")
