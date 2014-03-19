@@ -9,11 +9,11 @@
     pkill -USR1 -f python2.*blockify
 """
 
-import subprocess
 import time
 import sys
 import os
 import signal
+from subprocess import Popen, PIPE
 
 # Check if we can use the wnck library, otherwise resort to wmctrl.
 use_wnck = False
@@ -26,13 +26,13 @@ try:
 except ImportError:
     try:
         devnull = open(os.devnull)
-        subprocess.Popen(["wmctrl"], stdout=devnull, stderr=devnull).communicate()
+        Popen(["wmctrl"], stdout=devnull, stderr=devnull).communicate()
     except OSError:
         print "Please install wnck or wmctrl first."
         sys.exit(1)
 
 # Globals
-VERSION=0.5
+VERSION = 0.5
 spotify = "Spotify - "
 is_muted = True
 home = os.path.expanduser("~")
@@ -41,6 +41,7 @@ SONGFILE = os.path.join(home, ".blockify_list")
 #########################################
 # Functions that work with the SONGFILE #
 #########################################
+
 
 def load_song_list():
     try:
@@ -51,19 +52,20 @@ def load_song_list():
         song_file.write("")
         song_file.close()
         return []
-    
+
     song_list = song_file.read()
     song_file.close()
 
     # Split the list into lines.
     song_list = song_list.split("\n")
-    
+
     # Remove all empty lines.
     clean_list = [i for i in song_list if len(i.strip())]
     song_list = clean_list
 
     # Return song list for any function that may need it.
     return song_list
+
 
 def add_to_list(new_song):
     print 'Adding', new_song, 'to', SONGFILE
@@ -72,19 +74,20 @@ def add_to_list(new_song):
     song_list_file = open(SONGFILE, "r")
     current_song_list = song_list_file.read()
     song_list_file.close()
-    
+
     # Add item to song list
     new_list = current_song_list + "\n" + new_song
     song_list_file = open(SONGFILE, "w")
     song_list_file.write(new_list)
     song_list_file.close()
-    
+
     # Reload song list, and return new song list.
     return load_song_list()
 
 ##############################################
 # Functions that retrieve the song from wine #
 ##############################################
+
 
 def get_windows():
     if use_wnck:
@@ -99,13 +102,14 @@ def get_windows():
         # Actual window list.
         return [win.get_icon_name() for win in windows if len(windows)]
     else:
-        pipe = subprocess.Popen(['wmctrl', '-l'], stdout=subprocess.PIPE).stdout
+        pipe = Popen(['wmctrl', '-l'], stdout=PIPE).stdout
         # Split the lines into a window list.
         return pipe.read().split("\n")
- 
+
 ######################################
 # Functions that get the actual song #
 ######################################
+
 
 def get_current_song():
     current_song = ""
@@ -124,7 +128,8 @@ def get_current_song():
     # Return the currently playing song or "".
     return current_song
 
-def check_songlist(current_song = ""):    
+
+def check_songlist(current_song=""):
     # Can check songlist without having to get_current_song().
     if current_song == "":
         current_song = get_current_song()
@@ -136,12 +141,13 @@ def check_songlist(current_song = ""):
     if current_song is not "":
         for song in song_list:
             if current_song.find(song) == 0:
-                toggle_mute(True) # Song was found, set mute to True.
+                toggle_mute(True)  # Song was found, set mute to True.
                 return True
 
     # Control reaches here when not found, not running
     # or no song provided.
-    toggle_mute(False) # No song, set mute to False.
+    toggle_mute(False)  # No song, set mute to False.
+
 
 def block_current():
     current_song = get_current_song()
@@ -154,54 +160,57 @@ def block_current():
 # Functions that work with amixer (from alsa-utils) #
 #####################################################
 
+
 def check_channels():
-    speaker_channel=False
+    speaker_channel = False
     # Check if we need to use the Speaker Channel in addition to Master.
-    amixer_output = subprocess.Popen(['amixer'], stdout=subprocess.PIPE).communicate()[0]
+    amixer_output = Popen(['amixer'], stdout=PIPE).communicate()[0]
     if "'Speaker',0" in amixer_output:
-        speaker_channel=True
+        speaker_channel = True
         return speaker_channel
     return speaker_channel
 
-def toggle_mute(mute = False):
+
+def toggle_mute(mute=False):
     global is_muted
     speaker_channel = check_channels()
 
     # Only send the un/mute command on state change.
     if is_muted != mute:
         if mute:
-            state = 'mute' 
+            state = 'mute'
             print "Muting", song
         else:
             state = 'unmute'
             print "Unmuting"
 
-        # It was found that some computers mute the 'Speaker' 
+        # It was found that some computers mute the 'Speaker'
         # channel when muting the master channel, but they
         # don't unmute automatically. Thus, we work with that
         # channel too.
         if speaker_channel:
             for channel in ['Master', 'Speaker']:
-                subprocess.Popen(['amixer', '-q', 'set', channel, state])
+                Popen(['amixer', '-q', 'set', channel, state])
         else:
             for channel in ['Master']:
-                subprocess.Popen(['amixer', '-q', 'set', channel, state])
-        
+                Popen(['amixer', '-q', 'set', channel, state])
+
         is_muted = mute
-    
+
+
 def check_mute():
     # Read the actual mute status from amixer.
-    p1 = subprocess.Popen(["amixer", "get", "Master"], stdout=subprocess.PIPE)
-    p2 = subprocess.Popen(["grep", "-o", "off"], stdin=p1.stdout, stdout=subprocess.PIPE)
+    p1 = Popen(["amixer", "get", "Master"], stdout=PIPE)
+    p2 = Popen(["grep", "-o", "off"], stdin=p1.stdout, stdout=PIPE)
     p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
     muted_output = p2.communicate()[0]
     #muted_output = os.popen("amixer get Master | grep -o off").read()
-    
+
     if "off" in muted_output:
-        actual_mute=True
+        actual_mute = True
     else:
-        actual_mute=False
-    
+        actual_mute = False
+
     # Return what we have the state as, and the actual state.
     return (actual_mute, is_muted)
 
@@ -209,35 +218,38 @@ def check_mute():
 # Functions that work with the app running #
 ############################################
 
+
 # Not necessary anymore but keeping it in for reference.
 def restart():
     print 'Restarting Blockify'
     python = sys.executable
     os.execl(python, python, * sys.argv)
 
+
 def trap_exit():
     print '\nStopping Blockify'
     # FIXME: this should not be necessary, fix toggle_mute().
     actual_mute, is_muted = check_mute()
-    if actual_mute == True:
+    if actual_mute:
         speaker_channel = check_channels()
         if speaker_channel:
             for channel in ['Master', 'Speaker']:
-                subprocess.Popen(['amixer', '-q', 'set', channel, 'unmute'])
+                Popen(['amixer', '-q', 'set', channel, 'unmute'])
         else:
             for channel in ['Master']:
-                subprocess.Popen(['amixer', '-q', 'set', channel, 'unmute'])
+                Popen(['amixer', '-q', 'set', channel, 'unmute'])
         print 'Unmuted. Bye'
     sys.exit()
 
 signal.signal(signal.SIGUSR1, lambda sig, hdl: block_current())
 signal.signal(signal.SIGUSR2, lambda sig, hdl: restart())
 signal.signal(signal.SIGTERM, lambda sig, hdl: trap_exit())
-signal.signal(signal.SIGINT,  lambda sig, hdl: trap_exit())
+signal.signal(signal.SIGINT, lambda sig, hdl: trap_exit())
 
 #################################################
 # Main loop and initialisation of CLI interface #
 #################################################
+
 
 def main():
     print "Starting Blockify"
@@ -248,17 +260,17 @@ def main():
     song_list = load_song_list()
     # Initialize timestamp of SONGFILE to see when/if we need to reload it.
     old_timestamp = os.path.getmtime(SONGFILE)
-    
+
     # Start the main loop.
     while(True):
         check_songlist()
-        
+
         # Reload songlist if it changed.
         current_timestamp = os.path.getmtime(SONGFILE)
         if old_timestamp != current_timestamp:
             song_list = load_song_list()
             old_timestamp = current_timestamp
-        
+
         time.sleep(1)
 
 
