@@ -1,7 +1,7 @@
 blockify
 ========
 
-Mute songs on spotify (wine version only), requires wmctrl.
+Mute songs on spotify. Depends on the wnck library.
 
 Optionally, there is a ui you can use, by calling ./blockify-ui
 
@@ -51,8 +51,5 @@ which will then enable you to add tracks by pressing mute when anything
 comes up which you don't like - Once it is added you'll need to enable
 the auto add function; also the auto add function turns off when you
 hit no as you might actually be muting audio for another reason.
-  
-Cheers,  
-mikar  
   
 To use media keys with Wine Spotify use [spotify_cmd](https://code.google.com/p/spotifycmd/).

@@ -27,7 +27,7 @@ blockify.load_song_list()
 app = Tk()
 app.title("Blockify")
 
-# Song Title Label
+# Song Title Labelhttp://pypix.com/python/create-simple-music-streaming-app-flask/
 string_artist_album = StringVar()
 string_artist_album.set("")
 label_artist_album = Label(app, textvariable=string_artist_album, font=("sans", 14))
