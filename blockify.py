@@ -45,16 +45,12 @@ SONGFILE = os.path.join(home, ".blockify_list")
 
 def load_song_list():
     try:
-        song_file = open(SONGFILE, "r")
+        with open(SONGFILE, "r") as f:
+            song_list = f.read()
     except IOError:
         # If SONGFILE didn't exist create it.
-        song_file = open(SONGFILE, "w")
-        song_file.write("")
-        song_file.close()
-        return []
-
-    song_list = song_file.read()
-    song_file.close()
+        with open(SONGFILE, "w+") as f:
+            song_list = f.read()
 
     # Split the list into lines.
     song_list = song_list.split("\n")
@@ -71,15 +67,13 @@ def add_to_list(new_song):
     print 'Adding', new_song, 'to', SONGFILE
 
     # Read in the old .blockify_list.
-    song_list_file = open(SONGFILE, "r")
-    current_song_list = song_list_file.read()
-    song_list_file.close()
+    with open(SONGFILE, "r") as f:
+        current_song_list = f.read()
 
     # Add item to song list
     new_list = current_song_list + "\n" + new_song
-    song_list_file = open(SONGFILE, "w")
-    song_list_file.write(new_list)
-    song_list_file.close()
+    with open(SONGFILE, "w") as f:
+        f.write(new_list)
 
     # Reload song list, and return new song list.
     return load_song_list()
@@ -99,11 +93,11 @@ def get_windows():
 
         # Object list of windows in screen.
         windows = screen.get_windows()
-        # Actual window list.
+        # Return the actual list of windows or an empty list.
         return [win.get_icon_name() for win in windows if len(windows)]
     else:
         pipe = Popen(['wmctrl', '-l'], stdout=PIPE).stdout
-        # Split the lines into a window list.
+        # Split the lines into a window list and return it.
         return pipe.read().split("\n")
 
 ######################################
@@ -117,7 +111,7 @@ def get_current_song():
     # Check if a Spotify window exists and return the current songname.
     pipe = get_windows()
     for line in pipe:
-        if (line.find(spotify) >= 0):
+        if line.find(spotify) >= 0:
             # Remove "Spotify - " and assign the name.
             if use_wnck:
                 current_song = " ".join(line.split()[2:])
@@ -138,22 +132,22 @@ def check_songlist(current_song=""):
     # with a string from the song list.
     global song
     song_list = load_song_list()
-    if current_song is not "":
+    if current_song != "":
         for song in song_list:
             if current_song.find(song) == 0:
-                toggle_mute(True)  # Song was found, set mute to True.
+                # Song was found, set mute to True.
+                toggle_mute(True)
                 return True
 
     # Control reaches here when not found, not running
-    # or no song provided.
-    toggle_mute(False)  # No song, set mute to False.
+    # or no song provided. Set mute to False.
+    toggle_mute(False)
 
 
 def block_current():
     current_song = get_current_song()
 
-    # If the length is 0 then skip.
-    if current_song is not "":
+    if current_song:
         add_to_list(current_song)
 
 #####################################################
@@ -184,10 +178,9 @@ def toggle_mute(mute=False):
             state = 'unmute'
             print "Unmuting"
 
-        # It was found that some computers mute the 'Speaker'
-        # channel when muting the master channel, but they
-        # don't unmute automatically. Thus, we work with that
-        # channel too.
+        # Some computers mute the 'Speaker' channel when muting
+        # the master channel, but they don't unmute automatically.
+        # Therefor, we work with that channel too.
         if speaker_channel:
             for channel in ['Master', 'Speaker']:
                 Popen(['amixer', '-q', 'set', channel, state])
@@ -212,7 +205,7 @@ def check_mute():
         actual_mute = False
 
     # Return what we have the state as, and the actual state.
-    return (actual_mute, is_muted)
+    return actual_mute, is_muted
 
 ############################################
 # Functions that work with the app running #
