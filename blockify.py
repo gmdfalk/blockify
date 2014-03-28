@@ -197,7 +197,7 @@ def check_mute():
     p2 = Popen(["grep", "-o", "off"], stdin=p1.stdout, stdout=PIPE)
     p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
     muted_output = p2.communicate()[0]
-    #muted_output = os.popen("amixer get Master | grep -o off").read()
+    # muted_output = os.popen("amixer get Master | grep -o off").read()
 
     if "off" in muted_output:
         actual_mute = True

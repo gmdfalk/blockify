@@ -32,15 +32,15 @@ label_artist_album.grid(row=1, column=1, columnspan=2)
 # Mute track_list check box
 bool_mute_tracks = IntVar()
 bool_mute_tracks.set(1)
-check_mute_tracks = Checkbutton(app, text="Mute Tracks",
-                                variable=bool_mute_tracks, onvalue=1, offvalue=0)
+check_mute_tracks = Checkbutton(app, text="Mute Tracks", onvalue=1,
+                                variable=bool_mute_tracks, offvalue=0)
 check_mute_tracks.grid(row=2, column=2)
 
 # Auto Mute track_list check box.
 bool_auto_add_tracks = IntVar()
 bool_auto_add_tracks.set(0)
-check_auto_add_tracks = Checkbutton(app, text="Auto Add Tracks",
-                                    variable=bool_auto_add_tracks, onvalue=1, offvalue=0)
+check_auto_add_tracks = Checkbutton(app, text="Auto Add Tracks", onvalue=1,
+                                    variable=bool_auto_add_tracks, offvalue=0)
 check_auto_add_tracks.grid(row=3, column=2)
 
 # Block currently playing song.
