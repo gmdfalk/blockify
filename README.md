@@ -1,23 +1,22 @@
 blockify
 ========
 
-Mute songs on spotify. Depends on the wnck library.
-
-Optionally, there is a ui you can use, by calling ./blockify-ui
+Mute Spotify advertisements.
+Works with both the Linux and Wine version of Spotify but depends on the wnck library.  
 
 Installation
 -------------
 
-Blockify can be installed anywhere, and is super easy to get started!
 Simply clone or download this repository into any folder and run
-`./blockify`. Initially no block list that is 'shipped' will install
-by default, however we do have an example in blockify_list. This example
-Blockify list can be installed by calling (from the Blockify folder)
+`./blockify`.  
+No blocklist will be installed by default but you can find a basic  
+example in the installation/clone directory. To use it, copy it to your $HOME:  
 
 ``` bash
 cp blockify_list ~/.blockify_list
 ```
-
+  
+Optionally, there is a GUI you can use, by calling ./blockify-ui  
 
 Usage
 ------ 
@@ -30,16 +29,7 @@ pkill -USR1 -f python2.*blockify
 ```
 
 Aliasing/Binding this to your shell/WM/DE is probably the most
-comfortable and safe way to deal with it. For example, you can do:
-
-``` bash
-echo alias blockify_add="pkill -USR1 -f python2.*blockify" >> ~/.bash_rc
-```
-
-Which will append this alias to your bash profile. You will have to
-manually remove it if you no longer want it by finding the line in
-your `~/.bash_rc` file and deleting it.
-
+comfortable and safe way to deal with it.
 
 GUI Interface
 -------------
