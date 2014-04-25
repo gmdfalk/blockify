@@ -8,11 +8,11 @@ Options:
     -q, --quiet           Don't print anything to stdout.
     -v                    Set the log verbosity, up to -vvv.
 """
-# TODO: pacmd option (complementing alsa/amixer).
-from codecs import open
-from os import path
+# TODO: pacmd mute/cli option (complementing alsa/amixer).
 from subprocess import check_output, Popen
+import codecs
 import logging
+import os
 import signal
 import sys
 import time
@@ -30,9 +30,10 @@ log = logging.getLogger("blockify")
 class Blocklist(list):
 
     def __init__(self):
-        self.home = path.expanduser("~")
-        self.location = path.join(self.home, ".blockify_list")
+        self.home = os.path.expanduser("~")
+        self.location = os.path.join(self.home, ".blockify_list")
         self.timestamp = self.get_timestamp()
+        self.extend(self.load_file())
 
     def append(self, item):
         "Overloading list.append to automatically save the list to a file."
@@ -45,23 +46,23 @@ class Blocklist(list):
         self.save_file()
 
     def get_timestamp(self):
-        return path.getmtime(self.location)
+        return os.path.getmtime(self.location)
 
     def load_file(self):
         log.info("Loading blockfile from {}.".format(self.location))
         try:
-            with open(self.location, "r", encoding="utf-8") as f:
+            with codecs.open(self.location, "r", encoding="utf-8") as f:
                 blocklist = f.read()
         except IOError:
-            with open(self.location, "w+", encoding="utf-8") as f:
+            with codecs.open(self.location, "w+", encoding="utf-8") as f:
                 blocklist = f.read()
 
         return [i for i in blocklist.split("\n") if i]
 
     def save_file(self):
         log.info("Saving blocklist to {}.".format(self.location))
-        with open(self.location, "w", encoding="utf-8") as f:
-            f.write("\n".join(self))
+        with codecs.open(self.location, "w", encoding="utf-8") as f:
+            f.write("\n".join(self) + "\n")
         self.timestamp = self.get_timestamp()
 
     def check_file(self):
@@ -78,11 +79,16 @@ class Blockify(object):
     def __init__(self, blocklist):
         self.blocklist = blocklist
         self.channels = self.get_channels()
-        self.song = self.get_current_song()
         log.info("Blockify started.")
 
     def update(self):
-        if 
+        current_song = self.get_current_song()
+
+        if current_song == "":
+            return
+
+        for i in self.blocklist:
+            print current_song.find(i)
 
     def get_windows(self):
         "Libwnck list of currently open windows."
@@ -146,7 +152,7 @@ class Blockify(object):
         signal.signal(signal.SIGINT, lambda sig, hdl: self.trap_exit())
 
     def trap_exit(self):
-        self.blocklist.save()
+        self.blocklist.save_file()
         self.toggle_mute()
         sys.exit()
 
@@ -174,11 +180,11 @@ def init_logger(logpath, loglevel, quiet):
         log.info("Loglevel is {}.".format(levels[loglevel]))
     if logpath:
         try:
-            logfile = path.abspath(logpath)
+            logfile = os.path.abspath(logpath)
             file_handler = logging.FileHandler(logfile)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
-            log.debug("Added logging file handler.")
+            log.debug("Added logging file handler: {}.".format(logfile))
         except IOError:
             log.error("Could not attach file handler.")
 
@@ -197,7 +203,8 @@ def main():
 
 def cli_entry():
     args = docopt(__doc__, version="0.7")
-    init_logger(args["--logdir"], args["-v"], args["--quiet"])
+    print args
+    init_logger(args["--logfile"], args["-v"], args["--quiet"])
     main()
 
 

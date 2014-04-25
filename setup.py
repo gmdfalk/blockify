@@ -1,7 +1,4 @@
-#!/usr/bin/env python2
-
-import os
-
+from os.path import dirname, join
 
 try:
     from setuptools import setup
@@ -10,7 +7,7 @@ except ImportError:
 
 
 def read(filename):
-    with open(os.path.join(os.path.dirname(__file__), filename)) as f:
+    with open(join(dirname(__file__), filename)) as f:
         return f.read()
 
 
@@ -20,11 +17,11 @@ _license = "MIT"
 
 setup(
     name=_name,
-    description="Mutes spotify advertisements.",
+    description="Mute spotify advertisements.",
     long_description=read("README.md"),
     version="0.7",
     license=_license,
-    url="https://github.com/mikar/%s" % _name,
+    url="https://github.com/mikar/{}".format(_name),
     author="Max Demian",
     author_email="mikar@gmx.de",
     packages=[_name],
