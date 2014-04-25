@@ -88,14 +88,14 @@ class Blockify(object):
 
         muted = self.sound_muted()
 
-        print current_song in self.blocklist
-
         if current_song in self.blocklist:
             if not muted:
-                print self.blocklist
                 self.toggle_mute(True)
         else:
-            self.toggle_mute()
+            if muted:
+                self.toggle_mute()
+            else:
+                print "not muted and not found"
 
     def get_windows(self):
         "Libwnck list of currently open windows."
@@ -174,7 +174,7 @@ def init_logger(logpath, loglevel, quiet):
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logger.setLevel(levels[loglevel])
 
-    logformat = "%(asctime)-14s %(levelname)-8s %(name)-8s %(message)s"
+    logformat = "%(asctime)-14s %(levelname)-8s %(message)s"
 
     formatter = logging.Formatter(logformat, "%Y-%m-%d %H:%M:%S")
 
@@ -210,7 +210,6 @@ def main():
 
 def cli_entry():
     args = docopt(__doc__, version="0.7")
-    print args
     init_logger(args["--logfile"], args["-v"], args["--quiet"])
     main()
 
