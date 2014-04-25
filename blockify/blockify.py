@@ -30,6 +30,7 @@ log = logging.getLogger()
 class Blocklist(list):
     "Inheriting from list type is a bad idea. Lets see what happens."
     def __init__(self):
+        list.__init__(self)
         self.home = os.path.expanduser("~")
         self.location = os.path.join(self.home, ".blockify_list")
         self.timestamp = self.get_timestamp()
