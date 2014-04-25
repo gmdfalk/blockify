@@ -27,7 +27,7 @@ pygtk.require("2.0")
 log = logging.getLogger()
 
 
-class Blocklist(object):
+class Blocklist(list):
     "Inheriting from list type is a bad idea. Lets see what happens."
     def __init__(self):
         self.home = os.path.expanduser("~")
@@ -65,13 +65,6 @@ class Blocklist(object):
             f.write("\n".join(self) + "\n")
         self.timestamp = self.get_timestamp()
 
-    def check_file(self):
-        # Reload blockfile if it changed.
-        current_timestamp = self.get_timestamp()
-        if self.timestamp != current_timestamp:
-            log.info("Blockfile changed. Reloading.")
-            self.__init__()
-
 
 class Blockify(object):
 
@@ -87,11 +80,16 @@ class Blockify(object):
             return
 
         # Check if the blockfile has changed.
-        self.blocklist.check_file()
+        current_timestamp = self.blocklist.get_timestamp()
+        if self.blocklist.timestamp != current_timestamp:
+            log.info("Blockfile changed. Reloading.")
+            self.blocklist = self.blocklist.__init__()
+
         muted = self.sound_muted()
 
         if current_song in self.blocklist:
             if not muted:
+                print self.blocklist
                 self.toggle_mute(True)
         else:
             if muted:
