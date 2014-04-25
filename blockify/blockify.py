@@ -27,8 +27,8 @@ pygtk.require("2.0")
 log = logging.getLogger("blockify")
 
 
-class Blocklist(list):
-    "Inheriting from list type is unnecessary. I'm doing it anyway to see why."
+class Blocklist(object):
+    "Inheriting from list type is a bad idea. Lets see what happens."
     def __init__(self):
         self.home = os.path.expanduser("~")
         self.location = os.path.join(self.home, ".blockify_list")
@@ -71,7 +71,6 @@ class Blocklist(list):
         if self.timestamp != current_timestamp:
             log.info("Blockfile changed. Reloading.")
             self.__init__()
-            self.timestamp = current_timestamp
 
 
 class Blockify(object):
@@ -87,8 +86,13 @@ class Blockify(object):
         if current_song == "":
             return
 
-        for i in self.blocklist:
-            print current_song.find(i)
+        # Check if the blockfile has changed.
+        self.blocklist.check_file()
+
+        if current_song in self.blocklist and not self.sound_muted():
+            self.toggle_mute(True)
+        else:
+            self.toggle_mute()
 
     def get_windows(self):
         "Libwnck list of currently open windows."
@@ -129,15 +133,16 @@ class Blockify(object):
         return channel_list
 
     def toggle_mute(self, mute=False):
-        if mute:
-            state = "mute"
-            log.info("Muting {}.".format(self.get_current_song()))
-        else:
-            state = "unmute"
-            log.info("Unmuting")
+        if not self.sound_muted():
+            if mute:
+                state = "mute"
+                log.info("Muting {}.".format(self.get_current_song()))
+            else:
+                state = "unmute"
+                log.info("Unmuting")
 
-        for channel in self.channels:
-            Popen(["amixer", "-q", "set", channel, state])
+            for channel in self.channels:
+                Popen(["amixer", "-q", "set", channel, state])
 
     def sound_muted(self):
         "Check if system sound is muted."
