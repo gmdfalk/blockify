@@ -24,7 +24,7 @@ import wnck
 
 
 pygtk.require("2.0")
-log = logging.getLogger("blockify")
+log = logging.getLogger()
 
 
 class Blocklist(object):
@@ -88,11 +88,14 @@ class Blockify(object):
 
         # Check if the blockfile has changed.
         self.blocklist.check_file()
+        muted = self.sound_muted()
 
-        if current_song in self.blocklist and not self.sound_muted():
-            self.toggle_mute(True)
+        if current_song in self.blocklist:
+            if not muted:
+                self.toggle_mute(True)
         else:
-            self.toggle_mute()
+            if muted:
+                self.toggle_mute()
 
     def get_windows(self):
         "Libwnck list of currently open windows."
@@ -133,21 +136,20 @@ class Blockify(object):
         return channel_list
 
     def toggle_mute(self, mute=False):
-        if not self.sound_muted():
-            if mute:
-                state = "mute"
-                log.info("Muting {}.".format(self.get_current_song()))
-            else:
-                state = "unmute"
-                log.info("Unmuting")
+        if mute:
+            state = "mute"
+            log.info("Muting {}.".format(self.get_current_song()))
+        else:
+            state = "unmute"
+            log.info("Unmuting")
 
-            for channel in self.channels:
-                Popen(["amixer", "-q", "set", channel, state])
+        for channel in self.channels:
+            Popen(["amixer", "-q", "set", channel, state])
 
     def sound_muted(self):
         "Check if system sound is muted."
-        master = check_output("amixer get Master | grep -o off", shell=True)
-        if "off" in master:
+        master = check_output(["amixer", "get", "Master"])
+        if "[off]" in master:
             return True
         return False
 
