@@ -1,12 +1,12 @@
 """blockify
 
 Usage:
-    blockify [-l <dir>] [-q] [-v...] [-h]
+    blockify [-l <path>] [-v...] [-q] [-h]
 
 Options:
-    -l, --logdir=<dir>  Will enable file logging to dir/blockify.log.
-    -q, --quiet         Don't anything to stdout.
-    -v                  Log verbosity.
+    -l, --logfile=<path>  Enables logging to the logfile/-path specified.
+    -q, --quiet           Don't print anything to stdout.
+    -v                    Set the log verbosity, up to -vvv.
 """
 # TODO: pacmd option (complementing alsa/amixer).
 from codecs import open
@@ -24,6 +24,7 @@ import wnck
 
 
 pygtk.require("2.0")
+log = logging.getLogger("blockify")
 
 
 class Blocklist(list):
@@ -36,7 +37,8 @@ class Blocklist(list):
     def append(self, item):
         "Overloading list.append to automatically save the list to a file."
         # Only allow nonempty strings.
-        if not item or not isinstance(item, str):
+        if not isinstance(item, str) or not item:
+            log.debug("Failed to add {} to blocklist.".format(item))
             return
         log.info("Adding {} to {}.".format(item, self.location))
         super(Blocklist, self).append(item)
@@ -46,7 +48,7 @@ class Blocklist(list):
         return path.getmtime(self.location)
 
     def load_file(self):
-        log.info("Loading {}.".format(self.location))
+        log.info("Loading blockfile from {}.".format(self.location))
         try:
             with open(self.location, "r", encoding="utf-8") as f:
                 blocklist = f.read()
@@ -59,7 +61,7 @@ class Blocklist(list):
     def save_file(self):
         log.info("Saving blocklist to {}.".format(self.location))
         with open(self.location, "w", encoding="utf-8") as f:
-            f.writelines([i + "\n" for i in self])
+            f.write("\n".join(self))
         self.timestamp = self.get_timestamp()
 
     def check_file(self):
@@ -78,6 +80,9 @@ class Blockify(object):
         self.channels = self.get_channels()
         self.song = self.get_current_song()
         log.info("Blockify started.")
+
+    def update(self):
+        if 
 
     def get_windows(self):
         "Libwnck list of currently open windows."
@@ -142,11 +147,11 @@ class Blockify(object):
 
     def trap_exit(self):
         self.blocklist.save()
-        self.unmute()
+        self.toggle_mute()
         sys.exit()
 
 
-def init_logger(logdir, loglevel, quiet):
+def init_logger(logpath, loglevel, quiet):
     "Initializes the logger for system messages."
     logger = logging.getLogger()
 
@@ -161,15 +166,15 @@ def init_logger(logdir, loglevel, quiet):
     formatter = logging.Formatter(logformat, "%Y-%m-%d %H:%M:%S")
 
     # Only attach a console handler if both nologs and quiet are disabled.
-    if not args["--quiet"]:
+    if not quiet:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
         log.debug("Added logging console handler.")
         log.info("Loglevel is {}.".format(levels[loglevel]))
-    if logdir:
+    if logpath:
         try:
-            logfile = path.join(logdir, "blockify.log")
+            logfile = path.abspath(logpath)
             file_handler = logging.FileHandler(logfile)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
@@ -185,15 +190,16 @@ def main():
     blockify.bind_signals()
     blockify.toggle_mute()
 
-    # Start the main loop.
     while True:
-        blocklist.check_blocklist()
-
+        blockify.update()
         time.sleep(1)
 
 
-if __name__ == "__main__":
+def cli_entry():
     args = docopt(__doc__, version="0.7")
     init_logger(args["--logdir"], args["-v"], args["--quiet"])
-    log = logging.getLogger("blockify")
     main()
+
+
+if __name__ == "__main__":
+    cli_entry()

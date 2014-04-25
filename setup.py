@@ -32,7 +32,7 @@ setup(
     install_package_data=True,
     entry_points={
                   "console_scripts": [
-                      "{0} = {0}.{0}:main".format(_name),
+                      "{0} = {0}.{0}:cli_entry".format(_name),
                   ],
                   "gui_scripts": [
                       "{0}-ui = {0}.{0}_ui:main".format(_name),
