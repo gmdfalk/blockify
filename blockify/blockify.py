@@ -83,17 +83,18 @@ class Blockify(object):
         current_timestamp = self.blocklist.get_timestamp()
         if self.blocklist.timestamp != current_timestamp:
             log.info("Blockfile changed. Reloading.")
-            self.blocklist = self.blocklist.__init__()
+            self.blocklist.__init__()
 
         muted = self.sound_muted()
+
+        print current_song in self.blocklist
 
         if current_song in self.blocklist:
             if not muted:
                 print self.blocklist
                 self.toggle_mute(True)
         else:
-            if muted:
-                self.toggle_mute()
+            self.toggle_mute()
 
     def get_windows(self):
         "Libwnck list of currently open windows."
