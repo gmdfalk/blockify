@@ -17,7 +17,7 @@ SONGFILE = os.path.join(home, ".blockify_list")
 initial_timestamp = os.path.getmtime(SONGFILE)
 
 blockify.toggle_mute()
-blockify.load_song_list()
+blockify.load_blocklist()
 
 # Create TK App.
 app = Tk()
@@ -64,7 +64,7 @@ def auto_block(current_song):
     if not bool_auto_add_tracks.get():
         return
 
-    actual_mute, is_muted = blockify.check_mute()
+    actual_mute, is_muted = blockify.sound_muted()
     if actual_mute != is_muted:
         if not toggle_block_current():
             bool_auto_add_tracks.set(0)
@@ -97,7 +97,7 @@ def update_gui():
     global initial_timestamp
     current_timestamp = os.path.getmtime(SONGFILE)
     if initial_timestamp != current_timestamp:
-        blockify.load_song_list()
+        blockify.load_blocklist()
         initial_timestamp = current_timestamp
 
     # Get title every second.
