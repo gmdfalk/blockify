@@ -28,7 +28,7 @@ log = logging.getLogger("blockify")
 
 
 class Blocklist(list):
-
+    "Inheriting from list type is unnecessary. I'm doing it anyway to see why."
     def __init__(self):
         self.home = os.path.expanduser("~")
         self.location = os.path.join(self.home, ".blockify_list")
@@ -70,7 +70,7 @@ class Blocklist(list):
         current_timestamp = self.get_timestamp()
         if self.timestamp != current_timestamp:
             log.info("Blockfile changed. Reloading.")
-            self.load_file()
+            self.__init__()
             self.timestamp = current_timestamp
 
 
