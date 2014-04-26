@@ -94,8 +94,6 @@ class Blockify(object):
         else:
             if muted:
                 self.toggle_mute()
-            else:
-                print "not muted and not found"
 
     def get_windows(self):
         "Libwnck list of currently open windows."
@@ -141,7 +139,7 @@ class Blockify(object):
             log.info("Muting {}.".format(self.get_current_song()))
         else:
             state = "unmute"
-            log.info("Unmuting")
+            log.info("Unmuting.")
 
         for channel in self.channels:
             Popen(["amixer", "-q", "set", channel, state])
@@ -205,7 +203,7 @@ def main():
 
     while True:
         blockify.update()
-        time.sleep(1)
+#         time.sleep(1)
 
 
 def cli_entry():

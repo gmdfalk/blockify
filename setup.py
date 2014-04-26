@@ -25,7 +25,7 @@ setup(
     author="Max Demian",
     author_email="mikar@gmx.de",
     packages=[_name],
-    package_data={_name: ["blockify_list"]},
+    package_data={_name + "/data": ["*.png", "blockify_list"]},
     install_package_data=True,
     entry_points={
                   "console_scripts": [
