@@ -28,9 +28,9 @@ log = logging.getLogger()
 
 
 class Blocklist(list):
-    "Inheriting from list type is a bad idea. Lets see what happens."
+    "Inheriting from list type is a bad idea. Let's see what happens."
     def __init__(self):
-        list.__init__(self)
+        super(Blocklist, self).__init__()
         self.home = os.path.expanduser("~")
         self.location = os.path.join(self.home, ".blockify_list")
         self.timestamp = self.get_timestamp()
@@ -44,6 +44,11 @@ class Blocklist(list):
             return
         log.info("Adding {} to {}.".format(item, self.location))
         super(Blocklist, self).append(item)
+        self.save_file()
+
+    def remove(self, item):
+        log.info("Removing {} from {}.".format(item, self.location))
+        super(Blocklist, self).remove(item)
         self.save_file()
 
     def get_timestamp(self):
@@ -124,6 +129,15 @@ class Blockify(object):
 
         if current_song:
             self.blocklist.append(current_song)
+
+    def unblock_current(self):
+        current_song = self.get_current_song()
+
+        if current_song:
+            try:
+                self.blocklist.remove(current_song)
+            except ValueError as e:
+                log.debug("Unable to unblock {}: {}".format(current_song, e))
 
     def get_channels(self):
         channel_list = ["Master"]
