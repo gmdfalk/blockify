@@ -1,8 +1,9 @@
 import os
 
+import glib
 import gtk
 
-# import blockify
+import blockify
 
 
 class Notepad(gtk.Window):
@@ -104,14 +105,26 @@ class BlockifyUI(gtk.Window):
         vbox.add(checkmute)
 
         self.add(vbox)
-        self.show_all()
 
-        self.connect("destroy", gtk.main_quit)
+    def update(self):
+        self.b.update()
+        return True
+#         self.b.update()
 
-        self.show_all()
-#         while gtk.events_pending():
-#             gtk.main_iteration()
-#             blockify.update()
+    def start(self):
+
+        print "Initialized."
+        blocklist = blockify.Blocklist()
+        self.b = blockify.Blockify(blocklist)
+
+        self.b.bind_signals()
+        self.b.toggle_mute()
+        glib.timeout_add_seconds(1, self.update)
+
+
+    def shutdown(self):
+        self.b.shutdown()
+        gtk.main_quit()
 
     def on_checkmute(self, widget):
         if widget.get_active():
@@ -128,10 +141,19 @@ class BlockifyUI(gtk.Window):
     def on_openlist(self, widget):
         if widget.get_active():
             widget.set_label("Close Blocklist")
-            self.n = BasicTreeViewExample()
+#             self.n = BasicTreeViewExample()
         else:
             widget.set_label("Open Blocklist")
-            self.n.destroy()
+#             self.n.destroy()
 
-BlockifyUI()
-gtk.main()
+
+def main():
+
+    ui = BlockifyUI()
+    ui.show_all()
+    ui.start()
+    gtk.main()
+
+
+if __name__ == "__main__":
+    main()

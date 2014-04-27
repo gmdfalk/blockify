@@ -153,10 +153,10 @@ class Blockify(object):
 
     def bind_signals(self):
         signal.signal(signal.SIGUSR1, lambda sig, hdl: self.block_current())
-        signal.signal(signal.SIGTERM, lambda sig, hdl: self.trap_exit())
-        signal.signal(signal.SIGINT, lambda sig, hdl: self.trap_exit())
+        signal.signal(signal.SIGTERM, lambda sig, hdl: self.shutdown())
+        signal.signal(signal.SIGINT, lambda sig, hdl: self.shutdown())
 
-    def trap_exit(self):
+    def shutdown(self):
         self.blocklist.save_file()
         self.toggle_mute()
         sys.exit()
@@ -203,7 +203,7 @@ def main():
 
     while True:
         blockify.update()
-#         time.sleep(1)
+        time.sleep(1)
 
 
 def cli_entry():
