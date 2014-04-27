@@ -24,7 +24,7 @@ import wnck
 
 
 pygtk.require("2.0")
-log = logging.getLogger()
+log = logging.getLogger("main")
 
 
 class Blocklist(list):
@@ -93,9 +93,13 @@ class Blockify(object):
 
         muted = self.sound_muted()
 
-        if current_song in self.blocklist:
-            if not muted:
+#         if current_song in self.blocklist:
+#             if not muted:
+#                 self.toggle_mute(True)
+        for i in self.blocklist:
+            if current_song.find(i) == 0:
                 self.toggle_mute(True)
+                return
         else:
             if muted:
                 self.toggle_mute()
@@ -105,11 +109,9 @@ class Blockify(object):
         # Get the current screen.
         screen = wnck.screen_get_default()
 
-        while gtk.events_pending():
-            gtk.main_iteration(False)
-
         # Object list of windows in screen.
         windows = screen.get_windows()
+
         # Return the actual list of windows or an empty list.
         return [win.get_icon_name() for win in windows if len(windows)]
 
@@ -176,7 +178,7 @@ class Blockify(object):
         sys.exit()
 
 
-def init_logger(logpath, loglevel, quiet):
+def init_logger(logpath=None, loglevel=1, quiet=False):
     "Initializes the logger for system messages."
     logger = logging.getLogger()
 
@@ -186,7 +188,7 @@ def init_logger(logpath, loglevel, quiet):
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logger.setLevel(levels[loglevel])
 
-    logformat = "%(asctime)-14s %(levelname)-8s %(message)s"
+    logformat = "%(asctime)-14s %(levelname)-8s %(name)-8s %(message)s"
 
     formatter = logging.Formatter(logformat, "%Y-%m-%d %H:%M:%S")
 
@@ -216,6 +218,8 @@ def main():
     blockify.toggle_mute()
 
     while True:
+        while gtk.events_pending():
+            gtk.main_iteration(False)
         blockify.update()
         time.sleep(1)
 

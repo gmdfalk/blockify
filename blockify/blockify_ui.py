@@ -3,17 +3,11 @@ import os
 import glib
 import gtk
 
+import logging
 import blockify
 
+log = logging.getLogger("gui")
 
-class Notepad(gtk.Window):
-
-    def __init__(self):
-        super(Notepad, self).__init__()
-        self.set_default_size(300, 200)
-        self.set_title("Blocklist")
-        self.set_wmclass("blocklist", "Blocklist")
-        self.show()
 
 class BlockifyUI(gtk.Window):
 
@@ -98,7 +92,7 @@ class BlockifyUI(gtk.Window):
 
 
 def main():
-
+    blockify.init_logger(loglevel=3)
     ui = BlockifyUI()
     ui.show_all()
     ui.start()
