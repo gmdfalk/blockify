@@ -2,7 +2,8 @@
 
 Usage:
     spotifydbus (toggle | next | prev | stop | play) [-v...] [options]
-    spotifydbus get [title | artist | length | all] [-v...] [options]
+    spotifydbus get [title | artist | length | status | all] [-v...] [options]
+    spotifydbus (openuri <uri> | seek <n> | setpos <pos>) [-v...] [options]
 
 Options:
     -l, --log=<path>  Enables logging to the logfile/-path specified.
@@ -73,7 +74,7 @@ class SpotifyDBus(object):
 
 
     def toggle_pause(self):
-        "Calls PlayPause method."
+        "Toggles the current song between Play and Pause."
         if self.player:
             can_pause = self.get_property("CanPause")
             can_play = self.get_property("CanPlay")
@@ -84,7 +85,7 @@ class SpotifyDBus(object):
 
 
     def play(self):
-        "Tries to stop playback."
+        "Tries to play the current title. Broken?"
         if self.player:
             can_play = self.get_property("CanPlay")
             if can_play:
@@ -93,15 +94,9 @@ class SpotifyDBus(object):
                 log.warn("Cannot Play")
 
     def stop(self):
-        "Tries to stop playback."
+        "Tries to stop playback. PlayPause is probably preferable."
         if self.player:
             self.player.Stop()
-
-
-    def get_status(self):
-        "Get current PlaybackStatus (Paused/Playing...)."
-        if self.player:
-            stat = self.get_property("PlaybackStatus")
 
 
     def next(self):
@@ -124,6 +119,16 @@ class SpotifyDBus(object):
                 log.warn("Cannot Go Previous.")
 
 
+    def set_position(self, track, position):
+        if self.player:
+            self.player.SetPosition(track, position)
+
+
+    def open_uri(self, uri):
+        if self.player:
+            self.player.OpenUri(uri)
+
+
     def seek(self, seconds):
         "Calls (nonworking?) seek method."
         if self.player:
@@ -132,6 +137,12 @@ class SpotifyDBus(object):
                 self.player.Seek(seconds)
             else:
                 log.warn("Cannot Seek.")
+
+
+    def get_song_status(self):
+        "Get current PlaybackStatus (Paused/Playing...)."
+        if self.player:
+            return self.get_property("PlaybackStatus")
 
 
     def get_song_length(self):
@@ -226,6 +237,7 @@ if __name__ == "__main__":
     args = docopt(__doc__, version="0.1")
     init_logger(args["--log"], args["-v"], args["--quiet"])
     spotify = SpotifyDBus()
+    print args
     if args["toggle"]:
         spotify.toggle_pause()
     elif args["next"]:
@@ -236,11 +248,21 @@ if __name__ == "__main__":
         spotify.play()
     elif args["stop"]:
         spotify.stop()
-    elif args["get"]:
+
+    if args["openuri"]:
+        spotify.open_uri(args["<uri>"])
+    elif args["seek"]:
+        spotify.seek(args["<secs>"])
+    elif args["setpos"]:
+        spotify.set_pos(args["<pos>"])
+
+    if args["get"]:
         if args["title"]:
             print spotify.get_song_title()
         elif args["artist"]:
             print spotify.get_song_artist()
+        elif args["status"]:
+            print spotify.get_song_status()
         elif args["all"]:
             spotify.print_info()
         else:
@@ -251,5 +273,5 @@ if __name__ == "__main__":
             else:
                 artist = spotify.get_song_artist()
                 title = spotify.get_song_title()
-                print "{} - {} ({}m{}s)".format(artist, title, m, s)
-    spotify.status()
+                status = spotify.get_song_status()
+                print "{} - {}, {}m{}s ({})".format(artist, title, m, s, status)
