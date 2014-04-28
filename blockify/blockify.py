@@ -26,7 +26,7 @@ import wnck
 
 
 pygtk.require("2.0")
-log = logging.getLogger()
+log = logging.getLogger("main")
 
 
 class Blocklist(list):
