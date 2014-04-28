@@ -1,6 +1,7 @@
 # TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
 import codecs
+import datetime
 import logging
 import os
 
@@ -17,6 +18,7 @@ log = logging.getLogger("gui")
 class Notepad(gtk.Window):
 
     def __init__(self, location):
+
         super(Notepad, self).__init__()
 
         self.location = location
@@ -36,15 +38,23 @@ class Notepad(gtk.Window):
         self.add(vbox)
 
         self.open_file()
-        adj = self.sw.get_vadjustment()
-        adj.set_value(adj.upper - adj.page_size)
 
         self.show_all()
 
+        # FIXME: Unholy mess. Why do i have to set value redundantly here?
+        swadj = self.sw.get_vadjustment()
+        swadj.value = 500
+        swadj.set_value(960)
+
+        tvadi = self.textview.get_vadjustment()
+        tvadi.value = 500
+        tvadi.set_value(960)
+
+
     def create_layout(self):
-        vbox = gtk.VBox(False, 0)
-        textbox = gtk.VBox(False, 10)
-        statusbox = gtk.VBox(False, 70)
+        vbox = gtk.VBox()
+        textbox = gtk.VBox()
+        statusbox = gtk.VBox()
         vbox.pack_start(textbox, True, True, 0)
         vbox.pack_start(statusbox, False, False, 0)
 
@@ -54,13 +64,15 @@ class Notepad(gtk.Window):
         self.sw.add(self.textview)
         textbox.pack_start(self.sw)
         statusbox.pack_start(self.statusbar, True, False, 0)
+
         return vbox
+
 
     def create_keybinds(self):
         # Keybindings.
         quit_group = gtk.AccelGroup()
         quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,
-        gtk.ACCEL_LOCKED, gtk.main_quit)
+        gtk.ACCEL_LOCKED, self.close)
         quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,
         gtk.ACCEL_LOCKED, self.close)
         self.add_accel_group(quit_group)
@@ -69,14 +81,17 @@ class Notepad(gtk.Window):
         gtk.ACCEL_LOCKED, self.save_file)
         self.add_accel_group(save_group)
 
+
     def close(self, *args):
         self.destroy()
+
 
     def open_file(self, *args):
         textbuffer = self.textview.get_buffer()
         with codecs.open(self.location, "r", encoding="utf-8") as f:
             textbuffer.set_text(f.read())
-        # ~ self.set_title(self.location)
+        self.set_title(self.location)
+
 
     def save_file(self, *args):
         textbuffer = self.textview.get_buffer()
@@ -86,7 +101,8 @@ class Notepad(gtk.Window):
             text += "\n"
         with codecs.open(self.location, "w", encoding="utf-8") as f:
             f.write(text)
-        self.statusbar.push(0, "Saved to {}".format(self.location))
+        now = str(datetime.datetime.now())
+        self.statusbar.push(0, "{}: Saved to {}.".format(now, self.location))
 
 
 class BlockifyUI(gtk.Window):
