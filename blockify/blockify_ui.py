@@ -1,11 +1,13 @@
 #!/usr/bin/env python2
+import logging
 import os
 
 import glib
 import gtk
 
-import logging
 import blockify
+import spotifydbus
+
 
 log = logging.getLogger("gui")
 
@@ -23,9 +25,9 @@ class BlockifyUI(gtk.Window):
         self.set_icon_from_file("data/sound.png")
 
         # Block/Unblock button.
-        block = gtk.ToggleButton("Block")
-        block.set_size_request(80, 35)
-        block.connect("clicked", self.on_block)
+        self.block = gtk.ToggleButton("Block")
+        self.block.set_size_request(80, 35)
+        self.block.connect("clicked", self.on_block)
 
         # Open/Close Blocklist button.
         openlist = gtk.ToggleButton("Open List")
@@ -40,7 +42,7 @@ class BlockifyUI(gtk.Window):
 
         # Layout.
         vbox = gtk.VBox(False, 2)
-        vbox.add(block)
+        vbox.add(self.block)
         vbox.add(openlist)
         vbox.add(checkmute)
 
@@ -49,31 +51,41 @@ class BlockifyUI(gtk.Window):
         # Trap the exit.
         self.connect("destroy", self.shutdown)
 
+
     def update(self):
-        self.b.update()
-        print self.b.get_current_song()  # Update Titel + Artist
-        # Update blockbutton
+        found = self.b.update()
+        self.songartist = self.spotify.get_song_artist()
+        self.songtitle = self.spotify.get_song_title()
+        if found and not self.block.get_active():
+            self.block.set_active(True)
+        elif not found and self.block.get_active():
+            self.block.set_active(False)
+
         return True
+
 
     def start(self):
         "Start blockify."
+        self.spotify = spotifydbus.SpotifyDBus()
         blocklist = blockify.Blocklist()
         self.b = blockify.Blockify(blocklist)
-
         self.b.bind_signals()
         self.b.toggle_mute()
         glib.timeout_add_seconds(1, self.update)
+
 
     def shutdown(self):
         "Cleanly shut down, unmuting sound and saving the blocklist."
         self.b.shutdown()
         gtk.main_quit()
 
+
     def on_checkmute(self, widget):
         if widget.get_active():
             self.set_title("Blockify (inactive)")
         else:
            self.set_title("Blockify")
+
 
     def on_block(self, widget):
         if widget.get_active():
@@ -82,6 +94,7 @@ class BlockifyUI(gtk.Window):
         else:
             widget.set_label("Block")
             self.b.unblock_current()
+
 
     def on_openlist(self, widget):
         if widget.get_active():
@@ -93,7 +106,7 @@ class BlockifyUI(gtk.Window):
 
 
 def main():
-    blockify.init_logger(loglevel=3)
+    blockify.init_logger(loglevel=2)
     ui = BlockifyUI()
     ui.show_all()
     ui.start()

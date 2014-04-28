@@ -108,7 +108,7 @@ class Blockify(object):
             if i in current_song:
                 if not muted:
                     self.toggle_mute(True)
-                return
+                return True
         else:
             if muted:
                 self.toggle_mute()
@@ -194,7 +194,7 @@ class Blockify(object):
         sys.exit()
 
 
-def init_logger(logpath, loglevel, quiet):
+def init_logger(logpath=None, loglevel=1, quiet=False):
     "Initializes the logger for system messages."
     logger = logging.getLogger()
 
@@ -234,7 +234,7 @@ def main():
     blockify.toggle_mute()
 
     while True:
-        #
+        # Initiate gtk loop to enable the window list for .get_windows().
         while gtk.events_pending():
             gtk.main_iteration(False)
         blockify.update()

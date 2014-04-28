@@ -5,7 +5,7 @@ It depends on the wnck library and will currently __not__ work if Spotify is min
 
 ### Installation
 Clone the repository with `git clone https://github.com/mikar/blockify`.  
-You can then either the cli/gui directly or install it with `pip install .`.  
+You can then either run the cli/gui directly or install it with `pip install .`.  
 Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/blockify/).
 
 ### Usage
