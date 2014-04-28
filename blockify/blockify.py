@@ -19,7 +19,7 @@ import time
 
 from docopt import docopt
 
-from spotifydbus import SpotifyDBus
+import spotifydbus
 
 
 log = logging.getLogger("main")
@@ -97,7 +97,8 @@ class Blockify(object):
         if automute:
             if force:
                 state = "mute"
-                log.info("Muting {}.".format(self.get_current_song()))
+                log.info("Muting {} - {}.".format(self.spotify.get_song_artist(),
+                                             self.spotify.get_song_title()))
             else:
                 state = "unmute"
                 log.info("Unmuting.")
@@ -184,7 +185,7 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
 
 
 def main():
-    spotify = SpotifyDBus()
+    spotify = spotifydbus.SpotifyDBus()
     blockify = Blockify(spotify)
 
     blockify.bind_signals()
