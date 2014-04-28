@@ -1,13 +1,23 @@
 """spotifydbus
 
 Usage:
-    spotifydbus (toggle | next | prev | get [title|artist|length] | info)
+    spotifydbus (toggle | next | prev | stop | play) [-v...] [options]
+    spotifydbus get [title | artist | length | all] [-v...] [options]
+
+Options:
+    -l, --log=<path>  Enables logging to the logfile/-path specified.
+    -q, --quiet       Don't print anything to stdout.
+    -v                Verbosity of the logging module.
+    -h, --help        Show this help text.
+    --version         Current version of spotifydbus.
 """
 import logging
+import os
 import re
+import sys
 
-import dbus
 from docopt import docopt
+import dbus
 
 
 log = logging.getLogger("dbus")
@@ -49,8 +59,11 @@ class SpotifyDBus(object):
 
     def get_property(self, key):
         "Gets the value from any available property."
-        if self.properties:
+        try:
+            log.debug("Getting property: {}".format(key))
             return self.properties.Get(self.player_path, key)
+        except AttributeError as e:
+            log.error("Could not get property: {}".format(e))
 
 
     def set_property(self, key, value):
@@ -68,6 +81,27 @@ class SpotifyDBus(object):
                 self.player.PlayPause()
             else:
                 log.warn("Cannot Play/Pause")
+
+
+    def play(self):
+        "Tries to stop playback."
+        if self.player:
+            can_play = self.get_property("CanPlay")
+            if can_play:
+                self.player.Play()
+            else:
+                log.warn("Cannot Play")
+
+    def stop(self):
+        "Tries to stop playback."
+        if self.player:
+            self.player.Stop()
+
+
+    def get_status(self):
+        "Get current PlaybackStatus (Paused/Playing...)."
+        if self.player:
+            stat = self.get_property("PlaybackStatus")
 
 
     def next(self):
@@ -156,25 +190,66 @@ class SpotifyDBus(object):
             log.error("Could not get properties: {}".format(e))
 
 
+def init_logger(logpath=None, loglevel=1, quiet=False):
+    "Initializes the logger for system messages."
+    logger = logging.getLogger()
+
+    # Set the loglevel.
+    if loglevel > 3:
+        loglevel = 3  # Cap at 3, incase someone likes their v-key too much.
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    logger.setLevel(levels[loglevel])
+
+    logformat = "%(asctime)-14s %(levelname)-8s %(message)s"
+
+    formatter = logging.Formatter(logformat, "%Y-%m-%d %H:%M:%S")
+
+    # Only attach a console handler if both nologs and quiet are disabled.
+    if not quiet:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+        log.debug("Added logging console handler.")
+        log.debug("Loglevel is {}.".format(levels[loglevel]))
+    if logpath:
+        try:
+            logfile = os.path.abspath(logpath)
+            file_handler = logging.FileHandler(logfile)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+            log.debug("Added logging file handler: {}.".format(logfile))
+        except IOError:
+            log.error("Could not attach file handler.")
+
+
 if __name__ == "__main__":
     args = docopt(__doc__, version="0.1")
-    s = SpotifyDBus()
+    init_logger(args["--log"], args["-v"], args["--quiet"])
+    spotify = SpotifyDBus()
     if args["toggle"]:
-        s.toggle_pause()
+        spotify.toggle_pause()
     elif args["next"]:
-        s.next()
+        spotify.next()
     elif args["prev"]:
-        s.prev()
-    elif args["info"]:
-        s.print_info()
+        spotify.prev()
+    elif args["play"]:
+        spotify.play()
+    elif args["stop"]:
+        spotify.stop()
     elif args["get"]:
         if args["title"]:
-            print s.get_song_title()
+            print spotify.get_song_title()
         elif args["artist"]:
-            print s.get_song_artist()
-        elif args["length"]:
-            length = s.get_song_length()
-            lentup = divmod(s.get_song_length(), 60)
-            print "{}m{}s ({})".format(lentup[0], lentup[1], length)
+            print spotify.get_song_artist()
+        elif args["all"]:
+            spotify.print_info()
         else:
-            print s.get_song_artist(), "-", s.get_song_title()
+            length = spotify.get_song_length()
+            m, s = divmod(spotify.get_song_length(), 60)
+            if args["length"]:
+                print "{}m{}s ({})".format(m, s, length)
+            else:
+                artist = spotify.get_song_artist()
+                title = spotify.get_song_title()
+                print "{} - {} ({}m{}s)".format(artist, title, m, s)
+    spotify.status()
