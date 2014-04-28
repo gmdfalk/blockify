@@ -86,7 +86,7 @@ class BlockifyUI(gtk.Window):
         song = self.b.current_song
 
         try:
-            artist, title = song.split("–")
+            artist, title = song.split(" – ")
         except (ValueError, IndexError):
             artist, title = song, ""
 

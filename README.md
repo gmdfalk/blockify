@@ -1,7 +1,8 @@
 # blockify
 
 Blockify is a GNU/Linux application that allows you to automatically mute songs and advertisements in both the wine and native versions of Spotify.  
-It depends on the wnck library and will currently __not__ work if Spotify is minimized.  
+It depends on gtk/pygtk and wnck/pywnck.
+Blockify will currently __not__ work if Spotify is minimized.  
 
 ### Installation
 Clone the repository with `git clone https://github.com/mikar/blockify`.  

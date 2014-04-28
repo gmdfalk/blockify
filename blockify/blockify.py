@@ -94,20 +94,20 @@ class Blockify(object):
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
+        # It all relies on current_song.
         self.current_song = self.get_current_song()
-        self.muted = self.sound_muted()
 
-        if not self.current_song:
+        if not self.current_song or not self.automute:
             return
 
-        if not self.automute:
-            return
 
         # Check if the blockfile has changed.
         current_timestamp = self.blocklist.get_timestamp()
         if self.blocklist.timestamp != current_timestamp:
             log.info("Blockfile changed. Reloading.")
             self.blocklist.__init__()
+
+        self.muted = self.sound_muted()
 
         for i in self.blocklist:
             if i in self.current_song:
@@ -124,7 +124,7 @@ class Blockify(object):
         # Get the current screen.
         screen = wnck.screen_get_default()
 
-        # TODo: screen.force_update(), does this allow minimized?
+        # TODO: screen.force_update(), does this allow minimized?
         # Object list of windows in screen.
         windows = screen.get_windows()
         # Return the actual list of windows or an empty list.
@@ -144,20 +144,17 @@ class Blockify(object):
 
 
     def block_current(self):
-        current_song = self.get_current_song()
-
-        if current_song:
-            self.blocklist.append(current_song)
+        if self.current_song:
+            self.blocklist.append(self.current_song)
 
 
     def unblock_current(self):
-        current_song = self.get_current_song()
-
-        if current_song:
+        if self.current_song:
             try:
-                self.blocklist.remove(current_song)
+                self.blocklist.remove(self.current_song)
             except ValueError as e:
-                log.debug("Unable to unblock {}: {}".format(current_song, e))
+                log.debug("Unable to unblock {}: {}".format(self.current_song,
+                                                            e))
 
 
     def get_channels(self):
