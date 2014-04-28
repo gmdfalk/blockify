@@ -87,6 +87,7 @@ class Blockify(object):
 
     def __init__(self, blocklist):
         self.blocklist = blocklist
+        self.orglist = blocklist[:]
         self.channels = self.get_channels()
         self.automute = True
         log.info("Blockify started.")
@@ -192,7 +193,9 @@ class Blockify(object):
         signal.signal(signal.SIGINT, lambda sig, hdl: self.shutdown())
 
     def shutdown(self):
-        self.blocklist.save_file()
+        # Save the list only if it changed during runtime.
+        if self.blocklist != self.orglist:
+            self.blocklist.save_file()
         self.toggle_mute()
         sys.exit()
 

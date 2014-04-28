@@ -62,7 +62,6 @@ class SpotifyDBus(object):
 
     def get_property(self, key):
         "Gets the value from any available property."
-        log.debug("Getting property: {}".format(key))
         return self.properties.Get(self.player_path, key)
 
 

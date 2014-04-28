@@ -41,4 +41,4 @@ Aliasing/Binding this to your shell/WM/DE is probably the most comfortable and s
 
 Thanks to [kerbertx](https://github.com/kebertx/blockify), a dbus interface for the native Spotify client is now included, too.  
 The docstring inside spotifydbus.py explains how it's used.  
-If you're using the wine version of Spotify you might want to use [spotify_cmd](https://code.google.com/p/spotifycmd/) for similar functionality.
+If you're using the wine version of Spotify you might want to take a look at [spotify_cmd](https://code.google.com/p/spotifycmd/) for similar functionality.

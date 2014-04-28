@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # coding: utf-8
 # TODO: minimize to system-try
 # TODO: different modes: minimal, full
@@ -210,10 +209,10 @@ class BlockifyUI(gtk.Window):
     def on_openlist(self, widget):
         if widget.get_active():
             widget.set_label("Close List")
-#             self.n = BasicTreeViewExample()
+            self.n = Notepad()
         else:
             widget.set_label("Open List")
-#             self.n.destroy()
+            self.n.destroy()
 
 
 def main():
