@@ -179,23 +179,24 @@ class Blockify(object):
 
 
     def toggle_mute(self, force=False):
-        if force:
+
+        mutemethod = getattr(self, mute_mode + "_mute", None)
+        mutemethod(force)
+
+
+    def alsa_mute(self, force):
+        if not self.sound_muted() and force:
             state = "mute"
             log.info("Muting {}.".format(self.current_song))
-        else:
+        elif self.sound_muted() and not force:
             state = "unmute"
             log.info("Unmuting.")
 
-        mutemethod = getattr(self, mute_mode + "_mute", None)
-        mutemethod(force, state)
-
-
-    def alsa_mute(self, force, state):
         for channel in self.channels:
             subprocess.Popen(["amixer", "-q", "set", channel, state])
 
 
-    def pulse_mute(self, force, state):
+    def pulse_mute(self, force):
         '''Finds spotify's audio sink and toggles it between muted and not muted'''
 
         pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
@@ -215,8 +216,10 @@ class Blockify(object):
         index, muted = idxd[pid]
 
         if muted == "no" and force:
+            log.info("Muting {} (Pulse).".format(self.current_song))
             subprocess.call(["pacmd", "set-sink-input-mute", index, '1'])
         elif muted == "yes" and not force:
+            log.info("Unmuting (Pulse).")
             subprocess.call(["pacmd", "set-sink-input-mute", index, '0'])
 
 
