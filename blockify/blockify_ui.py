@@ -13,6 +13,61 @@ import spotifydbus
 log = logging.getLogger("gui")
 
 
+class Notepad(gtk.Window):
+
+    def __init__(self, location=None):
+        super(Notepad, self).__init__()
+        if location is None:
+            self.location = "/home/demian/.blockify_list"
+
+        self.set_title(self.location)
+        self.set_default_size(380, 440)
+
+        self.textview = gtk.TextView()
+        self.statusbar = gtk.Statusbar()
+        self.statusbar.push(0, "Ctrl+S to save, Ctrl+Q/W to close.")
+
+        self.create_keybinds()
+        vbox = self.create_layout()
+
+        self.add(vbox)
+        self.show_all()
+
+    def create_layout(self):
+        vbox = gtk.VBox(False, 0)
+        textbox = gtk.VBox(False, 10)
+        statusbox = gtk.VBox(False, 70)
+        vbox.pack_start(textbox, True, True, 0)
+        vbox.pack_start(statusbox, False, False, 0)
+
+        # Put the textview into a ScrolledWindow.
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add(self.textview)
+        textbox.pack_start(sw)
+        statusbox.pack_start(self.statusbar, True, False, 0)
+        return vbox
+
+    def create_keybinds(self):
+        # Keybindings.
+        quit_group = gtk.AccelGroup()
+        quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,
+        gtk.ACCEL_LOCKED, self.close)
+        quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,
+        gtk.ACCEL_LOCKED, self.close)
+        self.add_accel_group(quit_group)
+        save_group = gtk.AccelGroup()
+        save_group.connect_group(ord("s"), gtk.gdk.CONTROL_MASK,
+        gtk.ACCEL_LOCKED, self.save_file)
+        self.add_accel_group(save_group)
+
+    def close(self, *args):
+        self.destroy()
+
+    def save_file(self, *args):
+        pass
+
+
 class BlockifyUI(gtk.Window):
 
     def __init__(self):
@@ -214,7 +269,8 @@ class BlockifyUI(gtk.Window):
             self.n = Notepad()
         else:
             widget.set_label("Open List")
-            self.n.destroy()
+            if self.n:
+                self.n.destroy()
 
 
 def main():
