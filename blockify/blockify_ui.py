@@ -1,5 +1,6 @@
 # TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
+import codecs
 import logging
 import os
 
@@ -15,13 +16,15 @@ log = logging.getLogger("gui")
 
 class Notepad(gtk.Window):
 
-    def __init__(self, location=None):
+    def __init__(self, location):
         super(Notepad, self).__init__()
-        if location is None:
-            self.location = "/home/demian/.blockify_list"
 
-        self.set_title(self.location)
-        self.set_default_size(380, 440)
+        self.location = location
+
+        self.set_title("Blocklist")
+        self.set_wmclass("blocklist", "Blockify")
+        self.set_default_size(460, 500)
+        self.set_position(gtk.WIN_POS_CENTER)
 
         self.textview = gtk.TextView()
         self.statusbar = gtk.Statusbar()
@@ -31,6 +34,11 @@ class Notepad(gtk.Window):
         vbox = self.create_layout()
 
         self.add(vbox)
+
+        self.open_file()
+        adj = self.sw.get_vadjustment()
+        adj.set_value(adj.upper - adj.page_size)
+
         self.show_all()
 
     def create_layout(self):
@@ -41,10 +49,10 @@ class Notepad(gtk.Window):
         vbox.pack_start(statusbox, False, False, 0)
 
         # Put the textview into a ScrolledWindow.
-        sw = gtk.ScrolledWindow()
-        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        sw.add(self.textview)
-        textbox.pack_start(sw)
+        self.sw = gtk.ScrolledWindow()
+        self.sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        self.sw.add(self.textview)
+        textbox.pack_start(self.sw)
         statusbox.pack_start(self.statusbar, True, False, 0)
         return vbox
 
@@ -52,7 +60,7 @@ class Notepad(gtk.Window):
         # Keybindings.
         quit_group = gtk.AccelGroup()
         quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,
-        gtk.ACCEL_LOCKED, self.close)
+        gtk.ACCEL_LOCKED, gtk.main_quit)
         quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,
         gtk.ACCEL_LOCKED, self.close)
         self.add_accel_group(quit_group)
@@ -64,8 +72,21 @@ class Notepad(gtk.Window):
     def close(self, *args):
         self.destroy()
 
+    def open_file(self, *args):
+        textbuffer = self.textview.get_buffer()
+        with codecs.open(self.location, "r", encoding="utf-8") as f:
+            textbuffer.set_text(f.read())
+        # ~ self.set_title(self.location)
+
     def save_file(self, *args):
-        pass
+        textbuffer = self.textview.get_buffer()
+        start, end = textbuffer.get_start_iter(), textbuffer.get_end_iter()
+        text = textbuffer.get_text(start, end)
+        if not text.endswith("\n"):
+            text += "\n"
+        with codecs.open(self.location, "w", encoding="utf-8") as f:
+            f.write(text)
+        self.statusbar.push(0, "Saved to {}".format(self.location))
 
 
 class BlockifyUI(gtk.Window):
@@ -91,7 +112,6 @@ class BlockifyUI(gtk.Window):
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
         self.set_default_size(220, 240)
-        self.set_position(gtk.WIN_POS_CENTER)
         self.set_icon_from_file(self.muteofficon)
 
 
@@ -266,7 +286,7 @@ class BlockifyUI(gtk.Window):
     def on_openlist(self, widget):
         if widget.get_active():
             widget.set_label("Close List")
-            self.n = Notepad()
+            self.n = Notepad(self.b.blocklist.location)
         else:
             widget.set_label("Open List")
             if self.n:

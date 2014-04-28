@@ -18,11 +18,13 @@ import os
 import re
 import sys
 
+import dbus
+
+
 try:
     from docopt import docopt
 except ImportError:
-    print "Please install docopt to use the CLI."
-import dbus
+    print "ImportError: Please install docopt to use the CLI."
 
 
 log = logging.getLogger("dbus")
