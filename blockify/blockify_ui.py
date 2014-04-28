@@ -20,7 +20,7 @@ class BlockifyUI(gtk.Window):
         # Window setup.
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
-        self.set_default_size(185, 220)
+        self.set_default_size(220, 240)
         self.set_position(gtk.WIN_POS_CENTER)
         self.set_icon_from_file("data/sound.png")
 
@@ -32,7 +32,7 @@ class BlockifyUI(gtk.Window):
         self.toggleblock.connect("clicked", self.on_toggleblock)
 
         # Mute/Unmute button.
-        self.togglemute = gtk.ToggleButton("Mute")
+        self.togglemute = gtk.ToggleButton("Manual Mute")
         self.togglemute.connect("clicked", self.on_togglemute)
 
         # Play/Pause button.

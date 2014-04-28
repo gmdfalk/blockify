@@ -9,7 +9,8 @@ Options:
     -v                    Set the log verbosity, up to -vvv.
 """
 # TODO: pacmd mute/cli option (complementing alsa/amixer).
-# TODO: try xlib for minimized window detection.
+# TODO: try xlib/_net for minimized window detection.
+# TODO: play local mp3s when ads are muted? currently not possible.
 import codecs
 import logging
 import os
