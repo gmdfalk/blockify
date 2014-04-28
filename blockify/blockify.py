@@ -14,6 +14,7 @@ Options:
 import codecs
 import logging
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -28,6 +29,13 @@ try:
     from docopt import docopt
 except ImportError:
     print "ImportError: Please install docopt to use the CLI."
+
+try:
+    devnull = open(os.devnull)
+    subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
+    mute_mode = "pulse"
+except subprocess.CalledProcessError:
+    mute_mode = "alsa"
 
 
 pygtk.require("2.0")
@@ -172,16 +180,47 @@ class Blockify(object):
         return channel_list
 
 
-    def toggle_mute(self, mute=False):
-        if mute:
+    def toggle_mute(self, force=False):
+        if force:
             state = "mute"
             log.info("Muting {}.".format(self.current_song))
         else:
             state = "unmute"
             log.info("Unmuting.")
 
+
+        method = getattr(self, mute_mode + "_mute", None)
+        method(force, state)
+
+
+    def alsa_mute(self, force, state):
         for channel in self.channels:
             subprocess.Popen(["amixer", "-q", "set", channel, state])
+
+
+    def pulse_mute(self, force, state):
+        '''Finds spotify's audio sink and toggles it between muted and not muted'''
+
+        pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
+        pidof_out = subprocess.check_output(["pidof", "spotify"])
+
+        pattern = re.compile(r'(?: index|muted|application\.process\.id).*?(\w+)')
+        pids = pidof_out.decode('utf-8').strip().split(' ')
+        output = pacmd_out.decode('utf-8')
+
+        # Every third element is a key, the value is the preceding two
+        # elements in the form of a tuple - {pid : (index, muted)}
+        info = pattern.findall(output)
+        idxd = {info[3 * n + 2] : (info[3 * n], info[3 * n + 1])
+                for n in range(0, len(info) // 3)}
+
+        pid = [k for k in idxd.keys() if k in pids][0]
+        index, muted = idxd[pid]
+
+        if force:
+            subprocess.call(["pacmd", "set-sink-input-mute", index, '1'])
+        else:
+            subprocess.call(["pacmd", "set-sink-input-mute", index, '0'])
 
 
     def sound_muted(self):
