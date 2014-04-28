@@ -56,8 +56,8 @@ class Blocklist(list):
         try:
             super(Blocklist, self).remove(item)
             self.save_file()
-        except ValueError:
-            log.warn("Could not remove {} from blocklist.".format(item))
+        except ValueError as e:
+            log.warn("Could not remove {} from blocklist: {}".format(item, e))
 
 
     def get_timestamp(self):
@@ -65,7 +65,7 @@ class Blocklist(list):
 
 
     def load_file(self):
-        log.info("Loading blockfile from {}.".format(self.location))
+        log.debug("Loading blockfile from {}.".format(self.location))
         try:
             with codecs.open(self.location, "r", encoding="utf-8") as f:
                 blocklist = f.read()
@@ -77,7 +77,7 @@ class Blocklist(list):
 
 
     def save_file(self):
-        log.info("Saving blocklist to {}.".format(self.location))
+        log.debug("Saving blocklist to {}.".format(self.location))
         with codecs.open(self.location, "w", encoding="utf-8") as f:
             f.write("\n".join(self) + "\n")
         self.timestamp = self.get_timestamp()

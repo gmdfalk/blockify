@@ -38,7 +38,7 @@ class BlockifyUI(gtk.Window):
         self.toggleblock.connect("clicked", self.on_toggleblock)
 
         # Mute/Unmute button.
-        self.togglemute = gtk.ToggleButton("Manual Mute")
+        self.togglemute = gtk.ToggleButton("(Manual) Mute")
         self.togglemute.connect("clicked", self.on_togglemute)
 
         # Play/Pause button.
@@ -70,8 +70,8 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.toggleplay)
         hbox.add(self.prevsong)
         hbox.add(self.nextsong)
-        vbox.add(self.togglemute)
         vbox.add(self.toggleblock)
+        vbox.add(self.togglemute)
         vbox.add(self.toggleautomute)
         vbox.add(self.openlist)
 #         alignment = gtk.Alignment()
@@ -97,32 +97,23 @@ class BlockifyUI(gtk.Window):
         found = self.b.update()
 
         # Grab some useful information from DBus.
-        self.songstatus = self.spotify.get_song_status()
+        try:
+            self.songstatus = self.spotify.get_song_status()
+            self.statuslabel.set_text(self.get_status_text())
+        except AttributeError:
+            self.songstatus = ""
 
         artist, title = self.format_current_song()
 
         self.artistlabel.set_text(artist)
         self.titlelabel.set_text(title)
         # Set state label:
-        self.statuslabel.set_text(self.get_status_text())
 
         # Correct the state of the Block/Unblock toggle button.
         if found and not self.toggleblock.get_active():
             self.toggleblock.set_active(False)
         elif not found and self.toggleblock.get_active():
             self.toggleblock.set_active(True)
-
-        # Correct the state of the Play/Pause toggle button.
-#         if self.songstatus == "Playing" and not self.toggleplay.get_active():
-#             self.toggleplay.set_active(True)
-#         elif self.songstatus != "Playing" and self.toggleplay.get_active():
-#             self.toggleplay.set_active(False)
-
-#         if self.b.muted and not self.togglemute.get_active():
-#             self.togglemute.set_active(True)
-#         elif not self.b.muted and self.togglemute.get_active():
-#             self.togglemute.set_active(False)
-
 
         # The glib.timeout loop will only break if we return False here.
         return True
@@ -141,6 +132,7 @@ class BlockifyUI(gtk.Window):
         self.b = blockify.Blockify(blocklist)
         self.b.bind_signals()
         self.b.toggle_mute()
+        # Start and loop the main update routine once per second.
         glib.timeout_add_seconds(1, self.update)
 
 
