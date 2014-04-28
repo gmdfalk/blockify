@@ -83,7 +83,7 @@ class BlockifyUI(gtk.Window):
 
 
     def format_current_song(self):
-        song = self.b.get_current_song()
+        song = self.b.current_song
 
         try:
             artist, title = song.split("–")

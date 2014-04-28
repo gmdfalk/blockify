@@ -94,10 +94,10 @@ class Blockify(object):
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
-        current_song = self.get_current_song()
+        self.current_song = self.get_current_song()
         self.muted = self.sound_muted()
 
-        if not current_song:
+        if not self.current_song:
             return
 
         if not self.automute:
@@ -110,7 +110,7 @@ class Blockify(object):
             self.blocklist.__init__()
 
         for i in self.blocklist:
-            if i in current_song:
+            if i in self.current_song:
                 if not self.muted:
                     self.toggle_mute(True)
                 return True
@@ -172,7 +172,7 @@ class Blockify(object):
     def toggle_mute(self, mute=False):
         if mute:
             state = "mute"
-            log.info("Muting {}.".format(self.get_current_song()))
+            log.info("Muting {}.".format(self.current_song))
         else:
             state = "unmute"
             log.info("Unmuting.")
