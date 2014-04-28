@@ -125,12 +125,10 @@ class Blockify(object):
 
         for i in self.blocklist:
             if i in self.current_song:
-                if not self.muted:
-                    self.toggle_mute(True)
+                self.toggle_mute(True)
                 return True
         else:
-            if self.muted:
-                self.toggle_mute()
+            self.toggle_mute()
 
 
     def get_windows(self):
@@ -188,9 +186,8 @@ class Blockify(object):
             state = "unmute"
             log.info("Unmuting.")
 
-
-        method = getattr(self, mute_mode + "_mute", None)
-        method(force, state)
+        mutemethod = getattr(self, mute_mode + "_mute", None)
+        mutemethod(force, state)
 
 
     def alsa_mute(self, force, state):
@@ -217,9 +214,9 @@ class Blockify(object):
         pid = [k for k in idxd.keys() if k in pids][0]
         index, muted = idxd[pid]
 
-        if force:
+        if muted == "no" and force:
             subprocess.call(["pacmd", "set-sink-input-mute", index, '1'])
-        else:
+        elif muted == "yes" and not force:
             subprocess.call(["pacmd", "set-sink-input-mute", index, '0'])
 
 

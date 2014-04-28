@@ -17,11 +17,12 @@ log = logging.getLogger("gui")
 
 class Notepad(gtk.Window):
 
-    def __init__(self, location):
+    def __init__(self, location, parentw):
 
         super(Notepad, self).__init__()
 
         self.location = location
+        self.parentw = parentw  # Parent window, TODO: Create a gtk-parent.
 
         self.set_title("Blocklist")
         self.set_wmclass("blocklist", "Blockify")
@@ -83,7 +84,7 @@ class Notepad(gtk.Window):
 
 
     def close(self, *args):
-        self.destroy()
+        self.parentw.openlist.set_active(False)
 
 
     def open_file(self, *args):
@@ -302,7 +303,7 @@ class BlockifyUI(gtk.Window):
     def on_openlist(self, widget):
         if widget.get_active():
             widget.set_label("Close List")
-            self.n = Notepad(self.b.blocklist.location)
+            self.n = Notepad(self.b.blocklist.location, self)
         else:
             widget.set_label("Open List")
             if self.n:
