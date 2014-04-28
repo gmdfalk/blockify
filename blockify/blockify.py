@@ -19,7 +19,10 @@ import subprocess
 import sys
 import time
 
-from docopt import docopt
+try:
+    from docopt import docopt
+except ImportError:
+    print "Please install docopt to use the CLI."
 import gtk
 import pygtk
 import wnck

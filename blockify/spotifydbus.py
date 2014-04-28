@@ -18,7 +18,10 @@ import os
 import re
 import sys
 
-from docopt import docopt
+try:
+    from docopt import docopt
+except ImportError:
+    print "Please install docopt to use the CLI."
 import dbus
 
 
