@@ -19,6 +19,17 @@ class BlockifyUI(gtk.Window):
 
     def __init__(self):
         super(BlockifyUI, self).__init__()
+
+        self.init_window()
+        self.create_buttons()
+        vbox = self.create_layout()
+        self.add(vbox)
+
+        # Trap the exit.
+        self.connect("destroy", self.shutdown)
+
+
+    def init_window(self):
         basedir = os.path.dirname(os.path.realpath(__file__))
         self.muteofficon = os.path.join(basedir, "data/not_muted.png")
         self.muteonicon = os.path.join(basedir, "data/muted.png")
@@ -30,6 +41,8 @@ class BlockifyUI(gtk.Window):
         self.set_position(gtk.WIN_POS_CENTER)
         self.set_icon_from_file(self.muteofficon)
 
+
+    def create_buttons(self):
         self.artistlabel = gtk.Label()
         self.titlelabel = gtk.Label()
         self.statuslabel = gtk.Label()
@@ -60,7 +73,8 @@ class BlockifyUI(gtk.Window):
         self.toggleautomute.unset_flags(gtk.CAN_FOCUS)
         self.toggleautomute.connect("clicked", self.on_toggleautomute)
 
-        # Layout.
+
+    def create_layout(self):
         vbox = gtk.VBox()
         vbox.add(self.artistlabel)
         vbox.add(self.titlelabel)
@@ -74,12 +88,8 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.togglemute)
         vbox.add(self.toggleautomute)
         vbox.add(self.openlist)
-#         alignment = gtk.Alignment()
-#         alignment.set(0.5, 0, 0, 0)
-        self.add(vbox)
 
-        # Trap the exit.
-        self.connect("destroy", self.shutdown)
+        return vbox
 
 
     def format_current_song(self):
@@ -88,9 +98,14 @@ class BlockifyUI(gtk.Window):
         try:
             artist, title = song.split(" – ")
         except (ValueError, IndexError):
-            artist, title = song, ""
+            try:
+                artist = self.spotify.get_song_artist()
+                title = self.spotify.get_song_title()
+            except:
+                artist, title = song, ""
 
         return artist, title
+
 
     def update(self):
         # Call the main update function of blockify.
@@ -117,6 +132,7 @@ class BlockifyUI(gtk.Window):
 
         # The glib.timeout loop will only break if we return False here.
         return True
+
 
     def get_status_text(self):
         length = self.spotify.get_song_length()

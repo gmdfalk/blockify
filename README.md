@@ -10,7 +10,7 @@ You can then either run the cli/gui directly or install it with `pip install .`.
 Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/blockify/).
 Blockify comes with an example blockify_list which you may copy to ~/.blockify_list.  
 The list will quickly grow as you add your own entries. Keep in mind that you can edit the entries to broaden the matching pattern.  
-For instance, `Bloodhound Gang – The Bad Touch` will only block that song while `Blood` will block not only all Bloodhound Gang Songs but all artists whose name starts with "Blood".  
+For instance, `Bloodhound Gang – The Bad Touch` will only block that song while `Blood` will block not only all Bloodhound Gang Songs but any artist whose name starts with "Blood".  
 
 ### GUI Usage
 ![ScreenShot](http://a.pomf.se/dzngqg.png)  
