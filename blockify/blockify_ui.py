@@ -20,10 +20,13 @@ class BlockifyUI(gtk.Window):
         # Window setup.
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
-        self.set_default_size(300, 200)
+        self.set_default_size(185, 220)
         self.set_position(gtk.WIN_POS_CENTER)
         self.set_icon_from_file("data/sound.png")
 
+        self.artistlabel = gtk.Label("Artist")
+        self.titlelabel = gtk.Label("Title")
+        self.statuslabel = gtk.Label("")
         # Block/Unblock button.
         self.toggleblock = gtk.ToggleButton("Block")
         self.toggleblock.connect("clicked", self.on_toggleblock)
@@ -52,15 +55,26 @@ class BlockifyUI(gtk.Window):
         self.checkmute.connect("clicked", self.on_checkmute)
 
         # Layout.
-        vbox = gtk.VBox(False, 2)
+        alignment = gtk.Alignment()
+        vbox = gtk.VBox()
+        vbox.add(self.artistlabel)
+        vbox.add(self.titlelabel)
+        vbox.add(self.statuslabel)
+        hbox = gtk.HBox()
+        vbox.pack_start(hbox)
+        vbox.add(self.toggleplay)
+        hbox.add(self.prevsong)
+        hbox.add(self.nextsong)
         vbox.add(self.openlist)
         vbox.add(self.toggleblock)
-        vbox.add(self.toggleplay)
         vbox.add(self.togglemute)
-        vbox.add(self.nextsong)
-        vbox.add(self.prevsong)
-        vbox.add(self.checkmute)
 
+
+        vbox.add(self.checkmute)
+#         alignment.set(0.5, 0, 0, 0)
+
+
+#         self.add(vbox)
         self.add(vbox)
 
         # Trap the exit.
@@ -73,18 +87,26 @@ class BlockifyUI(gtk.Window):
 
         # Grab some useful information from DBus.
         self.songstatus = self.spotify.get_song_status()
-        self.songartist = self.spotify.get_song_artist()
-        self.songtitle = self.spotify.get_song_title()
+        self.artistlabel.set_text(self.spotify.get_song_artist())
+        self.titlelabel.set_text(self.spotify.get_song_title())
 
         # Correct the state of the Block/Unblock toggle button.
         if found and not self.toggleblock.get_active():
-            self.toggleblock.set_active(True)
-        elif not found and self.toggleblock.get_active():
             self.toggleblock.set_active(False)
+        elif not found and self.toggleblock.get_active():
+            self.toggleblock.set_active(True)
 
         # Correct the state of the Play/Pause toggle button.
-        if self.songstatus == "Playing":
-            pass
+#         if self.songstatus == "Playing" and not self.toggleplay.get_active():
+#             self.toggleplay.set_active(True)
+#         elif self.songstatus != "Playing" and self.toggleplay.get_active():
+#             self.toggleplay.set_active(False)
+
+#         if self.b.muted and not self.togglemute.get_active():
+#             self.togglemute.set_active(True)
+#         elif not self.b.muted and self.togglemute.get_active():
+#             self.togglemute.set_active(False)
+
 
         # The glib.timeout loop will only break if we return False here.
         return True
@@ -92,8 +114,8 @@ class BlockifyUI(gtk.Window):
 
     def start(self):
         "Start blockify and the main update routine."
-        self.spotify = spotifydbus.SpotifyDBus()
         blocklist = blockify.Blocklist()
+        self.spotify = spotifydbus.SpotifyDBus()
         self.b = blockify.Blockify(blocklist)
         self.b.bind_signals()
         self.b.toggle_mute()
@@ -126,6 +148,7 @@ class BlockifyUI(gtk.Window):
                 widget.set_label("Block")
                 self.b.unblock_current()
 
+
     def on_togglemute(self, widget):
         if widget.get_active():
             widget.set_label("Unmute")
@@ -135,6 +158,7 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Mute")
             self.b.automute = True
             self.b.toggle_mute(False)
+
 
     def on_toggleplay(self, widget):
         if self.songstatus == "Playing":

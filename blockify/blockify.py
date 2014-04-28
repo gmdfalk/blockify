@@ -28,29 +28,32 @@ pygtk.require("2.0")
 log = logging.getLogger()
 
 
-class Blocklist(set):
+class Blocklist(list):
     "Inheriting from list type is a bad idea. Let's see what happens."
 
     def __init__(self):
         super(Blocklist, self).__init__()
         self.home = os.path.expanduser("~")
         self.location = os.path.join(self.home, ".blockify_list")
+        self.extend(self.load_file())
         self.timestamp = self.get_timestamp()
-        self.union(self.load_file())
 
 
-    def add(self, item):
+    def append(self, item):
         "Overloading list.append to automatically save the list to a file."
         # Only allow nonempty strings.
+        if item in self:
+            log.debug("Attempted to append duplicate item: {}.".format(item))
+            return
         log.info("Adding {} to {}.".format(item, self.location))
-        super(Blocklist, self).add(item)
+        super(Blocklist, self).append(item)
         self.save_file()
 
 
-    def discard(self, item):
+    def remove(self, item):
         log.info("Removing {} from {}.".format(item, self.location))
         try:
-            super(Blocklist, self).discard(item)
+            super(Blocklist, self).remove(item)
             self.save_file()
         except ValueError:
             log.warn("Could not remove {} from blocklist.".format(item))
@@ -69,7 +72,7 @@ class Blocklist(set):
             with codecs.open(self.location, "w+", encoding="utf-8") as f:
                 blocklist = f.read()
 
-        return {i for i in blocklist.split("\n") if i}
+        return [i for i in blocklist.split("\n") if i]
 
 
     def save_file(self):
@@ -91,6 +94,7 @@ class Blockify(object):
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
         current_song = self.get_current_song()
+        self.muted = self.sound_muted()
 
         if not current_song:
             return
@@ -102,17 +106,15 @@ class Blockify(object):
         current_timestamp = self.blocklist.get_timestamp()
         if self.blocklist.timestamp != current_timestamp:
             log.info("Blockfile changed. Reloading.")
-            self.blocklist.clear()
-
-        muted = self.sound_muted()
+            self.blocklist.__init__()
 
         for i in self.blocklist:
             if i in current_song:
-                if not muted:
+                if not self.muted:
                     self.toggle_mute(True)
                 return True
         else:
-            if muted:
+            if self.muted:
                 self.toggle_mute()
 
 
@@ -121,6 +123,7 @@ class Blockify(object):
         # Get the current screen.
         screen = wnck.screen_get_default()
 
+        # TODo: screen.force_update(), does this allow minimized?
         # Object list of windows in screen.
         windows = screen.get_windows()
         # Return the actual list of windows or an empty list.
@@ -143,7 +146,7 @@ class Blockify(object):
         current_song = self.get_current_song()
 
         if current_song:
-            self.blocklist.add(current_song)
+            self.blocklist.append(current_song)
 
 
     def unblock_current(self):
@@ -151,7 +154,7 @@ class Blockify(object):
 
         if current_song:
             try:
-                self.blocklist.discard(current_song)
+                self.blocklist.remove(current_song)
             except ValueError as e:
                 log.debug("Unable to unblock {}: {}".format(current_song, e))
 
