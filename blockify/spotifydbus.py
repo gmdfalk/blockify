@@ -33,6 +33,7 @@ class SpotifyDBus(object):
         self.prop_path = "org.freedesktop.DBus.Properties"
         self.player_path = "org.mpris.MediaPlayer2.Player"
         self.spotify_path = None
+        self.player = None
 
         if not bus:
             bus = dbus.SessionBus()
@@ -93,6 +94,7 @@ class SpotifyDBus(object):
                 self.player.Play()
             else:
                 log.warn("Cannot Play")
+
 
     def stop(self):
         "Tries to stop playback. PlayPause is probably preferable."
