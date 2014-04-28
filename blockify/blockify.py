@@ -9,6 +9,7 @@ Options:
     -v                    Set the log verbosity, up to -vvv.
 """
 # TODO: pacmd mute/cli option (complementing alsa/amixer).
+# TODO: try xlib for minimized window detection.
 import codecs
 import logging
 import os
@@ -27,7 +28,7 @@ pygtk.require("2.0")
 log = logging.getLogger()
 
 
-class Blocklist(list):
+class Blocklist(set):
     "Inheriting from list type is a bad idea. Let's see what happens."
 
     def __init__(self):
@@ -35,24 +36,21 @@ class Blocklist(list):
         self.home = os.path.expanduser("~")
         self.location = os.path.join(self.home, ".blockify_list")
         self.timestamp = self.get_timestamp()
-        self.extend(self.load_file())
+        self.union(self.load_file())
 
 
-    def append(self, item):
+    def add(self, item):
         "Overloading list.append to automatically save the list to a file."
         # Only allow nonempty strings.
-        if not isinstance(item, str) or not item:
-            log.debug("Failed to add {} to blocklist.".format(item))
-            return
         log.info("Adding {} to {}.".format(item, self.location))
-        super(Blocklist, self).append(item)
+        super(Blocklist, self).add(item)
         self.save_file()
 
 
-    def remove(self, item):
+    def discard(self, item):
         log.info("Removing {} from {}.".format(item, self.location))
         try:
-            super(Blocklist, self).remove(item)
+            super(Blocklist, self).discard(item)
             self.save_file()
         except ValueError:
             log.warn("Could not remove {} from blocklist.".format(item))
@@ -71,7 +69,7 @@ class Blocklist(list):
             with codecs.open(self.location, "w+", encoding="utf-8") as f:
                 blocklist = f.read()
 
-        return [i for i in blocklist.split("\n") if i]
+        return {i for i in blocklist.split("\n") if i}
 
 
     def save_file(self):
@@ -86,6 +84,7 @@ class Blockify(object):
     def __init__(self, blocklist):
         self.blocklist = blocklist
         self.channels = self.get_channels()
+        self.automute = True
         log.info("Blockify started.")
 
 
@@ -96,11 +95,14 @@ class Blockify(object):
         if not current_song:
             return
 
+        if not self.automute:
+            return
+
         # Check if the blockfile has changed.
         current_timestamp = self.blocklist.get_timestamp()
         if self.blocklist.timestamp != current_timestamp:
             log.info("Blockfile changed. Reloading.")
-            self.blocklist.__init__()
+            self.blocklist.clear()
 
         muted = self.sound_muted()
 
@@ -141,7 +143,7 @@ class Blockify(object):
         current_song = self.get_current_song()
 
         if current_song:
-            self.blocklist.append(current_song)
+            self.blocklist.add(current_song)
 
 
     def unblock_current(self):
@@ -149,7 +151,7 @@ class Blockify(object):
 
         if current_song:
             try:
-                self.blocklist.remove(current_song)
+                self.blocklist.discard(current_song)
             except ValueError as e:
                 log.debug("Unable to unblock {}: {}".format(current_song, e))
 

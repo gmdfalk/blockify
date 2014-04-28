@@ -74,7 +74,7 @@ class SpotifyDBus(object):
             return self.properties.Set(self.player_path, key, value)
 
 
-    def toggle_pause(self):
+    def playpause(self):
         "Toggles the current song between Play and Pause."
         if self.player:
             can_pause = self.get_property("CanPause")
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     spotify = SpotifyDBus()
 
     if args["toggle"]:
-        spotify.toggle_pause()
+        spotify.playpause()
     elif args["next"]:
         spotify.next()
     elif args["prev"]:
