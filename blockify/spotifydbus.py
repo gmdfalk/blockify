@@ -62,11 +62,8 @@ class SpotifyDBus(object):
 
     def get_property(self, key):
         "Gets the value from any available property."
-        try:
-            log.debug("Getting property: {}".format(key))
-            return self.properties.Get(self.player_path, key)
-        except AttributeError as e:
-            log.error("Could not get property: {}".format(e))
+        log.debug("Getting property: {}".format(key))
+        return self.properties.Get(self.player_path, key)
 
 
     def set_property(self, key, value):
