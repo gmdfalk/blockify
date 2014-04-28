@@ -9,10 +9,17 @@ Clone the repository with `git clone https://github.com/mikar/blockify`.
 You can then either run the cli/gui directly or install it with `pip install .`.  
 Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/blockify/).
 
-### Usage
+### GUI Usage
+Blockify comes with a GUI which is tailored for the native linux version of Spotify.  
+It does work with the Wine version but Play/Pause and Previous/Next will not be available.  
+Otherwise, the UI elements should be pretty obvious.
+
+You can, at all times, open your ~/.blockify_list in an editor of your choice to edit it in detail.  
+The "Open/Close Blocklist" element in the GUI is only meant for quick removals of items.
+
+### CLI Usage
 
 When you find a song you want to mute, add it to ~/.blockify_list either manually or with:
- 
 ``` bash
 pkill -USR1 -f python2.*blockify
 ```
