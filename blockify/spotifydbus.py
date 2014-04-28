@@ -1,16 +1,17 @@
+#!/usr/bin/env python2
 """spotifydbus
 
 Usage:
     spotifydbus (toggle | next | prev | stop | play) [-v...] [options]
     spotifydbus get [title | artist | length | status | all] [-v...] [options]
-    spotifydbus (openuri <uri> | seek <n> | setpos <pos>) [-v...] [options]
+    spotifydbus (openuri <uri> | seek <secs> | setpos <pos>) [-v...] [options]
 
 Options:
     -l, --log=<path>  Enables logging to the logfile/-path specified.
     -q, --quiet       Don't print anything to stdout.
     -v                Verbosity of the logging module.
     -h, --help        Show this help text.
-    --version         Current version of spotifydbus.
+    --version         Show current version of spotifydbus.
 """
 import logging
 import os
@@ -85,7 +86,7 @@ class SpotifyDBus(object):
 
 
     def play(self):
-        "Tries to play the current title. Broken?"
+        "DEFUNCT: Tries to play the current title."
         if self.player:
             can_play = self.get_property("CanPlay")
             if can_play:
@@ -130,7 +131,7 @@ class SpotifyDBus(object):
 
 
     def seek(self, seconds):
-        "Calls (nonworking?) seek method."
+        "DEFUNCT: Calls seek method."
         if self.player:
             can_seek = self.get_property("CanSeek")
             if can_seek:
@@ -156,7 +157,7 @@ class SpotifyDBus(object):
         "Gets title of current song from metadata"
         metadata = self.get_property("Metadata")
         if metadata:
-            return str(metadata["xesam:title"])
+            return metadata["xesam:title"].encode("utf-8")
 
 
     def get_song_artist(self):
@@ -237,7 +238,7 @@ if __name__ == "__main__":
     args = docopt(__doc__, version="0.1")
     init_logger(args["--log"], args["-v"], args["--quiet"])
     spotify = SpotifyDBus()
-    print args
+
     if args["toggle"]:
         spotify.toggle_pause()
     elif args["next"]:
@@ -256,22 +257,23 @@ if __name__ == "__main__":
     elif args["setpos"]:
         spotify.set_pos(args["<pos>"])
 
-    if args["get"]:
-        if args["title"]:
-            print spotify.get_song_title()
-        elif args["artist"]:
-            print spotify.get_song_artist()
-        elif args["status"]:
-            print spotify.get_song_status()
-        elif args["all"]:
-            spotify.print_info()
+    if args["title"]:
+        print spotify.get_song_title()
+    elif args["artist"]:
+        print spotify.get_song_artist()
+    elif args["status"]:
+        print spotify.get_song_status()
+    elif args["all"]:
+        spotify.print_info()
+    elif args["get"]:
+        length = spotify.get_song_length()
+        m, s = divmod(spotify.get_song_length(), 60)
+        if args["length"]:
+            print "{}m{}s ({})".format(m, s, length)
         else:
-            length = spotify.get_song_length()
-            m, s = divmod(spotify.get_song_length(), 60)
-            if args["length"]:
-                print "{}m{}s ({})".format(m, s, length)
-            else:
-                artist = spotify.get_song_artist()
-                title = spotify.get_song_title()
-                status = spotify.get_song_status()
-                print "{} - {}, {}m{}s ({})".format(artist, title, m, s, status)
+            rating = spotify.get_property("Metadata")["xesam:autoRating"]
+            artist = spotify.get_song_artist()
+            title = spotify.get_song_title()
+            state = spotify.get_song_status()
+            print "{} - {}, {}m{}s, {} ({})".format(artist, title,
+                                                    m, s, rating, state)
