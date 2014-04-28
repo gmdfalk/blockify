@@ -105,8 +105,10 @@ class Blockify(object):
         muted = self.sound_muted()
 
         for i in self.blocklist:
-            if i in current_song and not muted:
-                self.toggle_mute(True)
+            if i in current_song:
+                if not muted:
+                    self.toggle_mute(True)
+                return
         else:
             if muted:
                 self.toggle_mute()
@@ -232,6 +234,7 @@ def main():
     blockify.toggle_mute()
 
     while True:
+        #
         while gtk.events_pending():
             gtk.main_iteration(False)
         blockify.update()
