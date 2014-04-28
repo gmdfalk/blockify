@@ -50,12 +50,11 @@ class BlockifyUI(gtk.Window):
         self.prevsong.connect("clicked", self.on_prevsong)
 
         # Disable/Enable mute checkbutton.
-        self.checkmute = gtk.CheckButton("Disable mute.")
-        self.checkmute.unset_flags(gtk.CAN_FOCUS)
-        self.checkmute.connect("clicked", self.on_checkmute)
+        self.toggleautomute = gtk.ToggleButton("Disable AutoMute")
+        self.toggleautomute.unset_flags(gtk.CAN_FOCUS)
+        self.toggleautomute.connect("clicked", self.on_toggleautomute)
 
         # Layout.
-        alignment = gtk.Alignment()
         vbox = gtk.VBox()
         vbox.add(self.artistlabel)
         vbox.add(self.titlelabel)
@@ -65,16 +64,12 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.toggleplay)
         hbox.add(self.prevsong)
         hbox.add(self.nextsong)
-        vbox.add(self.openlist)
-        vbox.add(self.toggleblock)
         vbox.add(self.togglemute)
-
-
-        vbox.add(self.checkmute)
+        vbox.add(self.toggleblock)
+        vbox.add(self.toggleautomute)
+        vbox.add(self.openlist)
+#         alignment = gtk.Alignment()
 #         alignment.set(0.5, 0, 0, 0)
-
-
-#         self.add(vbox)
         self.add(vbox)
 
         # Trap the exit.
@@ -89,6 +84,9 @@ class BlockifyUI(gtk.Window):
         self.songstatus = self.spotify.get_song_status()
         self.artistlabel.set_text(self.spotify.get_song_artist())
         self.titlelabel.set_text(self.spotify.get_song_title())
+
+        # Set state label:
+        self.statuslabel.set_text(self.get_status_text())
 
         # Correct the state of the Block/Unblock toggle button.
         if found and not self.toggleblock.get_active():
@@ -111,6 +109,12 @@ class BlockifyUI(gtk.Window):
         # The glib.timeout loop will only break if we return False here.
         return True
 
+    def get_status_text(self):
+        length = self.spotify.get_song_length()
+        m, s = divmod(self.spotify.get_song_length(), 60)
+        rating = self.spotify.get_property("Metadata")["xesam:autoRating"]
+        return "{}m{}s, {} ({})".format(m, s, rating, self.songstatus)
+
 
     def start(self):
         "Start blockify and the main update routine."
@@ -122,21 +126,22 @@ class BlockifyUI(gtk.Window):
         glib.timeout_add_seconds(1, self.update)
 
 
-    def shutdown(self):
+    def shutdown(self, arg):
         "Cleanly shut down, unmuting sound and saving the blocklist."
         self.b.shutdown()
         gtk.main_quit()
 
 
-    def on_checkmute(self, widget):
+    def on_toggleautomute(self, widget):
         if widget.get_active():
             self.set_title("Blockify (inactive)")
             self.b.automute = False
+            widget.set_label("Enable AutoMute")
             self.b.toggle_mute()
-
         else:
            self.set_title("Blockify")
            self.b.automute = True
+           widget.set_label("Disable AutoMute")
 
 
     def on_toggleblock(self, widget):
@@ -178,10 +183,10 @@ class BlockifyUI(gtk.Window):
 
     def on_openlist(self, widget):
         if widget.get_active():
-            widget.set_label("Close Blocklist")
+            widget.set_label("Close List")
 #             self.n = BasicTreeViewExample()
         else:
-            widget.set_label("Open Blocklist")
+            widget.set_label("Open List")
 #             self.n.destroy()
 
 
