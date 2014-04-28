@@ -1,4 +1,7 @@
 #!/usr/bin/env python2
+# coding: utf-8
+# TODO: minimize to system-try
+# TODO: different modes: minimal, full
 import logging
 import os
 
@@ -16,17 +19,20 @@ class BlockifyUI(gtk.Window):
 
     def __init__(self):
         super(BlockifyUI, self).__init__()
+        basedir = os.path.dirname(os.path.realpath(__file__))
+        self.muteofficon = os.path.join(basedir, "data/not_muted.png")
+        self.muteonicon = os.path.join(basedir, "data/muted.png")
 
         # Window setup.
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
         self.set_default_size(220, 240)
         self.set_position(gtk.WIN_POS_CENTER)
-        self.set_icon_from_file("data/sound.png")
+        self.set_icon_from_file(self.muteofficon)
 
-        self.artistlabel = gtk.Label("Artist")
-        self.titlelabel = gtk.Label("Title")
-        self.statuslabel = gtk.Label("")
+        self.artistlabel = gtk.Label()
+        self.titlelabel = gtk.Label()
+        self.statuslabel = gtk.Label()
         # Block/Unblock button.
         self.toggleblock = gtk.ToggleButton("Block")
         self.toggleblock.connect("clicked", self.on_toggleblock)
@@ -76,15 +82,27 @@ class BlockifyUI(gtk.Window):
         self.connect("destroy", self.shutdown)
 
 
+    def format_current_song(self):
+        song = self.b.get_current_song()
+
+        try:
+            artist, title = song.split("–")
+        except (ValueError, IndexError):
+            artist, title = song, ""
+
+        return artist, title
+
     def update(self):
         # Call the main update function of blockify.
         found = self.b.update()
 
         # Grab some useful information from DBus.
         self.songstatus = self.spotify.get_song_status()
-        self.artistlabel.set_text(self.spotify.get_song_artist())
-        self.titlelabel.set_text(self.spotify.get_song_title())
 
+        artist, title = self.format_current_song()
+
+        self.artistlabel.set_text(artist)
+        self.titlelabel.set_text(title)
         # Set state label:
         self.statuslabel.set_text(self.get_status_text())
 
@@ -139,9 +157,9 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Enable AutoMute")
             self.b.toggle_mute()
         else:
-           self.set_title("Blockify")
-           self.b.automute = True
-           widget.set_label("Disable AutoMute")
+            self.set_title("Blockify")
+            self.b.automute = True
+            widget.set_label("Disable AutoMute")
 
 
     def on_toggleblock(self, widget):
