@@ -1,6 +1,5 @@
-# coding: utf-8
-# TODO: minimize to system-try
-# TODO: different modes: minimal, full
+# TODO: Minimize to system-tray
+# TODO: Different modes: minimal, full
 import logging
 import os
 
@@ -93,9 +92,12 @@ class BlockifyUI(gtk.Window):
 
     def format_current_song(self):
         song = self.b.current_song
+        # For whatever reason, spotify doesn't use a normal hyphen but a
+        # slightly longer one. This is its unicode code point.
+        delimiter = u"\u2013"
 
         try:
-            artist, title = song.split(" – ")
+            artist, title = song.split(" {} ".format(delimiter))
         except (ValueError, IndexError):
             try:
                 artist = self.spotify.get_song_artist()
