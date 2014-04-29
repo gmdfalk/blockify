@@ -240,8 +240,12 @@ class Blockify(object):
         idxd = {info[3 * n + 2] : (info[3 * n], info[3 * n + 1])
                 for n in range(0, len(info) // 3)}
 
-        pid = [k for k in idxd.keys() if k in pids][0]
-        index, muted = idxd[pid]
+        try:
+            pid = [k for k in idxd.keys() if k in pids][0]
+            index, muted = idxd[pid]
+        except IndexError as e:
+            log.error("Could not get Spotify PID: {}".format(e))
+            return
 
         if muted == "no" and force:
             log.info("Muting {}.".format(self.current_song))

@@ -40,8 +40,8 @@ class Notepad(gtk.Window):
         self.add(vbox)
 
         self.open_file()
-
         self.show_all()
+
 
         # FIXME: Unholy mess. Why do i have to set value redundantly here?
         swadj = self.sw.get_vadjustment()
@@ -267,16 +267,6 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Disable AutoMute")
 
 
-    def on_toggleblock(self, widget):
-        if self.b.automute:
-            if widget.get_active():
-                widget.set_label("Unblock")
-                self.b.block_current()
-            else:
-                widget.set_label("Block")
-                self.b.unblock_current()
-
-
     def on_togglemute(self, widget):
         if widget.get_active():
             widget.set_label("Unmute")
@@ -286,6 +276,16 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Mute")
             self.b.automute = True
             self.b.toggle_mute(False)
+
+
+    def on_toggleblock(self, widget):
+        if self.b.automute:
+            if widget.get_active():
+                widget.set_label("Unblock")
+                self.b.block_current()
+            else:
+                widget.set_label("Block")
+                self.b.unblock_current()
 
 
     def on_toggleplay(self, widget):
