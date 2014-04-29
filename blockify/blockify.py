@@ -202,7 +202,11 @@ class Blockify(object):
         '''Finds spotify's audio sink and toggles it between muted and not muted'''
 
         pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
-        pidof_out = subprocess.check_output(["pidof", "spotify"])
+        try:
+            pidof_out = subprocess.check_output(["pidof", "spotify"])
+        except subprocess.CalledProcessError:
+            log.error("No Spotify process found. Is it running?")
+            return
 
         pattern = re.compile(r'(?: index|muted|application\.process\.id).*?(\w+)')
         pids = pidof_out.decode('utf-8').strip().split(' ')
