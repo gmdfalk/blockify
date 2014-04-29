@@ -55,7 +55,7 @@ class SpotifyDBus(object):
             self.player = dbus.Interface(self.proxy, self.player_path)
         else:
             self.proxy = None
-            log.error("Is Spotify running?")
+            log.error("Spotify not found in DBus session. Is it running?")
 
 
     def is_running(self):

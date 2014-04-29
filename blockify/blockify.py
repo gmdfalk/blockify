@@ -30,13 +30,6 @@ try:
 except ImportError:
     print "ImportError: Please install docopt to use the CLI."
 
-try:
-    devnull = open(os.devnull)
-    subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
-    mute_mode = "pulse"
-except (OSError, subprocess.CalledProcessError):
-    mute_mode = "alsa"
-
 
 pygtk.require("2.0")
 log = logging.getLogger("main")
@@ -103,6 +96,15 @@ class Blockify(object):
         self.orglist = blocklist[:]
         self.channels = self.get_channels()
         self.automute = True
+
+        # Determine if we can use sinks or have to use alsa.
+        try:
+            devnull = open(os.devnull)
+            subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
+            self.mute_mode = "pulsesink"
+        except (OSError, subprocess.CalledProcessError):
+            self.mute_mode = "alsa"
+
         log.info("Blockify started.")
 
 
@@ -178,7 +180,7 @@ class Blockify(object):
 
     def toggle_mute(self, force=False):
 
-        mutemethod = getattr(self, mute_mode + "_mute", None)
+        mutemethod = getattr(self, self.mute_mode + "_mute", None)
         mutemethod(force)
 
 
@@ -201,6 +203,24 @@ class Blockify(object):
 
 
     def pulse_mute(self, force):
+
+        master = subprocess.check_output(["amixer", "get", "Master"])
+        muted = True if "[off]" in master else False
+
+        if not muted and force:
+            state = "mute"
+            log.info("Muting {}.".format(self.current_song))
+        elif muted and not force:
+            state = "unmute"
+            log.info("Unmuting.")
+        else:
+            return
+
+        for channel in self.channels:
+            subprocess.Popen(["amixer", "-qD", "pulse", "set", channel, state])
+
+
+    def pulsesink_mute(self, force):
         "Finds spotify's audio sink and toggles its mute state."
 
         pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
