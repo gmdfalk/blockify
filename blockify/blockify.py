@@ -191,6 +191,8 @@ class Blockify(object):
         elif self.sound_muted() and not force:
             state = "unmute"
             log.info("Unmuting.")
+        else:
+            return
 
         for channel in self.channels:
             subprocess.Popen(["amixer", "-q", "set", channel, state])
@@ -216,10 +218,10 @@ class Blockify(object):
         index, muted = idxd[pid]
 
         if muted == "no" and force:
-            log.info("Muting {} (Pulse).".format(self.current_song))
+            log.info("Muting {}.".format(self.current_song))
             subprocess.call(["pacmd", "set-sink-input-mute", index, '1'])
         elif muted == "yes" and not force:
-            log.info("Unmuting (Pulse).")
+            log.info("Unmuting.")
             subprocess.call(["pacmd", "set-sink-input-mute", index, '0'])
 
 

@@ -1,5 +1,6 @@
 # TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
+# TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
 import codecs
 import datetime
 import logging
@@ -73,17 +74,20 @@ class Notepad(gtk.Window):
         # Keybindings.
         quit_group = gtk.AccelGroup()
         quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,
-        gtk.ACCEL_LOCKED, self.close)
+                                 gtk.ACCEL_LOCKED, self.destroy)
         quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,
-        gtk.ACCEL_LOCKED, self.close)
+                                 gtk.ACCEL_LOCKED, self.destroy)
         self.add_accel_group(quit_group)
+
         save_group = gtk.AccelGroup()
         save_group.connect_group(ord("s"), gtk.gdk.CONTROL_MASK,
-        gtk.ACCEL_LOCKED, self.save_file)
+                                 gtk.ACCEL_LOCKED, self.save_file)
         self.add_accel_group(save_group)
 
 
-    def close(self, *args):
+    def destroy(self, *args):
+        "Overloading destroy to untoggle the Open List button."
+        super(Notepad, self).destroy()
         self.parentw.openlist.set_active(False)
 
 
@@ -311,7 +315,8 @@ class BlockifyUI(gtk.Window):
 
 
 def main():
-    blockify.init_logger(loglevel=2)
+    # You can specify logging behavior here. Loglevel 3 is the most verbose.
+    blockify.init_logger(logpath=None, loglevel=2, quiet=False)
     ui = BlockifyUI()
     ui.show_all()
     ui.start()
