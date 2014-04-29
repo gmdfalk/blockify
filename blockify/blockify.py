@@ -34,7 +34,7 @@ try:
     devnull = open(os.devnull)
     subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
     mute_mode = "pulse"
-except subprocess.CalledProcessError:
+except (OSError, subprocess.CalledProcessError):
     mute_mode = "alsa"
 
 
