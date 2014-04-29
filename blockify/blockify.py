@@ -292,7 +292,7 @@ def main():
 
 
 def cli_entry():
-    args = docopt(__doc__, version="0.8")
+    args = docopt(__doc__, version="0.9")
     init_logger(args["--logfile"], args["-v"], args["--quiet"])
     main()
 

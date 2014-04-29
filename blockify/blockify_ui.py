@@ -315,7 +315,7 @@ class BlockifyUI(gtk.Window):
 
 
 def main():
-    # You can specify logging behavior here. Loglevel 3 is the most verbose.
+    # Edit this for less or more logging. Loglevel 0 is least verbose.
     blockify.init_logger(logpath=None, loglevel=2, quiet=False)
     ui = BlockifyUI()
     ui.show_all()
