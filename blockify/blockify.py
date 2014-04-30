@@ -49,8 +49,8 @@ class Blocklist(list):
     def append(self, item):
         "Overloading list.append to automatically save the list to a file."
         # Only allow nonempty strings.
-        if item in self:
-            log.debug("Attempted to append duplicate item: {}.".format(item))
+        if item in self or not item or item == " ":
+            log.debug("Not adding empty or duplicate item: {}.".format(item))
             return
         log.info("Adding {} to {}.".format(item, self.location))
         super(Blocklist, self).append(item)
