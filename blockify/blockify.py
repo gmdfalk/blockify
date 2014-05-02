@@ -316,7 +316,7 @@ def main():
 
 
 def cli_entry():
-    args = docopt(__doc__, version="0.9")
+    args = docopt(__doc__, version="1.0")
     init_logger(args["--log"], args["-v"], args["--quiet"])
     main()
 

@@ -89,7 +89,7 @@ class Notepad(gtk.Window):
     def destroy(self, *args):
         "Overloading destroy to untoggle the Open List button."
         super(Notepad, self).destroy()
-        self.parentw.openlist.set_active(False)
+        self.parentw.togglelist.set_active(False)
 
 
     def open_file(self, *args):
@@ -119,6 +119,11 @@ class BlockifyUI(gtk.Window):
         self.use_dbus = True
         self.automute_toggled = False
         self.block_toggled = False
+        # Set the GUI/Blockify update interval to 250ms. Increase this to
+        # reduce cpu usage resp. increase it to increase responsiveness.
+        # If you need absolutely minimal CPU usage you could, in self.start(),
+        # change the line to glib.timeout_add_seconds(2, self.update) or more.
+        self.update_interval = 250
 
         self.init_window()
         self.create_buttons()
@@ -158,8 +163,8 @@ class BlockifyUI(gtk.Window):
         self.toggleplay.connect("clicked", self.on_toggleplay)
 
         # Open/Close Blocklist button.
-        self.openlist = gtk.ToggleButton("Open List")
-        self.openlist.connect("clicked", self.on_openlist)
+        self.togglelist = gtk.ToggleButton("Open List")
+        self.togglelist.connect("clicked", self.on_togglelist)
 
         self.nextsong = gtk.Button("Next")
         self.nextsong.connect("clicked", self.on_nextsong)
@@ -186,7 +191,7 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.toggleblock)
         vbox.add(self.togglemute)
         vbox.add(self.toggleautomute)
-        vbox.add(self.openlist)
+        vbox.add(self.togglelist)
 
         return vbox
 
@@ -204,7 +209,7 @@ class BlockifyUI(gtk.Window):
                 artist = self.spotify.get_song_artist()
                 title = self.spotify.get_song_title()
             else:
-                artist, title = song, "No song playing."
+                artist, title = song, "No song playing?"
 
         return artist, title
 
@@ -231,6 +236,13 @@ class BlockifyUI(gtk.Window):
             self.toggleblock.set_active(True)
         elif not self.blocked:
             self.toggleblock.set_active(False)
+
+        # Correct state of Open/Close List toggle button.
+        try:
+            if not self.n.get_visible() and self.togglelist.get_active():
+                self.togglelist.set_active(False)
+        except AttributeError:
+            pass
 
         # The glib.timeout loop will only break if we return False here.
         return True
@@ -265,8 +277,9 @@ class BlockifyUI(gtk.Window):
         self.b = blockify.Blockify(blocklist)
         self.bind_signals()
         self.b.toggle_mute()
-        # Start and loop the main update routine once per second.
-        glib.timeout_add(100, self.update)
+        # Start and loop the main update routine once every 250ms.
+        # To influence responsiveness or CPU usage, decrease/increase ms here.
+        glib.timeout_add(self.update_interval, self.update)
 
 
     def bind_signals(self):
@@ -338,6 +351,16 @@ class BlockifyUI(gtk.Window):
                 self.set_title("Blockify")
 
 
+    def on_togglelist(self, widget):
+        if widget.get_active():
+            widget.set_label("Close List")
+            self.n = Notepad(self.b.blocklist.location, self)
+        else:
+            widget.set_label("Open List")
+            if self.n:
+                self.n.destroy()
+
+
     def on_toggleplay(self, widget):
         if self.spotify and self.use_dbus:
             if self.songstatus == "Playing":
@@ -355,16 +378,6 @@ class BlockifyUI(gtk.Window):
     def on_prevsong(self, widget):
         if self.spotify and self.use_dbus:
             self.spotify.prev()
-
-
-    def on_openlist(self, widget):
-        if widget.get_active():
-            widget.set_label("Close List")
-            self.n = Notepad(self.b.blocklist.location, self)
-        else:
-            widget.set_label("Open List")
-            if self.n:
-                self.n.destroy()
 
 
 def main():
