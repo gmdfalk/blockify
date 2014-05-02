@@ -116,6 +116,8 @@ class BlockifyUI(gtk.Window):
     def __init__(self):
         super(BlockifyUI, self).__init__()
 
+        self.use_dbus = True
+
         self.init_window()
         self.create_buttons()
         vbox = self.create_layout()
@@ -129,12 +131,12 @@ class BlockifyUI(gtk.Window):
         basedir = os.path.dirname(os.path.realpath(__file__))
         self.muteofficon = os.path.join(basedir, "data/not_muted.png")
         self.muteonicon = os.path.join(basedir, "data/muted.png")
+        self.set_icon_from_file(self.muteofficon)
 
         # Window setup.
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
         self.set_default_size(220, 240)
-        self.set_icon_from_file(self.muteofficon)
 
 
     def create_buttons(self):
@@ -196,7 +198,7 @@ class BlockifyUI(gtk.Window):
         try:
             artist, title = song.split(" {} ".format(delimiter))
         except (ValueError, IndexError):
-            if self.spotify:
+            if self.spotify and self.use_dbus:
                 artist = self.spotify.get_song_artist()
                 title = self.spotify.get_song_title()
             else:
@@ -210,7 +212,7 @@ class BlockifyUI(gtk.Window):
         found = self.b.update()
 
         # Grab some useful information from DBus.
-        if self.spotify:
+        if self.spotify and self.use_dbus:
             self.statuslabel.set_text(self.get_status_text())
             self.songstatus = self.spotify.get_song_status()
         else:
@@ -233,11 +235,15 @@ class BlockifyUI(gtk.Window):
 
 
     def get_status_text(self):
-        if self.spotify:
-            length = self.spotify.get_song_length()
-            m, s = divmod(self.spotify.get_song_length(), 60)
-            rating = self.spotify.get_property("Metadata")["xesam:autoRating"]
-            return "{}m{}s, {} ({})".format(m, s, rating, self.songstatus)
+        if self.spotify and self.dbus:
+            try:
+                length = self.spotify.get_song_length()
+                m, s = divmod(self.spotify.get_song_length(), 60)
+                rating = self.spotify.get_property("Metadata")["xesam:autoRating"]
+                return "{}m{}s, {} ({})".format(m, s, rating, self.songstatus)
+            except Exception as e:
+                self.use_dbus = False
+                log.error("Could not get status text from DBus: {}.".format(e))
         else:
             return ""
 
@@ -250,6 +256,7 @@ class BlockifyUI(gtk.Window):
             log.error("Cannot connect to DBus. "
                       "Some functions will be disabled ({}).".format(e))
             self.spotify = None
+            self.use_dbus = False
 
         blocklist = blockify.Blocklist()
         self.b = blockify.Blockify(blocklist)
@@ -305,7 +312,7 @@ class BlockifyUI(gtk.Window):
 
 
     def on_toggleplay(self, widget):
-        if self.spotify:
+        if self.spotify and self.use_dbus:
             if self.songstatus == "Playing":
                 widget.set_label("Play")
             else:
@@ -313,14 +320,13 @@ class BlockifyUI(gtk.Window):
             self.spotify.playpause()
 
 
-
     def on_nextsong(self, widget):
-        if self.spotify:
+        if self.spotify and self.use_dbus:
             self.spotify.next()
 
 
     def on_prevsong(self, widget):
-        if self.spotify:
+        if self.spotify and self.use_dbus:
             self.spotify.prev()
 
 
