@@ -117,7 +117,6 @@ class Blockify(object):
         if not self.current_song or not self.automute:
             return
 
-
         # Check if the blockfile has changed.
         current_timestamp = self.blocklist.get_timestamp()
         if self.blocklist.timestamp != current_timestamp:

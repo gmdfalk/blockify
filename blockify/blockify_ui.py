@@ -117,6 +117,8 @@ class BlockifyUI(gtk.Window):
         super(BlockifyUI, self).__init__()
 
         self.use_dbus = True
+        self.automute_toggled = False
+        self.block_toggled = False
 
         self.init_window()
         self.create_buttons()
@@ -209,7 +211,7 @@ class BlockifyUI(gtk.Window):
 
     def update(self):
         # Call the main update function of blockify.
-        found = self.b.update()
+        self.blocked = self.b.update()
 
         # Grab some useful information from DBus.
         if self.spotify and self.use_dbus:
@@ -225,10 +227,10 @@ class BlockifyUI(gtk.Window):
         # Set state label:
 
         # Correct the state of the Block/Unblock toggle button.
-        if found and not self.toggleblock.get_active():
-            self.toggleblock.set_active(False)
-        elif not found and self.toggleblock.get_active():
+        if self.blocked:
             self.toggleblock.set_active(True)
+        elif not self.blocked:
+            self.toggleblock.set_active(False)
 
         # The glib.timeout loop will only break if we return False here.
         return True
@@ -283,33 +285,57 @@ class BlockifyUI(gtk.Window):
         if widget.get_active():
             self.set_title("Blockify (inactive)")
             self.b.automute = False
+            self.automute_toggled = False
+            self.block_toggled = False
+            lbl = self.toggleblock.get_label()
+            self.toggleblock.set_label(lbl + " (disabled)")
             widget.set_label("Enable AutoMute")
             self.b.toggle_mute()
         else:
             self.set_title("Blockify")
             self.b.automute = True
+            self.automute_toggled = True
+            self.toggleblock.set_label("Block")
             widget.set_label("Disable AutoMute")
-
-
-    def on_togglemute(self, widget):
-        if widget.get_active():
-            widget.set_label("Unmute")
-            self.b.automute = False
-            self.b.toggle_mute(True)
-        else:
-            widget.set_label("Mute")
-            self.b.automute = True
-            self.b.toggle_mute(False)
 
 
     def on_toggleblock(self, widget):
         if self.b.automute:
             if widget.get_active():
                 widget.set_label("Unblock")
-                self.b.block_current()
+                if not self.blocked:
+                    self.b.block_current()
+                if not self.block_toggled:
+                    self.set_icon_from_file(self.muteonicon)
+                    self.set_title("Blockify (blocked)")
+                    self.block_toggled = True
             else:
                 widget.set_label("Block")
-                self.b.unblock_current()
+                if self.blocked:
+                    self.b.unblock_current()
+                if self.block_toggled:
+                    self.set_icon_from_file(self.muteofficon)
+                    self.set_title("Blockify")
+                    self.block_toggled = False
+
+
+    def on_togglemute(self, widget):
+        if self.block_toggled:
+            return
+        if widget.get_active():
+            widget.set_label("Unmute")
+            self.b.automute = False
+            self.b.toggle_mute(True)
+            self.set_icon_from_file(self.muteonicon)
+            if self.automute_toggled:
+                self.set_title("Blockify (muted)")
+        else:
+            widget.set_label("Mute")
+            self.set_icon_from_file(self.muteofficon)
+            self.b.toggle_mute(False)
+            if self.automute_toggled:
+                self.b.automute = True
+                self.set_title("Blockify")
 
 
     def on_toggleplay(self, widget):
