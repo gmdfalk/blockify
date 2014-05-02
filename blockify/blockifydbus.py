@@ -66,8 +66,11 @@ class BlockifyDBus(object):
 
     def get_property(self, key):
         "Gets the value from any available property."
-        return self.properties.Get(self.player_path, key)
-
+        try:
+            return self.properties.Get(self.player_path, key)
+        except AttributeError:
+            log.error("Could not retrieve property.")
+            sys.exit(1)
 
     def set_property(self, key, value):
         "Sets the value for any available property."
