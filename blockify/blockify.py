@@ -10,8 +10,8 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: try xlib/_net for minimized window detection.
-# TODO: play local mp3s when ads are muted? currently not possible.
+# TODO: Try xlib/_net for minimized window detection.
+# TODO: Play local mp3s when ads are muted? Currently only possible with pulse.
 import codecs
 import logging
 import os
