@@ -197,25 +197,6 @@ class BlockifyUI(gtk.Window):
         return vbox
 
 
-    def format_current_song(self):
-        song = self.b.current_song
-        # For whatever reason, spotify doesn't use a normal hyphen but a
-        # slightly longer one. This is its unicode code point.
-        delimiter = u"\u2013"
-
-        try:
-            artist, title = song.split(" {} ".format(delimiter))
-        except (ValueError, IndexError):
-            try:
-                artist = self.spotify.get_song_artist()
-                title = self.spotify.get_song_title()
-            except AttributeError:
-                artist, title = song, "No song playing?"
-                self.use_dbus = False
-
-        return artist, title
-
-
     def update(self):
         # Call the main update function of blockify.
         self.blocked = self.b.update()
@@ -223,8 +204,9 @@ class BlockifyUI(gtk.Window):
         # Grab some useful information from DBus.
         try:
             self.songstatus = self.spotify.get_song_status()
-            self.use_dbus = True
-        except:
+            if self.songstatus:
+                self.use_dbus = True
+        except DBusException:
             self.songstatus = ""
             self.use_dbus = False
 
@@ -254,19 +236,42 @@ class BlockifyUI(gtk.Window):
         return True
 
 
+    def format_current_song(self):
+        song = self.b.current_song
+        # For whatever reason, spotify doesn't use a normal hyphen but a
+        # slightly longer one. This is its unicode code point.
+        delimiter = u"\u2013"
+
+        try:
+            artist, title = song.split(" {} ".format(delimiter))
+        except (ValueError, IndexError):
+            try:
+                artist = self.spotify.get_song_artist()
+                title = self.spotify.get_song_title()
+            except AttributeError:
+                artist, title = song, "No song playing?"
+                self.use_dbus = False
+
+        if artist is None or title is None:
+            artist, title = song, "No song playing?"
+            self.use_dbus = False
+
+        return artist, title
+
+
     def get_status_text(self):
-        if self.spotify:
+        status = ""
+        if self.spotify and self.use_dbus:
             try:
                 songlength = self.spotify.get_song_length()
                 m, s = divmod(songlength, 60)
                 r = self.spotify.get_property("Metadata")["xesam:autoRating"]
-                return "{}m{}s, {} ({})".format(m, s, r, self.songstatus)
+                status = "{}m{}s, {} ({})".format(m, s, r, self.songstatus)
             except (TypeError, DBusException) as e:
                 log.error("Cannot use DBus. Some features (PlayPause etc.) "
                           "will be unavailable ({}).".format(e))
-                return ""
-        else:
-            return ""
+
+        return status
 
 
     def connect_dbus(self):
