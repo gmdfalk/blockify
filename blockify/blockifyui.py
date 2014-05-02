@@ -257,27 +257,29 @@ class BlockifyUI(gtk.Window):
             try:
                 m, s = divmod(self.spotify.get_song_length(), 60)
                 r = self.spotify.get_property("Metadata")["xesam:autoRating"]
-                self.use_dbus = True
                 return "{}m{}s, {} ({})".format(m, s, r, self.songstatus)
             except Exception as e:
-                self.use_dbus = False
-                log.error("Cannot use DBus. "
-                          "Some functions will be disabled ({}).".format(e))
+                log.error("Cannot use DBus. Some features (PlayPause etc.) "
+                          "will be unavailable ({}).".format(e))
                 return ""
         else:
             return ""
 
-    def start(self):
-        "Start blockify and the main update routine."
-        # Try to find a Spotify process in the current DBus session.
+
+    def connect_dbus(self):
         try:
             self.spotify = blockifydbus.BlockifyDBus()
         except Exception as e:
-            log.error("Cannot connect to DBus. "
-                      "Some functions will be disabled ({}).".format(e))
+            log.error("Cannot connect to DBus. Some features (PlayPause etc.) "
+                      "will be unavailable ({}).".format(e))
             self.spotify = None
             self.use_dbus = False
 
+    def start(self):
+        "Start blockify and the main update routine."
+        # Try to find a Spotify process in the current DBus session.
+
+        self.connect_dbus()
         blocklist = blockify.Blocklist()
         self.b = blockify.Blockify(blocklist)
         self.bind_signals()
@@ -367,6 +369,9 @@ class BlockifyUI(gtk.Window):
 
 
     def on_toggleplay(self, widget):
+        # Try to connect to dbus if it failed before.
+        if not self.spotify:
+            self.connect_dbus()
         if self.spotify and self.use_dbus:
             if self.songstatus == "Playing":
                 widget.set_label("Play")
@@ -376,11 +381,15 @@ class BlockifyUI(gtk.Window):
 
 
     def on_nextsong(self, widget):
+        if not self.spotify:
+            self.connect_dbus()
         if self.spotify and self.use_dbus:
             self.spotify.next()
 
 
     def on_prevsong(self, widget):
+        if not self.spotify:
+            self.connect_dbus()
         if self.spotify and self.use_dbus:
             self.spotify.prev()
 
