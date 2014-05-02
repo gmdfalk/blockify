@@ -104,8 +104,8 @@ class Notepad(gtk.Window):
         textbuffer = self.textview.get_buffer()
         start, end = textbuffer.get_start_iter(), textbuffer.get_end_iter()
         text = textbuffer.get_text(start, end)
-        if not text.endswith("\n"):
-            text += "\n"
+        if not text.endswith("\editor"):
+            text += "\editor"
         with codecs.open(self.location, "w", encoding="utf-8") as f:
             f.write(text)
         now = str(datetime.datetime.now())
@@ -121,7 +121,7 @@ class BlockifyUI(gtk.Window):
         self.automute_toggled = False
         self.block_toggled = False
         self.mute_toggled = False
-        self.n = None
+        self.editor = None
         # Set the GUI/Blockify update interval to 250ms. Increase this to
         # reduce cpu usage resp. increase it to increase responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
@@ -248,8 +248,8 @@ class BlockifyUI(gtk.Window):
             self.toggleblock.set_active(False)
 
         # Correct state of Open/Close List toggle button.
-        if self.n:
-            if not self.n.get_visible() and self.togglelist.get_active():
+        if self.editor:
+            if not self.editor.get_visible() and self.togglelist.get_active():
                 self.togglelist.set_active(False)
 
 
@@ -333,42 +333,45 @@ class BlockifyUI(gtk.Window):
         gtk.main_quit()
 
 
-    def on_toggleautomute(self, widget):
-        if widget.get_active():
-            self.set_title("Blockify (inactive)")
-            self.b.automute = False
-            self.automute_toggled = True
-            self.block_toggled = False
-            lbl = self.toggleblock.get_label()
-            self.toggleblock.set_label(lbl + " (disabled)")
-            widget.set_label("Enable AutoMute")
-            self.b.toggle_mute()
-        else:
-            self.set_title("Blockify")
-            self.b.automute = True
-            self.automute_toggled = False
-            self.toggleblock.set_label("Block")
-            widget.set_label("Disable AutoMute")
-
-
     def on_toggleblock(self, widget):
-        if not self.automute_toggled:
+        if not self.automute_toggled and not self.mute_toggled:
             if widget.get_active():
                 widget.set_label("Unblock")
                 if not self.found:
                     self.b.block_current()
                 if not self.block_toggled:
                     self.set_icon_from_file(self.muteonicon)
-                    self.set_title("Blockify (found)")
+                    self.set_title("Blockify (blocked)")
                     self.block_toggled = True
             else:
                 widget.set_label("Block")
                 if self.found:
                     self.b.unblock_current()
+                # Only
                 if self.block_toggled:
                     self.set_icon_from_file(self.muteofficon)
                     self.set_title("Blockify")
                     self.block_toggled = False
+
+
+    def on_toggleautomute(self, widget):
+        if widget.get_active():
+            self.set_title("Blockify (inactive)")
+            self.b.automute = False
+            self.automute_toggled = True
+            self.block_toggled = False
+            widget.set_label("Enable AutoMute")
+            self.b.toggle_mute()
+            if not self.mute_toggled:
+                lbl = self.toggleblock.get_label()
+                self.toggleblock.set_label(lbl + " (disabled)")
+        else:
+            self.set_title("Blockify")
+            self.b.automute = True
+            self.automute_toggled = False
+            widget.set_label("Disable AutoMute")
+            if not self.mute_toggled:
+                self.toggleblock.set_label("Block")
 
 
     def on_togglemute(self, widget):
@@ -380,26 +383,29 @@ class BlockifyUI(gtk.Window):
             self.b.automute = False
             self.mute_toggled = True
             self.b.toggle_mute(True)
-            if self.automute_toggled:
+            if not self.automute_toggled:
                 self.set_title("Blockify (muted)")
+                lbl = self.toggleblock.get_label()
+                self.toggleblock.set_label(lbl + " (disabled)")
         else:
             widget.set_label("Mute")
             self.set_icon_from_file(self.muteofficon)
             self.mute_toggled = False
             self.b.toggle_mute(False)
-            if self.automute_toggled:
+            if not self.automute_toggled:
                 self.b.automute = True
                 self.set_title("Blockify")
+                self.toggleblock.set_label("Block")
 
 
     def on_togglelist(self, widget):
         if widget.get_active():
             widget.set_label("Close List")
-            self.n = Notepad(self.b.blocklist.location, self)
+            self.editor = Notepad(self.b.blocklist.location, self)
         else:
             widget.set_label("Open List")
-            if self.n:
-                self.n.destroy()
+            if self.editor:
+                self.editor.destroy()
 
 
     def on_toggleplay(self, widget):
