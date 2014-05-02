@@ -120,6 +120,7 @@ class BlockifyUI(gtk.Window):
         self.use_dbus = True
         self.automute_toggled = False
         self.block_toggled = False
+        self.n = None
         # Set the GUI/Blockify update interval to 250ms. Increase this to
         # reduce cpu usage resp. increase it to increase responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
@@ -206,7 +207,7 @@ class BlockifyUI(gtk.Window):
             self.songstatus = self.spotify.get_song_status()
             if self.songstatus:
                 self.use_dbus = True
-        except DBusException:
+        except (DBusException, AttributeError):
             self.songstatus = ""
             self.use_dbus = False
 
@@ -214,10 +215,8 @@ class BlockifyUI(gtk.Window):
             self.statuslabel.set_text(self.get_status_text())
 
         artist, title = self.format_current_song()
-
         self.artistlabel.set_text(artist)
         self.titlelabel.set_text(title)
-        # Set state label:
 
         # Correct the state of the Block/Unblock toggle button.
         if self.blocked:
@@ -226,11 +225,9 @@ class BlockifyUI(gtk.Window):
             self.toggleblock.set_active(False)
 
         # Correct state of Open/Close List toggle button.
-        try:
+        if self.n:
             if not self.n.get_visible() and self.togglelist.get_active():
                 self.togglelist.set_active(False)
-        except AttributeError:
-            pass
 
         # The glib.timeout loop will only break if we return False here.
         return True
@@ -264,12 +261,15 @@ class BlockifyUI(gtk.Window):
         if self.spotify and self.use_dbus:
             try:
                 songlength = self.spotify.get_song_length()
-                m, s = divmod(songlength, 60)
-                r = self.spotify.get_property("Metadata")["xesam:autoRating"]
-                status = "{}m{}s, {} ({})".format(m, s, r, self.songstatus)
             except (TypeError, DBusException) as e:
                 log.error("Cannot use DBus. Some features (PlayPause etc.) "
                           "will be unavailable ({}).".format(e))
+                return status
+
+            if songlength:
+                m, s = divmod(songlength, 60)
+                r = self.spotify.get_property("Metadata")["xesam:autoRating"]
+                status = "{}m{}s, {} ({})".format(m, s, r, self.songstatus)
 
         return status
 
