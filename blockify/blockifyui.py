@@ -11,7 +11,7 @@ import glib
 import gtk
 
 import blockify
-import spotifydbus
+import blockifydbus
 
 
 log = logging.getLogger("gui")
@@ -266,7 +266,7 @@ class BlockifyUI(gtk.Window):
         "Start blockify and the main update routine."
         # Try to find a Spotify process in the current DBus session.
         try:
-            self.spotify = spotifydbus.SpotifyDBus()
+            self.spotify = blockifydbus.BlockifyDBus()
         except Exception as e:
             log.error("Cannot connect to DBus. "
                       "Some functions will be disabled ({}).".format(e))

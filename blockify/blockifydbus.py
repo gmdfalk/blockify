@@ -29,7 +29,7 @@ except ImportError:
 log = logging.getLogger("dbus")
 
 
-class SpotifyDBus(object):
+class BlockifyDBus(object):
     "Wrapper for Spotify's DBus interface."
 
     def __init__(self, bus=None):
@@ -236,10 +236,10 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
             log.error("Could not attach file handler.")
 
 
-if __name__ == "__main__":
-    args = docopt(__doc__, version="0.1")
+def main():
+    args = docopt(__doc__, version="0.2")
     init_logger(args["--log"], args["-v"], args["--quiet"])
-    spotify = SpotifyDBus()
+    spotify = BlockifyDBus()
 
     if args["toggle"]:
         spotify.playpause()
@@ -279,3 +279,7 @@ if __name__ == "__main__":
             state = spotify.get_song_status()
             print "{} - {}, {}m{}s, {} ({})".format(artist, title,
                                                     m, s, rating, state)
+
+
+if __name__ == "__main__":
+    main()

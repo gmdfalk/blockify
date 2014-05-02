@@ -301,6 +301,9 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
 
 
 def main():
+    args = docopt(__doc__, version="1.0")
+    init_logger(args["--log"], args["-v"], args["--quiet"])
+
     blocklist = Blocklist()
     blockify = Blockify(blocklist)
 
@@ -315,11 +318,5 @@ def main():
         time.sleep(1)
 
 
-def cli_entry():
-    args = docopt(__doc__, version="1.0")
-    init_logger(args["--log"], args["-v"], args["--quiet"])
-    main()
-
-
 if __name__ == "__main__":
-    cli_entry()
+    main()
