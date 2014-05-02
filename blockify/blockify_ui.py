@@ -235,15 +235,16 @@ class BlockifyUI(gtk.Window):
 
 
     def get_status_text(self):
-        if self.spotify and self.dbus:
+        if self.spotify and self.use_dbus:
             try:
-                length = self.spotify.get_song_length()
                 m, s = divmod(self.spotify.get_song_length(), 60)
-                rating = self.spotify.get_property("Metadata")["xesam:autoRating"]
-                return "{}m{}s, {} ({})".format(m, s, rating, self.songstatus)
+                r = self.spotify.get_property("Metadata")["xesam:autoRating"]
+                return "{}m{}s, {} ({})".format(m, s, r, self.songstatus)
             except Exception as e:
                 self.use_dbus = False
-                log.error("Could not get status text from DBus: {}.".format(e))
+                log.error("Cannot use DBus. "
+                          "Some functions will be disabled ({}).".format(e))
+                return ""
         else:
             return ""
 
