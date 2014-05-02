@@ -56,7 +56,6 @@ class BlockifyDBus(object):
             self.player = None
             self.proxy = None
             log.error("Spotify not found in DBus session. Is it running?")
-            return
 
 
     def is_running(self):
@@ -153,23 +152,26 @@ class BlockifyDBus(object):
 
     def get_song_length(self):
         "Gets the length of current song from metadata (in seconds)."
-        metadata = self.get_property("Metadata")
-        if metadata:
-            return int(metadata["mpris:length"] / 1000000)
+        if self.is_running():
+            metadata = self.get_property("Metadata")
+            if metadata:
+                return int(metadata["mpris:length"] / 1000000)
 
 
     def get_song_title(self):
         "Gets title of current song from metadata"
-        metadata = self.get_property("Metadata")
-        if metadata:
-            return metadata["xesam:title"].encode("utf-8")
+        if self.is_running():
+            metadata = self.get_property("Metadata")
+            if metadata:
+                return metadata["xesam:title"].encode("utf-8")
 
 
     def get_song_artist(self):
         "Gets the artist of current song from metadata"
-        metadata = self.get_property("Metadata")
-        if metadata:
-            return str(metadata["xesam:artist"][0])
+        if self.is_running():
+            metadata = self.get_property("Metadata")
+            if metadata:
+                return str(metadata["xesam:artist"][0])
 
 
     def print_info(self):

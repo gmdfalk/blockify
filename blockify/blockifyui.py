@@ -206,11 +206,12 @@ class BlockifyUI(gtk.Window):
         try:
             artist, title = song.split(" {} ".format(delimiter))
         except (ValueError, IndexError):
-            if self.spotify and self.use_dbus:
+            try:
                 artist = self.spotify.get_song_artist()
                 title = self.spotify.get_song_title()
-            else:
+            except AttributeError:
                 artist, title = song, "No song playing?"
+                self.use_dbus = False
 
         return artist, title
 
