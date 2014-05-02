@@ -5,6 +5,7 @@ import codecs
 import datetime
 import logging
 import os
+import signal
 
 import glib
 import gtk
@@ -195,11 +196,11 @@ class BlockifyUI(gtk.Window):
         try:
             artist, title = song.split(" {} ".format(delimiter))
         except (ValueError, IndexError):
-            try:
+            if self.spotify:
                 artist = self.spotify.get_song_artist()
                 title = self.spotify.get_song_title()
-            except:
-                artist, title = song, ""
+            else:
+                artist, title = song, "No song playing."
 
         return artist, title
 
@@ -209,10 +210,10 @@ class BlockifyUI(gtk.Window):
         found = self.b.update()
 
         # Grab some useful information from DBus.
-        try:
-            self.songstatus = self.spotify.get_song_status()
+        if self.spotify:
             self.statuslabel.set_text(self.get_status_text())
-        except AttributeError:
+            self.songstatus = self.spotify.get_song_status()
+        else:
             self.songstatus = ""
 
         artist, title = self.format_current_song()
@@ -232,24 +233,39 @@ class BlockifyUI(gtk.Window):
 
 
     def get_status_text(self):
-        length = self.spotify.get_song_length()
-        m, s = divmod(self.spotify.get_song_length(), 60)
-        rating = self.spotify.get_property("Metadata")["xesam:autoRating"]
-        return "{}m{}s, {} ({})".format(m, s, rating, self.songstatus)
-
+        if self.spotify:
+            length = self.spotify.get_song_length()
+            m, s = divmod(self.spotify.get_song_length(), 60)
+            rating = self.spotify.get_property("Metadata")["xesam:autoRating"]
+            return "{}m{}s, {} ({})".format(m, s, rating, self.songstatus)
+        else:
+            return ""
 
     def start(self):
         "Start blockify and the main update routine."
+        # Try to find a Spotify process in the current DBus session.
+        try:
+            self.spotify = spotifydbus.SpotifyDBus()
+        except Exception as e:
+            log.error("Cannot connect to DBus. "
+                      "Some functions will be disabled ({}).".format(e))
+            self.spotify = None
+
         blocklist = blockify.Blocklist()
-        self.spotify = spotifydbus.SpotifyDBus()
         self.b = blockify.Blockify(blocklist)
-        self.b.bind_signals()
+        self.bind_signals()
         self.b.toggle_mute()
         # Start and loop the main update routine once per second.
         glib.timeout_add_seconds(1, self.update)
 
 
-    def shutdown(self, arg):
+    def bind_signals(self):
+        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())
+        signal.signal(signal.SIGTERM, lambda sig, hdl: self.shutdown())
+        signal.signal(signal.SIGINT, lambda sig, hdl: self.shutdown())
+
+
+    def shutdown(self, *args):
         "Cleanly shut down, unmuting sound and saving the blocklist."
         self.b.shutdown()
         gtk.main_quit()
@@ -289,19 +305,23 @@ class BlockifyUI(gtk.Window):
 
 
     def on_toggleplay(self, widget):
-        if self.songstatus == "Playing":
-            widget.set_label("Play")
-        else:
-            widget.set_label("Pause")
-        self.spotify.playpause()
+        if self.spotify:
+            if self.songstatus == "Playing":
+                widget.set_label("Play")
+            else:
+                widget.set_label("Pause")
+            self.spotify.playpause()
+
 
 
     def on_nextsong(self, widget):
-        self.spotify.next()
+        if self.spotify:
+            self.spotify.next()
 
 
     def on_prevsong(self, widget):
-        self.spotify.prev()
+        if self.spotify:
+            self.spotify.prev()
 
 
     def on_openlist(self, widget):

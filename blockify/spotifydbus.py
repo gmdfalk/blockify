@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 """spotifydbus
 
 Usage:
@@ -9,7 +8,7 @@ Usage:
 Options:
     -l, --log=<path>  Enables logging to the logfile/-path specified.
     -q, --quiet       Don't print anything to stdout.
-    -v                Verbosity of the logging module.
+    -v                Verbosity of the logging module, up to -vvv.
     -h, --help        Show this help text.
     --version         Show current version of spotifydbus.
 """

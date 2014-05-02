@@ -4,11 +4,12 @@ Usage:
     blockify [-l <path>] [-v...] [-q] [-h]
 
 Options:
-    -l, --logfile=<path>  Enables logging to the logfile/-path specified.
-    -q, --quiet           Don't print anything to stdout.
-    -v                    Set the log verbosity, up to -vvv.
+    -l, --log=<path>  Enables logging to the logfile/-path specified.
+    -q, --quiet       Don't print anything to stdout.
+    -v                Verbosity of the logging module, up to -vvv.
+    -h, --help        Show this help text.
+    --version         Show current version of blockify.
 """
-# TODO: pacmd mute/cli option (complementing alsa/amixer).
 # TODO: try xlib/_net for minimized window detection.
 # TODO: play local mp3s when ads are muted? currently not possible.
 import codecs
@@ -261,6 +262,7 @@ class Blockify(object):
 
     def shutdown(self):
         # Save the list only if it changed during runtime.
+        log.info("Exiting safely. Bye.")
         if self.blocklist != self.orglist:
             self.blocklist.save_file()
         self.toggle_mute()
@@ -316,7 +318,7 @@ def main():
 
 def cli_entry():
     args = docopt(__doc__, version="0.9")
-    init_logger(args["--logfile"], args["-v"], args["--quiet"])
+    init_logger(args["--log"], args["-v"], args["--quiet"])
     main()
 
 
