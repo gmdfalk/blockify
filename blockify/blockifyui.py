@@ -199,12 +199,15 @@ class BlockifyUI(gtk.Window):
 
 
     def update(self):
-        # Call the main update function of blockify.
-        self.blocked = self.b.update()
+        # Call the main update function of blockify and assign return value
+        # (True/False) depending on whether a song to be blocked was found.
+        self.found = self.b.update()
 
         # Grab some useful information from DBus.
         try:
             self.songstatus = self.spotify.get_song_status()
+            # If we can't get a songstatus, we have to assume DBus is not
+            # working correctly.
             if self.songstatus:
                 self.use_dbus = True
         except (DBusException, AttributeError):
@@ -219,9 +222,9 @@ class BlockifyUI(gtk.Window):
         self.titlelabel.set_text(title)
 
         # Correct the state of the Block/Unblock toggle button.
-        if self.blocked:
+        if self.found:
             self.toggleblock.set_active(True)
-        elif not self.blocked:
+        elif not self.found:
             self.toggleblock.set_active(False)
 
         # Correct state of Open/Close List toggle button.
@@ -235,10 +238,12 @@ class BlockifyUI(gtk.Window):
 
     def format_current_song(self):
         song = self.b.current_song
-        # For whatever reason, spotify doesn't use a normal hyphen but a
+        # For whatever reason, Spotify doesn't use a normal hyphen but a
         # slightly longer one. This is its unicode code point.
         delimiter = u"\u2013"
 
+        # We prefer the current_song variable as source for artist, title but
+        # should that fail, try getting those from DBus.
         try:
             artist, title = song.split(" {} ".format(delimiter))
         except (ValueError, IndexError):
@@ -249,6 +254,7 @@ class BlockifyUI(gtk.Window):
                 artist, title = song, "No song playing?"
                 self.use_dbus = False
 
+        # Sometimes song.split returns None, catch it here.
         if artist is None or title is None:
             artist, title = song, "No song playing?"
             self.use_dbus = False
@@ -331,15 +337,15 @@ class BlockifyUI(gtk.Window):
         if self.b.automute:
             if widget.get_active():
                 widget.set_label("Unblock")
-                if not self.blocked:
+                if not self.found:
                     self.b.block_current()
                 if not self.block_toggled:
                     self.set_icon_from_file(self.muteonicon)
-                    self.set_title("Blockify (blocked)")
+                    self.set_title("Blockify (found)")
                     self.block_toggled = True
             else:
                 widget.set_label("Block")
-                if self.blocked:
+                if self.found:
                     self.b.unblock_current()
                 if self.block_toggled:
                     self.set_icon_from_file(self.muteofficon)
