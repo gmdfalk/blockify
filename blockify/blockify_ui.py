@@ -266,7 +266,7 @@ class BlockifyUI(gtk.Window):
         self.bind_signals()
         self.b.toggle_mute()
         # Start and loop the main update routine once per second.
-        glib.timeout_add_seconds(1, self.update)
+        glib.timeout_add(100, self.update)
 
 
     def bind_signals(self):
