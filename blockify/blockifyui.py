@@ -249,10 +249,11 @@ class BlockifyUI(gtk.Window):
 
 
     def get_status_text(self):
-        if self.spotify and self.use_dbus:
+        if self.spotify:
             try:
                 m, s = divmod(self.spotify.get_song_length(), 60)
                 r = self.spotify.get_property("Metadata")["xesam:autoRating"]
+                self.use_dbus = True
                 return "{}m{}s, {} ({})".format(m, s, r, self.songstatus)
             except Exception as e:
                 self.use_dbus = False

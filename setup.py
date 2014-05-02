@@ -30,7 +30,7 @@ setup(
     entry_points={
                   "console_scripts": [
                       "{0} = {0}.{0}:main".format(_name),
-                      "{0}dbus = {0}.{0}dbus:main".format(_name),
+                      "{0}-dbus = {0}.{0}dbus:main".format(_name),
                   ],
                   "gui_scripts": [
                       "{0}-ui = {0}.{0}ui:main".format(_name),
