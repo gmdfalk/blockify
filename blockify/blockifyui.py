@@ -199,10 +199,21 @@ class BlockifyUI(gtk.Window):
 
 
     def update(self):
+        "Main GUI loop."
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
 
+        # Our main GUI workers here, updating labels, buttons and the likes.
+        self.update_songinfo()
+        self.update_labels()
+        self.update_togglebuttons()
+
+        # The glib.timeout loop will only break if we return False here.
+        return True
+
+
+    def update_songinfo(self):
         # Grab some useful information from DBus.
         try:
             self.songstatus = self.spotify.get_song_status()
@@ -214,6 +225,8 @@ class BlockifyUI(gtk.Window):
             self.songstatus = ""
             self.use_dbus = False
 
+
+    def update_labels(self):
         if self.spotify and self.use_dbus:
             self.statuslabel.set_text(self.get_status_text())
 
@@ -221,6 +234,8 @@ class BlockifyUI(gtk.Window):
         self.artistlabel.set_text(artist)
         self.titlelabel.set_text(title)
 
+
+    def update_togglebuttons(self):
         # Correct the state of the Block/Unblock toggle button.
         if self.found:
             self.toggleblock.set_active(True)
@@ -231,9 +246,6 @@ class BlockifyUI(gtk.Window):
         if self.n:
             if not self.n.get_visible() and self.togglelist.get_active():
                 self.togglelist.set_active(False)
-
-        # The glib.timeout loop will only break if we return False here.
-        return True
 
 
     def format_current_song(self):

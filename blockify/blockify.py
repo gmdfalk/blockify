@@ -243,7 +243,7 @@ class Blockify(object):
             pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
             pidof_out = subprocess.check_output(["pidof", "spotify"])
         except subprocess.CalledProcessError:
-            log.error("Process or sink not found. Is Pulse/Spotify running?")
+            log.error("Sink or process not found. Is Pulse/Spotify running?")
             self.mute_mode = "pulse"  # Fall back to amixer mute mode.
             return
 
