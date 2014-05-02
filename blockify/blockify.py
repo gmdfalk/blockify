@@ -223,11 +223,11 @@ class Blockify(object):
     def pulsesink_mute(self, force):
         "Finds spotify's audio sink and toggles its mute state."
 
-        pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
         try:
+            pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
             pidof_out = subprocess.check_output(["pidof", "spotify"])
         except subprocess.CalledProcessError:
-            log.error("No Spotify process found. Is it running?")
+            log.error("Process or sink not found. Is Pulse/Spotify running?")
             return
 
         pattern = re.compile(r'(?: index|muted|application\.process\.id).*?(\w+)')
@@ -237,14 +237,13 @@ class Blockify(object):
         # Every third element is a key, the value is the preceding two
         # elements in the form of a tuple - {pid : (index, muted)}
         info = pattern.findall(output)
-        idxd = {info[3 * n + 2] : (info[3 * n], info[3 * n + 1])
-                for n in range(0, len(info) // 3)}
+        idxd = {info[3 * n + 2]: (info[3 * n], info[3 * n + 1])
+                for n in range(len(info) // 3)}
 
         try:
             pid = [k for k in idxd.keys() if k in pids][0]
             index, muted = idxd[pid]
-        except IndexError as e:
-            log.error("Could not get Spotify PID: {}".format(e))
+        except IndexError:
             return
 
         if muted == "no" and force:
