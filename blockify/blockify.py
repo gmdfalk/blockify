@@ -214,10 +214,10 @@ class Blockify(object):
         for channel in self.channels:
             subprocess.Popen(["amixer", "-q", "set", channel, state])
 
-        if self.fallback_enabled:
-            muted = self.is_muted()
-            if state == "mute" and not muted:
-                log.error("Muting with alsa failed.")
+#         if self.fallback_enabled:
+#             muted = self.is_muted()
+#             if state == "mute" and not muted:
+#                 log.error("Muting with alsa failed.")
 
 
     def pulse_mute(self, force):
@@ -229,11 +229,11 @@ class Blockify(object):
         for channel in self.channels:
             subprocess.Popen(["amixer", "-qD", "pulse", "set", channel, state])
 
-        if self.fallback_enabled:
-            muted = self.is_muted()
-            if state == "mute" and not muted:
-                log.error("Muting with pulse failed. Trying alsa.")
-                self.mute_mode = "alsa"
+#         if self.fallback_enabled:
+#             muted = self.is_muted()
+#             if state == "mute" and not muted:
+#                 log.error("Muting with pulse failed. Trying alsa.")
+#                 self.mute_mode = "alsa"
 
 
     def pulsesink_mute(self, force):
