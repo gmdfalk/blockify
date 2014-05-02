@@ -219,11 +219,15 @@ class BlockifyUI(gtk.Window):
         self.blocked = self.b.update()
 
         # Grab some useful information from DBus.
+        try:
+            self.songstatus = self.spotify.get_song_status()
+            self.use_dbus = True
+        except:
+            self.songstatus = ""
+            self.use_dbus = False
+
         if self.spotify and self.use_dbus:
             self.statuslabel.set_text(self.get_status_text())
-            self.songstatus = self.spotify.get_song_status()
-        else:
-            self.songstatus = ""
 
         artist, title = self.format_current_song()
 
