@@ -120,6 +120,7 @@ class BlockifyUI(gtk.Window):
         self.use_dbus = True
         self.automute_toggled = False
         self.block_toggled = False
+        self.mute_toggled = False
         self.n = None
         # Set the GUI/Blockify update interval to 250ms. Increase this to
         # reduce cpu usage resp. increase it to increase responsiveness.
@@ -203,6 +204,10 @@ class BlockifyUI(gtk.Window):
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
+
+        # Correct the automute state.
+        if not self.mute_toggled and not self.automute_toggled:
+            self.b.automute = True
 
         # Our main GUI workers here, updating labels, buttons and the likes.
         self.update_songinfo()
@@ -301,6 +306,7 @@ class BlockifyUI(gtk.Window):
             self.spotify = None
             self.use_dbus = False
 
+
     def start(self):
         "Start blockify and the main update routine."
         # Try to find a Spotify process in the current DBus session.
@@ -331,7 +337,7 @@ class BlockifyUI(gtk.Window):
         if widget.get_active():
             self.set_title("Blockify (inactive)")
             self.b.automute = False
-            self.automute_toggled = False
+            self.automute_toggled = True
             self.block_toggled = False
             lbl = self.toggleblock.get_label()
             self.toggleblock.set_label(lbl + " (disabled)")
@@ -340,13 +346,13 @@ class BlockifyUI(gtk.Window):
         else:
             self.set_title("Blockify")
             self.b.automute = True
-            self.automute_toggled = True
+            self.automute_toggled = False
             self.toggleblock.set_label("Block")
             widget.set_label("Disable AutoMute")
 
 
     def on_toggleblock(self, widget):
-        if self.b.automute:
+        if not self.automute_toggled:
             if widget.get_active():
                 widget.set_label("Unblock")
                 if not self.found:
@@ -370,14 +376,16 @@ class BlockifyUI(gtk.Window):
             return
         if widget.get_active():
             widget.set_label("Unmute")
-            self.b.automute = False
-            self.b.toggle_mute(True)
             self.set_icon_from_file(self.muteonicon)
+            self.b.automute = False
+            self.mute_toggled = True
+            self.b.toggle_mute(True)
             if self.automute_toggled:
                 self.set_title("Blockify (muted)")
         else:
             widget.set_label("Mute")
             self.set_icon_from_file(self.muteofficon)
+            self.mute_toggled = False
             self.b.toggle_mute(False)
             if self.automute_toggled:
                 self.b.automute = True
