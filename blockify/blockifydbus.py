@@ -37,7 +37,6 @@ class BlockifyDBus(object):
         self.prop_path = "org.freedesktop.DBus.Properties"
         self.player_path = "org.mpris.MediaPlayer2.Player"
         self.spotify_path = None
-        self.player = None
 
         if not bus:
             bus = dbus.SessionBus()
@@ -47,14 +46,17 @@ class BlockifyDBus(object):
             if re.match(r".*mpris.*spotify", name):
                 self.spotify_path = str(name)
 
-        if self.spotify_path:
+        if self.is_running():
             self.proxy = self.session_bus.get_object(self.spotify_path,
                                                      self.obj_path)
             self.properties = dbus.Interface(self.proxy, self.prop_path)
             self.player = dbus.Interface(self.proxy, self.player_path)
         else:
+            self.properties = None
+            self.player = None
             self.proxy = None
             log.error("Spotify not found in DBus session. Is it running?")
+            return
 
 
     def is_running(self):
@@ -66,21 +68,19 @@ class BlockifyDBus(object):
 
     def get_property(self, key):
         "Gets the value from any available property."
-        try:
+        if self.is_running():
             return self.properties.Get(self.player_path, key)
-        except AttributeError:
-            log.error("Could not retrieve property.")
-            sys.exit(1)
+
 
     def set_property(self, key, value):
         "Sets the value for any available property."
-        if self.properties:
+        if self.is_running():
             return self.properties.Set(self.player_path, key, value)
 
 
     def playpause(self):
         "Toggles the current song between Play and Pause."
-        if self.player:
+        if self.is_running():
             can_pause = self.get_property("CanPause")
             can_play = self.get_property("CanPlay")
             if can_pause and can_play:
@@ -91,7 +91,7 @@ class BlockifyDBus(object):
 
     def play(self):
         "DEFUNCT: Tries to play the current title."
-        if self.player:
+        if self.is_running():
             can_play = self.get_property("CanPlay")
             if can_play:
                 self.player.Play()
@@ -101,13 +101,13 @@ class BlockifyDBus(object):
 
     def stop(self):
         "Tries to stop playback. PlayPause is probably preferable."
-        if self.player:
+        if self.is_running():
             self.player.Stop()
 
 
     def next(self):
         "Tries to skip to next song."
-        if self.player:
+        if self.is_running():
             can_next = self.get_property("CanGoNext")
             if can_next:
                 self.player.Next()
@@ -117,7 +117,7 @@ class BlockifyDBus(object):
 
     def prev(self):
         "Tries to go back to last song."
-        if self.player:
+        if self.is_running():
             can_prev = self.get_property("CanGoPrevious")
             if can_prev:
                 self.player.Previous()
@@ -126,18 +126,18 @@ class BlockifyDBus(object):
 
 
     def set_position(self, track, position):
-        if self.player:
+        if self.is_running():
             self.player.SetPosition(track, position)
 
 
     def open_uri(self, uri):
-        if self.player:
+        if self.is_running():
             self.player.OpenUri(uri)
 
 
     def seek(self, seconds):
         "DEFUNCT: Calls seek method."
-        if self.player:
+        if self.is_running():
             can_seek = self.get_property("CanSeek")
             if can_seek:
                 self.player.Seek(seconds)
@@ -147,7 +147,7 @@ class BlockifyDBus(object):
 
     def get_song_status(self):
         "Get current PlaybackStatus (Paused/Playing...)."
-        if self.player:
+        if self.is_running():
             return self.get_property("PlaybackStatus")
 
 
