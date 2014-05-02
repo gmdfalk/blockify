@@ -194,14 +194,13 @@ class Blockify(object):
     def get_state(self, force):
         muted = self.is_muted()
 
+        state = None
         if not muted and force:
             state = "mute"
             log.info("Muting {}.".format(self.current_song))
         elif muted and not force:
             state = "unmute"
             log.info("Unmuting.")
-        else:
-            return
 
         return state
 
@@ -209,6 +208,8 @@ class Blockify(object):
     def alsa_mute(self, force):
 
         state = self.get_state(force)
+        if not state:
+            return
 
         for channel in self.channels:
             subprocess.Popen(["amixer", "-q", "set", channel, state])
@@ -217,6 +218,8 @@ class Blockify(object):
     def pulse_mute(self, force):
 
         state = self.get_state(force)
+        if not state:
+            return
 
         for channel in self.channels:
             subprocess.Popen(["amixer", "-qD", "pulse", "set", channel, state])
