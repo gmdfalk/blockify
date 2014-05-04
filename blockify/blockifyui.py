@@ -19,13 +19,13 @@ log = logging.getLogger("gui")
 
 
 class Notepad(gtk.Window):
-
+    "A tiny text editor to modify the blocklist."
     def __init__(self, location, parentw):
 
         super(Notepad, self).__init__()
 
         self.location = location
-        self.parentw = parentw  # Parent window, TODO: Create a gtk-parent.
+        self.parentw = parentw  # Used to untoggle the open/close list button.
 
         self.set_title("Blocklist")
         self.set_wmclass("blocklist", "Blockify")
@@ -43,7 +43,6 @@ class Notepad(gtk.Window):
 
         self.open_file()
         self.show_all()
-
 
         # FIXME: Unholy mess. Why do i have to set value redundantly here?
         swadj = self.sw.get_vadjustment()
@@ -73,7 +72,7 @@ class Notepad(gtk.Window):
 
 
     def create_keybinds(self):
-        # Keybindings.
+        "Register Ctrl+Q/W to quit and Ctrl+S to save the blocklist."
         quit_group = gtk.AccelGroup()
         quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,
                                  gtk.ACCEL_LOCKED, self.destroy)
@@ -83,7 +82,7 @@ class Notepad(gtk.Window):
 
         save_group = gtk.AccelGroup()
         save_group.connect_group(ord("s"), gtk.gdk.CONTROL_MASK,
-                                 gtk.ACCEL_LOCKED, self.save_file)
+                                 gtk.ACCEL_LOCKED, self.save)
         self.add_accel_group(save_group)
 
 
@@ -100,12 +99,13 @@ class Notepad(gtk.Window):
         self.set_title(self.location)
 
 
-    def save_file(self, *args):
+    def save(self, *args):
         textbuffer = self.textview.get_buffer()
         start, end = textbuffer.get_start_iter(), textbuffer.get_end_iter()
         text = textbuffer.get_text(start, end)
-        if not text.endswith("\editor"):
-            text += "\editor"
+        # Append a newline to the blocklist, if necessary.
+        if not text.endswith("\n"):
+            text += "\n"
         with codecs.open(self.location, "w", encoding="utf-8") as f:
             f.write(text)
         now = str(datetime.datetime.now())
@@ -113,7 +113,7 @@ class Notepad(gtk.Window):
 
 
 class BlockifyUI(gtk.Window):
-
+    "PyQT4 interface for blockify."
     def __init__(self):
         super(BlockifyUI, self).__init__()
 
@@ -123,7 +123,7 @@ class BlockifyUI(gtk.Window):
         self.mute_toggled = False
         self.editor = None
         # Set the GUI/Blockify update interval to 250ms. Increase this to
-        # reduce cpu usage resp. increase it to increase responsiveness.
+        # reduce CPU usage and decrease it to improve responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
         # change the line to glib.timeout_add_seconds(2, self.update) or more.
         self.update_interval = 250
@@ -435,6 +435,7 @@ class BlockifyUI(gtk.Window):
 
 
 def main():
+    "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
     blockify.init_logger(logpath=None, loglevel=2, quiet=False)
     ui = BlockifyUI()

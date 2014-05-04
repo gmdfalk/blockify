@@ -215,7 +215,7 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
 
     # Set the loglevel.
     if loglevel > 3:
-        loglevel = 3  # Cap at 3, incase someone likes their v-key too much.
+        loglevel = 3  # Cap at 3 to avoid index errors.
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logger.setLevel(levels[loglevel])
 
@@ -223,13 +223,12 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
 
     formatter = logging.Formatter(logformat, "%Y-%m-%d %H:%M:%S")
 
-    # Only attach a console handler if both nologs and quiet are disabled.
     if not quiet:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
         log.debug("Added logging console handler.")
-        log.debug("Loglevel is {}.".format(levels[loglevel]))
+        log.info("Loglevel is {}.".format(levels[loglevel]))
     if logpath:
         try:
             logfile = os.path.abspath(logpath)

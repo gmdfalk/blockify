@@ -43,7 +43,7 @@ class Blocklist(list):
         super(Blocklist, self).__init__()
         self.home = os.path.expanduser("~")
         self.location = os.path.join(self.home, ".blockify_list")
-        self.extend(self.load_file())
+        self.extend(self.load())
         self.timestamp = self.get_timestamp()
 
 
@@ -55,14 +55,14 @@ class Blocklist(list):
             return
         log.info("Adding {} to {}.".format(item, self.location))
         super(Blocklist, self).append(item)
-        self.save_file()
+        self.save()
 
 
     def remove(self, item):
         log.info("Removing {} from {}.".format(item, self.location))
         try:
             super(Blocklist, self).remove(item)
-            self.save_file()
+            self.save()
         except ValueError as e:
             log.warn("Could not remove {} from blocklist: {}".format(item, e))
 
@@ -71,7 +71,7 @@ class Blocklist(list):
         return os.path.getmtime(self.location)
 
 
-    def load_file(self):
+    def load(self):
         log.debug("Loading blockfile from {}.".format(self.location))
         try:
             with codecs.open(self.location, "r", encoding="utf-8") as f:
@@ -83,7 +83,7 @@ class Blocklist(list):
         return [i for i in blocklist.split("\n") if i]
 
 
-    def save_file(self):
+    def save(self):
         log.debug("Saving blocklist to {}.".format(self.location))
         with codecs.open(self.location, "w", encoding="utf-8") as f:
             f.write("\n".join(self) + "\n")
@@ -108,7 +108,7 @@ class Blockify(object):
         except (OSError, subprocess.CalledProcessError):
             self.mute_mode = "alsa"
 
-        log.info("Blockify started.")
+        log.info("Blockify initialized.")
 
 
     def update(self):
@@ -128,9 +128,11 @@ class Blockify(object):
         for i in self.blocklist:
             if i in self.current_song:
                 self.toggle_mute(True)
-                return True  # We found one! Used in ui.
+                return True  # Return boolean to use as self.found in GUI.
         else:
             self.toggle_mute()
+
+        return False
 
 
     def get_windows(self):
@@ -138,7 +140,6 @@ class Blockify(object):
         # Get the current screen.
         screen = wnck.screen_get_default()
 
-        # TODO: screen.force_update(), does this allow minimized?
         # Object list of windows in screen.
         windows = screen.get_windows()
         # Return the actual list of windows or an empty list.
@@ -181,13 +182,13 @@ class Blockify(object):
 
 
     def toggle_mute(self, force=False):
-
         mutemethod = getattr(self, self.mute_mode + "_mute", None)
         mutemethod(force)
 
 
     def is_muted(self):
         master = subprocess.check_output(["amixer", "get", "Master"])
+
         return True if "[off]" in master else False
 
 
@@ -206,7 +207,7 @@ class Blockify(object):
 
 
     def alsa_mute(self, force):
-
+        "Mute method for systems without Pulseaudio. Mutes sound system-wide."
         state = self.get_state(force)
         if not state:
             return
@@ -221,7 +222,7 @@ class Blockify(object):
 
 
     def pulse_mute(self, force):
-
+        "Used if pulseaudio is installed but no sinks are found. System-wide."
         state = self.get_state(force)
         if not state:
             return
@@ -238,7 +239,6 @@ class Blockify(object):
 
     def pulsesink_mute(self, force):
         "Finds spotify's audio sink and toggles its mute state."
-
         try:
             pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
             pidof_out = subprocess.check_output(["pidof", "spotify"])
@@ -273,35 +273,36 @@ class Blockify(object):
 
 
     def bind_signals(self):
+        "Catch SIGINT and SIGTERM to exit cleanly & SIGUSR1 to block a song."
         signal.signal(signal.SIGUSR1, lambda sig, hdl: self.block_current())
         signal.signal(signal.SIGTERM, lambda sig, hdl: self.shutdown())
         signal.signal(signal.SIGINT, lambda sig, hdl: self.shutdown())
 
 
     def shutdown(self):
-        # Save the list only if it changed during runtime.
         log.info("Exiting safely. Bye.")
+        # Save the list only if it changed during runtime.
         if self.blocklist != self.orglist:
-            self.blocklist.save_file()
+            self.blocklist.save()
+        # Unmute before exiting.
         self.toggle_mute()
         sys.exit()
 
 
 def init_logger(logpath=None, loglevel=1, quiet=False):
-    "Initializes the logger for system messages."
+    "Initializes the logging module."
     logger = logging.getLogger()
 
     # Set the loglevel.
     if loglevel > 3:
-        loglevel = 3  # Cap at 3, incase someone likes their v-key too much.
+        loglevel = 3  # Cap at 3 to avoid index errors.
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logger.setLevel(levels[loglevel])
 
-    logformat = "%(asctime)-14s %(levelname)-8s %(message)s"
+    logformat = "%(asctime)-14s %(levelname)-8s %(name)-8s %(message)s"
 
     formatter = logging.Formatter(logformat, "%Y-%m-%d %H:%M:%S")
 
-    # Only attach a console handler if both nologs and quiet are disabled.
     if not quiet:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(formatter)
@@ -320,6 +321,7 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
 
 
 def main():
+    "Entry point for the CLI-version of Blockify."
     args = docopt(__doc__, version="1.0")
     init_logger(args["--log"], args["-v"], args["--quiet"])
 
