@@ -1,6 +1,3 @@
-# TODO: Minimize to system-tray
-# TODO: Different modes: minimal, full
-# TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
 import codecs
 import datetime
 import logging
@@ -8,11 +5,14 @@ import os
 import signal
 
 from dbus.exceptions import DBusException
+import blockify
 import glib
 import gtk
 
-import blockify
 import blockifydbus
+# TODO: Minimize to system-tray
+# TODO: Different modes: minimal, full
+# TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
 
 
 log = logging.getLogger("gui")
@@ -200,7 +200,6 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.togglemute)
         vbox.add(self.toggleautomute)
         vbox.add(self.togglelist)
-
         return vbox
 
 
@@ -211,7 +210,7 @@ class BlockifyUI(gtk.Window):
         self.found = self.b.update()
 
         # Correct the automute state, if necessary.
-        if not self.mute_toggled and not self.automute_toggled:
+        if not any([self.mute_toggled, self.automute_toggled, self.b.automute]):
             self.b.automute = True
 
         # Our main GUI workers here, updating labels, buttons and the likes.
@@ -325,6 +324,8 @@ class BlockifyUI(gtk.Window):
         # Start and loop the main update routine once every 250ms.
         # To influence responsiveness or CPU usage, decrease/increase ms here.
         glib.timeout_add(self.update_interval, self.update)
+        log.info("Blockify-UI started.")
+
 
 
     def bind_signals(self):
@@ -337,6 +338,7 @@ class BlockifyUI(gtk.Window):
     def stop(self, *args):
         "Cleanly shut down, unmuting sound and saving the blocklist."
         self.b.stop()
+        log.debug("Exiting GUI.")
         gtk.main_quit()
 
 
@@ -370,8 +372,8 @@ class BlockifyUI(gtk.Window):
             self.automute_toggled = True
             self.block_toggled = False
             widget.set_label("Enable AutoMute")
-            self.b.toggle_mute()
             if not self.mute_toggled:
+                self.b.toggle_mute()
                 lbl = self.toggleblock.get_label()
                 self.toggleblock.set_label(lbl + " (disabled)")
         else:
@@ -446,7 +448,7 @@ class BlockifyUI(gtk.Window):
 def main():
     "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
-    blockify.init_logger(logpath=None, loglevel=2, quiet=False)
+    blockify.init_logger(logpath=None, loglevel=4, quiet=False)
     ui = BlockifyUI()
     gtk.main()
 

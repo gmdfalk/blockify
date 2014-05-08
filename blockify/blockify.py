@@ -97,7 +97,7 @@ class Blockify(object):
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.channels = self.get_channels()
-        self.automute = True
+        self._automute = True
         # If muting fails, switch to alternative mute_mode (sink>pulse>alsa).
         self.fallback_enabled = True
 
@@ -110,6 +110,18 @@ class Blockify(object):
             self.mute_mode = "alsa"
 
         log.info("Blockify initialized.")
+
+
+    @property
+    def automute(self):
+#         log.debug("Automute is: {}.".format(self._automute))
+        return self._automute
+
+
+    @automute.setter
+    def automute(self, boolean):
+        log.debug("Setting automute to: {}.".format(boolean))
+        self._automute = boolean
 
 
     def update(self):

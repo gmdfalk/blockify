@@ -23,7 +23,7 @@ import dbus
 try:
     from docopt import docopt
 except ImportError:
-    print "ImportError: Please install docopt to use the CLI."
+    print "ImportError: Please install docopt to use the DBus CLI."
 
 
 log = logging.getLogger("dbus")
@@ -241,6 +241,7 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
 
 
 def main():
+    "Entry point for the CLI DBus interface."
     args = docopt(__doc__, version="0.2")
     init_logger(args["--log"], args["-v"], args["--quiet"])
     spotify = BlockifyDBus()
@@ -273,7 +274,7 @@ def main():
         spotify.print_info()
     elif args["get"]:
         length = spotify.get_song_length()
-        m, s = divmod(spotify.get_song_length(), 60)
+        m, s = divmod(length, 60)
         if args["length"]:
             print "{}m{}s ({})".format(m, s, length)
         else:
