@@ -12,6 +12,7 @@ Options:
 """
 # TODO: Try xlib/_net for minimized window detection.
 # TODO: Play local mp3s when ads are muted? Currently only possible with pulse.
+# TODO: Fix fallback mode from pulse to alsa.
 import codecs
 import logging
 import os
@@ -215,11 +216,6 @@ class Blockify(object):
         for channel in self.channels:
             subprocess.Popen(["amixer", "-q", "set", channel, state])
 
-#         if self.fallback_enabled:
-#             muted = self.is_muted()
-#             if state == "mute" and not muted:
-#                 log.error("Muting with alsa failed.")
-
 
     def pulse_mute(self, force):
         "Used if pulseaudio is installed but no sinks are found. System-wide."
@@ -230,11 +226,13 @@ class Blockify(object):
         for channel in self.channels:
             subprocess.Popen(["amixer", "-qD", "pulse", "set", channel, state])
 
-#         if self.fallback_enabled:
-#             muted = self.is_muted()
-#             if state == "mute" and not muted:
-#                 log.error("Muting with pulse failed. Trying alsa.")
-#                 self.mute_mode = "alsa"
+        # TODO: Enable fallback mode for pulse.
+#         if not self.fallback_enabled:
+#             return
+#         muted = self.is_muted()
+#         if state == "mute" and not muted:
+#             log.error("Muting with pulse failed. Trying alsa.")
+#             self.mute_mode = "alsa"
 
 
     def pulsesink_mute(self, force):
@@ -275,11 +273,11 @@ class Blockify(object):
     def bind_signals(self):
         "Catch SIGINT and SIGTERM to exit cleanly & SIGUSR1 to block a song."
         signal.signal(signal.SIGUSR1, lambda sig, hdl: self.block_current())
-        signal.signal(signal.SIGTERM, lambda sig, hdl: self.shutdown())
-        signal.signal(signal.SIGINT, lambda sig, hdl: self.shutdown())
+        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
+        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
 
 
-    def shutdown(self):
+    def stop(self):
         log.info("Exiting safely. Bye.")
         # Save the list only if it changed during runtime.
         if self.blocklist != self.orglist:
@@ -322,8 +320,12 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
 
 def main():
     "Entry point for the CLI-version of Blockify."
-    args = docopt(__doc__, version="1.0")
-    init_logger(args["--log"], args["-v"], args["--quiet"])
+    try:
+        args = docopt(__doc__, version="1.0")
+        init_logger(args["--log"], args["-v"], args["--quiet"])
+    except NameError:
+        print "Please install docopt to use the CLI."
+        init_logger()
 
     blocklist = Blocklist()
     blockify = Blockify(blocklist)

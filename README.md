@@ -18,14 +18,11 @@ Blockify comes with a GUI which is tailored for the native linux version of Spot
 It does work with the Wine version but Play/Pause and Previous/Next will not be available.  
 Otherwise, the UI elements should be pretty obvious.
 
-You can, at all times, open your ~/.blockify_list in an editor of your choice to edit it in detail.  
-The "Open/Close Blocklist" element in the GUI is only meant for quick removals of items.
-
 ### CLI Usage
 
 `blockify -h` will print out a help text with available options.
 
-When you find a track you want to mute, add it to ~/.blockify_list either manually or with:
+When you find an ad you want to mute, add it to ~/.blockify_list either manually or with:
 ``` bash
 pkill -USR1 -f python2.*blockify
 ```
