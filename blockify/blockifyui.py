@@ -13,6 +13,8 @@ import blockifydbus
 # TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
+# TODO: Album label.
+# FIXME: Correct mutebutton state after disabling automute.
 
 
 log = logging.getLogger("gui")

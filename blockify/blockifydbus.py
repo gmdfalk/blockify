@@ -166,6 +166,14 @@ class BlockifyDBus(object):
                 return metadata["xesam:title"].encode("utf-8")
 
 
+    def get_song_album(self):
+        "Gets album of current song from metadata"
+        if self.is_running():
+            metadata = self.get_property("Metadata")
+            if metadata:
+                return metadata["xesam:album"].encode("utf-8")
+
+
     def get_song_artist(self):
         "Gets the artist of current song from metadata"
         if self.is_running():
@@ -281,8 +289,9 @@ def main():
             rating = spotify.get_property("Metadata")["xesam:autoRating"]
             artist = spotify.get_song_artist()
             title = spotify.get_song_title()
+            album = spotify.get_song_album()
             state = spotify.get_song_status()
-            print "{} - {}, {}m{}s, {} ({})".format(artist, title,
+            print "{} - {} ({}), {}m{}s, {} ({})".format(artist, title, album,
                                                     m, s, rating, state)
 
 
