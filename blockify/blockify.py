@@ -258,9 +258,9 @@ class Blockify(object):
             self.mute_mode = "pulse"  # Fall back to amixer mute mode.
             return
 
-        pattern = re.compile(r'(?: index|muted|application\.process\.id).*?(\w+)')
-        pids = pidof_out.decode('utf-8').strip().split(' ')
-        output = pacmd_out.decode('utf-8')
+        pattern = re.compile(r"(?: index|muted|application\.process\.id).*?(\w+)")
+        pids = pidof_out.decode("utf-8").strip().split(" ")
+        output = pacmd_out.decode("utf-8")
 
         # Every third element is a key, the value is the preceding two
         # elements in the form of a tuple - {pid : (index, muted)}
@@ -276,10 +276,10 @@ class Blockify(object):
 
         if muted == "no" and force:
             log.info("Muting {}.".format(self.current_song))
-            subprocess.call(["pacmd", "set-sink-input-mute", index, '1'])
+            subprocess.call(["pacmd", "set-sink-input-mute", index, "1"])
         elif muted == "yes" and not force:
             log.info("Unmuting.")
-            subprocess.call(["pacmd", "set-sink-input-mute", index, '0'])
+            subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
 
 
     def bind_signals(self):
@@ -336,8 +336,8 @@ def main():
         args = docopt(__doc__, version="1.0")
         init_logger(args["--log"], args["-v"], args["--quiet"])
     except NameError:
-        print "Please install docopt to use the CLI."
-        init_logger()
+        init_logger(logpath=None, loglevel=2, quiet=False)
+        log.error("Please install docopt to use the CLI.")
 
     blocklist = Blocklist()
     blockify = Blockify(blocklist)
@@ -350,7 +350,7 @@ def main():
         while gtk.events_pending():
             gtk.main_iteration(False)
         blockify.update()
-        time.sleep(1)
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":

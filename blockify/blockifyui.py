@@ -14,6 +14,8 @@ import blockifydbus
 # TODO: Different modes: minimal, full
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
 # TODO: Album label.
+# TODO: Differentiate better between Spotify not running and no song playing to
+# display in the status label.
 # FIXME: Correct mutebutton state after disabling automute.
 
 
@@ -206,7 +208,7 @@ class BlockifyUI(gtk.Window):
 
 
     def update(self):
-        "Main GUI loop."
+        "Main GUI loop, 250ms interval (self.update_interval)."
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
@@ -450,7 +452,7 @@ class BlockifyUI(gtk.Window):
 def main():
     "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
-    blockify.init_logger(logpath=None, loglevel=4, quiet=False)
+    blockify.init_logger(logpath=None, loglevel=2, quiet=False)
     ui = BlockifyUI()
     gtk.main()
 
