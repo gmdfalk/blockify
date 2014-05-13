@@ -252,7 +252,7 @@ class BlockifyUI(gtk.Window):
         song = self.b.current_song
         # For whatever reason, Spotify doesn't use a normal hyphen but a
         # slightly longer one. This is its unicode code point.
-        delimiter = u"\u2013"
+        delimiter = u"\u2013"  # \xe2\x80\x93 is the bytestring.
 
         # We prefer the current_song variable as source for artist, title but
         # should that fail, try getting those from DBus.
