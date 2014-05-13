@@ -335,6 +335,7 @@ class BlockifyUI(gtk.Window):
     def bind_signals(self):
         "Binds SIGTERM, SIGINT and SIGUSR1 to custom actions."
         signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())
+        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.b.unblock_current())
         signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
         signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
 

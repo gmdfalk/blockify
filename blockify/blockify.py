@@ -285,6 +285,7 @@ class Blockify(object):
     def bind_signals(self):
         "Catch SIGINT and SIGTERM to exit cleanly & SIGUSR1 to block a song."
         signal.signal(signal.SIGUSR1, lambda sig, hdl: self.block_current())
+        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.unblock_current())
         signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
         signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
 

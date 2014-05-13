@@ -22,12 +22,18 @@ Otherwise, the UI elements should be pretty obvious.
 
 `blockify -h` will print out a help text with available options.
 
-When you find an ad you want to mute, add it to ~/.blockify_list either manually or with:
+When you find a song you want to mute, add it to ~/.blockify_list either manually or with:
 ``` bash
 pkill -USR1 -f python2.*blockify
 ```
 
-This command will remove the last added entry:
+Similarly, to unblock a song, you can either remove it manually from the textfile or send SIGUSR2:
+``` bash
+pkill -USR2 -f python2.*blockify
+```
+Note that this will only work for unedited block entries.  
+
+Alternatively, this command will remove the last added entry from the blocklist:
 ``` bash
 sed -ie '$d' ~/.blockify_list
 ```
