@@ -145,14 +145,16 @@ class Blockify(object):
 
         # Object list of windows in screen.
         windows = screen.get_windows()
+
         # Return the actual list of windows or an empty list.
-        return [win.get_icon_name() for win in windows if len(windows)]
+        windownames = [win.get_icon_name() for win in windows if len(windows)]
+        return windownames
 
     def get_current_song(self):
         "Checks if a Spotify window exists and returns the current songname."
         pipe = self.get_windows()
         for line in pipe:
-            if line.find("Spotify - ") >= 0:
+            if line.startswith("Spotify - "):
                 # Remove "Spotify - " and return the rest of the songname.
                 return " ".join(line.split()[2:])
 
