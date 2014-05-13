@@ -47,7 +47,6 @@ class Blocklist(list):
         self.extend(self.load())
         self.timestamp = self.get_timestamp()
 
-
     def append(self, item):
         "Overloading list.append to automatically save the list to a file."
         # Only allow nonempty strings.
@@ -58,7 +57,6 @@ class Blocklist(list):
         super(Blocklist, self).append(item)
         self.save()
 
-
     def remove(self, item):
         log.info("Removing {} from {}.".format(item, self.location))
         try:
@@ -67,10 +65,8 @@ class Blocklist(list):
         except ValueError as e:
             log.warn("Could not remove {} from blocklist: {}".format(item, e))
 
-
     def get_timestamp(self):
         return os.path.getmtime(self.location)
-
 
     def load(self):
         log.debug("Loading blockfile from {}.".format(self.location))
@@ -82,7 +78,6 @@ class Blocklist(list):
                 blocklist = f.read()
 
         return [i for i in blocklist.split("\n") if i]
-
 
     def save(self):
         log.debug("Saving blocklist to {}.".format(self.location))
@@ -111,18 +106,14 @@ class Blockify(object):
 
         log.info("Blockify initialized.")
 
-
     @property
     def automute(self):
-#         log.debug("Automute is: {}.".format(self._automute))
         return self._automute
-
 
     @automute.setter
     def automute(self, boolean):
         log.debug("Setting automute to: {}.".format(boolean))
         self._automute = boolean
-
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
@@ -147,7 +138,6 @@ class Blockify(object):
 
         return False
 
-
     def get_windows(self):
         "Libwnck list of currently open windows."
         # Get the current screen.
@@ -157,7 +147,6 @@ class Blockify(object):
         windows = screen.get_windows()
         # Return the actual list of windows or an empty list.
         return [win.get_icon_name() for win in windows if len(windows)]
-
 
     def get_current_song(self):
         "Checks if a Spotify window exists and returns the current songname."
@@ -170,11 +159,9 @@ class Blockify(object):
         # No song playing, so return an empty string.
         return ""
 
-
     def block_current(self):
         if self.current_song:
             self.blocklist.append(self.current_song)
-
 
     def unblock_current(self):
         if self.current_song:
@@ -184,7 +171,6 @@ class Blockify(object):
                 log.debug("Unable to unblock {}: {}".format(self.current_song,
                                                             e))
 
-
     def get_channels(self):
         channel_list = ["Master"]
         amixer_output = subprocess.check_output("amixer")
@@ -193,17 +179,14 @@ class Blockify(object):
 
         return channel_list
 
-
     def toggle_mute(self, force=False):
         mutemethod = getattr(self, self.mute_mode + "_mute", None)
         mutemethod(force)
-
 
     def is_muted(self):
         master = subprocess.check_output(["amixer", "get", "Master"])
 
         return True if "[off]" in master else False
-
 
     def get_state(self, force):
         muted = self.is_muted()
@@ -218,7 +201,6 @@ class Blockify(object):
 
         return state
 
-
     def alsa_mute(self, force):
         "Mute method for systems without Pulseaudio. Mutes sound system-wide."
         state = self.get_state(force)
@@ -228,7 +210,6 @@ class Blockify(object):
         for channel in self.channels:
             subprocess.Popen(["amixer", "-q", "set", channel, state])
 
-
     def pulse_mute(self, force):
         "Used if pulseaudio is installed but no sinks are found. System-wide."
         state = self.get_state(force)
@@ -237,7 +218,6 @@ class Blockify(object):
 
         for channel in self.channels:
             subprocess.Popen(["amixer", "-qD", "pulse", "set", channel, state])
-
         # TODO: Enable fallback mode for pulse.
 #         if not self.fallback_enabled:
 #             return
@@ -245,7 +225,6 @@ class Blockify(object):
 #         if state == "mute" and not muted:
 #             log.error("Muting with pulse failed. Trying alsa.")
 #             self.mute_mode = "alsa"
-
 
     def pulsesink_mute(self, force):
         "Finds spotify's audio sink and toggles its mute state."
@@ -281,14 +260,12 @@ class Blockify(object):
             log.info("Unmuting.")
             subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
 
-
     def bind_signals(self):
         "Catch SIGINT and SIGTERM to exit cleanly & SIGUSR1 to block a song."
         signal.signal(signal.SIGUSR1, lambda sig, hdl: self.block_current())
         signal.signal(signal.SIGUSR2, lambda sig, hdl: self.unblock_current())
         signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
         signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
-
 
     def stop(self):
         log.info("Exiting safely. Bye.")

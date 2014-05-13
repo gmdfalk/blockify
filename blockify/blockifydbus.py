@@ -57,25 +57,21 @@ class BlockifyDBus(object):
             self.proxy = None
             log.error("Spotify not found in DBus session. Is it running?")
 
-
     def is_running(self):
         "TODO: Make this not redundant"
         if self.spotify_path is None:
             return False
         return True
 
-
     def get_property(self, key):
         "Gets the value from any available property."
         if self.is_running():
             return self.properties.Get(self.player_path, key)
 
-
     def set_property(self, key, value):
         "Sets the value for any available property."
         if self.is_running():
             return self.properties.Set(self.player_path, key, value)
-
 
     def playpause(self):
         "Toggles the current song between Play and Pause."
@@ -87,7 +83,6 @@ class BlockifyDBus(object):
             else:
                 log.warn("Cannot Play/Pause")
 
-
     def play(self):
         "DEFUNCT: Tries to play the current title."
         if self.is_running():
@@ -97,12 +92,10 @@ class BlockifyDBus(object):
             else:
                 log.warn("Cannot Play")
 
-
     def stop(self):
         "Tries to stop playback. PlayPause is probably preferable."
         if self.is_running():
             self.player.Stop()
-
 
     def next(self):
         "Tries to skip to next song."
@@ -113,7 +106,6 @@ class BlockifyDBus(object):
             else:
                 log.warn("Cannot Go Next")
 
-
     def prev(self):
         "Tries to go back to last song."
         if self.is_running():
@@ -123,16 +115,13 @@ class BlockifyDBus(object):
             else:
                 log.warn("Cannot Go Previous.")
 
-
     def set_position(self, track, position):
         if self.is_running():
             self.player.SetPosition(track, position)
 
-
     def open_uri(self, uri):
         if self.is_running():
             self.player.OpenUri(uri)
-
 
     def seek(self, seconds):
         "DEFUNCT: Calls seek method."
@@ -143,12 +132,10 @@ class BlockifyDBus(object):
             else:
                 log.warn("Cannot Seek.")
 
-
     def get_song_status(self):
         "Get current PlaybackStatus (Paused/Playing...)."
         if self.is_running():
             return self.get_property("PlaybackStatus")
-
 
     def get_song_length(self):
         "Gets the length of current song from metadata (in seconds)."
@@ -157,14 +144,12 @@ class BlockifyDBus(object):
             if metadata:
                 return int(metadata["mpris:length"] / 1000000)
 
-
     def get_song_title(self):
         "Gets title of current song from metadata"
         if self.is_running():
             metadata = self.get_property("Metadata")
             if metadata:
                 return metadata["xesam:title"].encode("utf-8")
-
 
     def get_song_album(self):
         "Gets album of current song from metadata"
@@ -173,14 +158,12 @@ class BlockifyDBus(object):
             if metadata:
                 return metadata["xesam:album"].encode("utf-8")
 
-
     def get_song_artist(self):
         "Gets the artist of current song from metadata"
         if self.is_running():
             metadata = self.get_property("Metadata")
             if metadata:
                 return str(metadata["xesam:artist"][0])
-
 
     def print_info(self):
         "Print all the DBus info we can get our hands on."
@@ -292,7 +275,7 @@ def main():
             album = spotify.get_song_album()
             state = spotify.get_song_status()
             print "{} - {} ({}), {}m{}s, {} ({})".format(artist, title, album,
-                                                    m, s, rating, state)
+                                                         m, s, rating, state)
 
 
 if __name__ == "__main__":

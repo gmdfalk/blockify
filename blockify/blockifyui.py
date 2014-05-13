@@ -57,7 +57,6 @@ class Notepad(gtk.Window):
         tvadi.value = 500
         tvadi.set_value(960)
 
-
     def create_layout(self):
         vbox = gtk.VBox()
         textbox = gtk.VBox()
@@ -74,7 +73,6 @@ class Notepad(gtk.Window):
 
         return vbox
 
-
     def create_keybinds(self):
         "Register Ctrl+Q/W to quit and Ctrl+S to save the blocklist."
         quit_group = gtk.AccelGroup()
@@ -89,19 +87,16 @@ class Notepad(gtk.Window):
                                  gtk.ACCEL_LOCKED, self.save)
         self.add_accel_group(save_group)
 
-
     def destroy(self, *args):
         "Overloading destroy to untoggle the Open List button."
         super(Notepad, self).destroy()
         self.parentw.togglelist.set_active(False)
-
 
     def open_file(self, *args):
         textbuffer = self.textview.get_buffer()
         with codecs.open(self.location, "r", encoding="utf-8") as f:
             textbuffer.set_text(f.read())
         self.set_title(self.location)
-
 
     def save(self, *args):
         textbuffer = self.textview.get_buffer()
@@ -148,7 +143,6 @@ class BlockifyUI(gtk.Window):
         self.start()
         self.show_all()
 
-
     def init_window(self):
         basedir = os.path.dirname(os.path.realpath(__file__))
         self.muteofficon = os.path.join(basedir, "data/not_muted.png")
@@ -159,7 +153,6 @@ class BlockifyUI(gtk.Window):
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
         self.set_default_size(220, 240)
-
 
     def create_buttons(self):
         # Block/Unblock button.
@@ -189,7 +182,6 @@ class BlockifyUI(gtk.Window):
         self.toggleautomute.unset_flags(gtk.CAN_FOCUS)
         self.toggleautomute.connect("clicked", self.on_toggleautomute)
 
-
     def create_layout(self):
         vbox = gtk.VBox()
         vbox.add(self.artistlabel)
@@ -205,7 +197,6 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.toggleautomute)
         vbox.add(self.togglelist)
         return vbox
-
 
     def update(self):
         "Main GUI loop, 250ms interval (self.update_interval)."
@@ -225,7 +216,6 @@ class BlockifyUI(gtk.Window):
         # The glib.timeout loop will only break if we return False here.
         return True
 
-
     def update_songinfo(self):
         # Grab some useful information from DBus.
         try:
@@ -238,7 +228,6 @@ class BlockifyUI(gtk.Window):
             self.songstatus = ""
             self.use_dbus = False
 
-
     def update_labels(self):
         if self.spotify and self.use_dbus:
             self.statuslabel.set_text(self.get_status_text())
@@ -246,7 +235,6 @@ class BlockifyUI(gtk.Window):
         artist, title = self.format_current_song()
         self.artistlabel.set_text(artist)
         self.titlelabel.set_text(title)
-
 
     def update_togglebuttons(self):
         # Correct the state of the Block/Unblock toggle button.
@@ -259,7 +247,6 @@ class BlockifyUI(gtk.Window):
         if self.editor:
             if not self.editor.get_visible() and self.togglelist.get_active():
                 self.togglelist.set_active(False)
-
 
     def format_current_song(self):
         song = self.b.current_song
@@ -286,7 +273,6 @@ class BlockifyUI(gtk.Window):
 
         return artist, title
 
-
     def get_status_text(self):
         status = ""
         if self.spotify and self.use_dbus:
@@ -304,7 +290,6 @@ class BlockifyUI(gtk.Window):
 
         return status
 
-
     def connect_dbus(self):
         try:
             self.spotify = blockifydbus.BlockifyDBus()
@@ -313,7 +298,6 @@ class BlockifyUI(gtk.Window):
                       " will be unavailable ({}).".format(e))
             self.spotify = None
             self.use_dbus = False
-
 
     def start(self):
         "Start blockify and the main update routine."
@@ -330,8 +314,6 @@ class BlockifyUI(gtk.Window):
         glib.timeout_add(self.update_interval, self.update)
         log.info("Blockify-UI started.")
 
-
-
     def bind_signals(self):
         "Binds SIGTERM, SIGINT and SIGUSR1 to custom actions."
         signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())
@@ -339,13 +321,11 @@ class BlockifyUI(gtk.Window):
         signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
         signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
 
-
     def stop(self, *args):
         "Cleanly shut down, unmuting sound and saving the blocklist."
         self.b.stop()
         log.debug("Exiting GUI.")
         gtk.main_quit()
-
 
     def on_toggleblock(self, widget):
         # Block the blockbutton if blockbutton-blocking togglebuttons are toggled.
@@ -369,7 +349,6 @@ class BlockifyUI(gtk.Window):
                 self.set_title("Blockify")
                 self.block_toggled = False
 
-
     def on_toggleautomute(self, widget):
         if widget.get_active():
             self.set_title("Blockify (inactive)")
@@ -388,7 +367,6 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Disable AutoMute")
             if not self.mute_toggled:
                 self.toggleblock.set_label("Block")
-
 
     def on_togglemute(self, widget):
         if self.block_toggled:
@@ -413,7 +391,6 @@ class BlockifyUI(gtk.Window):
                 self.set_title("Blockify")
                 self.toggleblock.set_label("Block")
 
-
     def on_togglelist(self, widget):
         if widget.get_active():
             widget.set_label("Close List")
@@ -422,7 +399,6 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Open List")
             if self.editor:
                 self.editor.destroy()
-
 
     def on_toggleplay(self, widget):
         # Try to connect to DBus if it failed before.
@@ -435,13 +411,11 @@ class BlockifyUI(gtk.Window):
                 widget.set_label("Pause")
             self.spotify.playpause()
 
-
     def on_nextsong(self, widget):
         if not self.spotify:
             self.connect_dbus()
         if self.spotify and self.use_dbus:
             self.spotify.next()
-
 
     def on_prevsong(self, widget):
         if not self.spotify:
