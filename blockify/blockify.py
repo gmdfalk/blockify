@@ -39,6 +39,8 @@ log = logging.getLogger("main")
 
 class Blocklist(list):
     "Inheriting from list type is a bad idea. Let's see what happens."
+    # Could subclass UserList.UserList here instead which inherits from
+    # collections.MutableSequence. In Python3 it's collections.UserList.
 
     def __init__(self):
         super(Blocklist, self).__init__()
