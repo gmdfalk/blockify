@@ -179,17 +179,21 @@ class Blockify(object):
         amixer_output = subprocess.check_output("amixer")
         if "'Speaker',0" in amixer_output:
             channel_list.append("Speaker")
+        if "'Headphone',0" in amixer_output:
+            channel_list.append("Headphone")
 
         return channel_list
 
     def toggle_mute(self, force=False):
-        mutemethod = getattr(self, self.mute_mode + "_mute", None)
+        mutemethod = getattr(self, self.mute_mode + "_mute")
         mutemethod(force)
 
     def is_muted(self):
-        master = subprocess.check_output(["amixer", "get", "Master"])
-
-        return True if "[off]" in master else False
+        for channel in self.channels:
+            output = subprocess.check_output(["amixer", "get", channel])
+            if "[off]" in output:
+                return True
+        return False
 
     def get_state(self, force):
         muted = self.is_muted()
