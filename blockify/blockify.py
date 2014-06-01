@@ -91,21 +91,19 @@ class Blocklist(list):
 class Blockify(object):
 
     def __init__(self, blocklist):
+        self._automute = True
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.channels = self.get_channels()
-        self._automute = True
-        # If muting fails, switch to alternative mute_mode (sink>pulse>alsa).
-        self.fallback_enabled = True
         self.current_song = ""
 
         # Determine if we can use sinks or have to use alsa.
         try:
             devnull = open(os.devnull)
             subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
-            self.mute_mode = "pulsesink"
+            self.mutemethod = self.pulsesink_mute
         except (OSError, subprocess.CalledProcessError):
-            self.mute_mode = "alsa"
+            self.mutemethod = self.alsa_mute
 
         log.info("Blockify initialized.")
 
@@ -123,9 +121,11 @@ class Blockify(object):
         # It all relies on current_song.
         self.current_song = self.get_current_song()
 
+        # Manual control is enabled so we return here.
         if not self.automute:
             return
 
+        # No song playing, unmute.
         if not self.current_song:
             self.toggle_mute(2)
             return
@@ -191,8 +191,7 @@ class Blockify(object):
 
     def toggle_mute(self, mode=0):
         # 0 = automatic, 1 = force mute, 2 = force unmute
-        mutemethod = getattr(self, self.mute_mode + "_mute")
-        mutemethod(mode)
+        self.mutemethod(mode)
 
     def is_muted(self):
         for channel in self.channels:
@@ -205,9 +204,9 @@ class Blockify(object):
         muted = self.is_muted()
 
         state = None
-        if mode == 2 or not self.current_song:
+        if mode == 2 or (not self.current_song and muted):
             state = "unmute"
-        elif not muted and mode:
+        elif not muted and mode == 1:
             state = "mute"
             log.info("Muting {}.".format(self.current_song))
         elif muted and not mode:
@@ -233,13 +232,6 @@ class Blockify(object):
 
         for channel in self.channels:
             subprocess.Popen(["amixer", "-qD", "pulse", "set", channel, state])
-        # TODO: Enable fallback mode for pulse.
-#         if not self.fallback_enabled:
-#             return
-#         muted = self.is_muted()
-#         if state == "mute" and not muted:
-#             log.error("Muting with pulse failed. Trying alsa.")
-#             self.mute_mode = "alsa"
 
     def pulsesink_mute(self, mode):
         "Finds spotify's audio sink and toggles its mute state."
@@ -249,7 +241,7 @@ class Blockify(object):
         except subprocess.CalledProcessError:
             log.error("Sink or process not found. Is Pulse/Spotify running?")
             log.error("Resorting to amixer as mute method.")
-            self.mute_mode = "pulse"  # Fall back to amixer mute mode.
+            self.mutemethod = self.pulse_mute  # Fall back to amixer mute mode.
             return
 
         pattern = re.compile(r"(?: index|muted|application\.process\.id).*?(\w+)")
@@ -268,10 +260,10 @@ class Blockify(object):
         except IndexError:
             return
 
-        if mode == 2 or not self.current_song:
+        if mode == 2 or (not self.current_song and muted == "yes"):
             log.info("Forcing unmute.")
             subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
-        elif muted == "no" and mode:
+        elif muted == "no" and mode == 1:
             log.info("Muting {}.".format(self.current_song))
             subprocess.call(["pacmd", "set-sink-input-mute", index, "1"])
         elif muted == "yes" and not mode:
@@ -287,7 +279,6 @@ class Blockify(object):
 
     def stop(self):
         log.info("Exiting safely. Bye.")
-        self.automute = False
         # Save the list only if it changed during runtime.
         if self.blocklist != self.orglist:
             self.blocklist.save()

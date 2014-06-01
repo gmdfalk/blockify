@@ -17,6 +17,7 @@ import blockifydbus
 # TODO: Differentiate better between Spotify not running and no song playing to
 # display in the status label.
 # FIXME: Correct mutebutton state after disabling automute.
+# FIXME: Reconnect to DBus if it failed initially.
 
 
 log = logging.getLogger("gui")
@@ -121,11 +122,11 @@ class BlockifyUI(gtk.Window):
         self.block_toggled = False
         self.mute_toggled = False
         self.editor = None
-        # Set the GUI/Blockify update interval to 250ms. Increase this to
+        # Set the GUI/Blockify update interval to 500ms. Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
         # change the line to glib.timeout_add_seconds(2, self.update) or more.
-        self.update_interval = 250
+        self.update_interval = 500
 
         self.init_window()
 
@@ -311,6 +312,7 @@ class BlockifyUI(gtk.Window):
         self.b.toggle_mute()
         # Start and loop the main update routine once every 250ms.
         # To influence responsiveness or CPU usage, decrease/increase ms here.
+#         glib.timeout_add_seconds(1, self.update)
         glib.timeout_add(self.update_interval, self.update)
         log.info("Blockify-UI started.")
 
