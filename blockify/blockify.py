@@ -97,6 +97,7 @@ class Blockify(object):
         self._automute = True
         # If muting fails, switch to alternative mute_mode (sink>pulse>alsa).
         self.fallback_enabled = True
+        self.current_song = ""
 
         # Determine if we can use sinks or have to use alsa.
         try:
@@ -121,8 +122,13 @@ class Blockify(object):
         "Main loop. Checks for blocklist match and mutes accordingly."
         # It all relies on current_song.
         self.current_song = self.get_current_song()
+        print self.current_song
 
-        if not self.current_song or not self.automute:
+        if not self.automute:
+            return
+
+        if not self.current_song:
+            self.toggle_mute(2)
             return
 
         # Check if the blockfile has changed.
@@ -200,7 +206,7 @@ class Blockify(object):
         muted = self.is_muted()
 
         state = None
-        if mode == 2:
+        if mode == 2 or not self.current_song:
             state = "unmute"
         elif not muted and mode:
             state = "mute"
@@ -263,7 +269,7 @@ class Blockify(object):
         except IndexError:
             return
 
-        if mode == 2:
+        if mode == 2 or not self.current_song:
             log.info("Forcing unmute.")
             subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
         elif muted == "no" and mode:
@@ -282,6 +288,7 @@ class Blockify(object):
 
     def stop(self):
         log.info("Exiting safely. Bye.")
+        self.automute = False
         # Save the list only if it changed during runtime.
         if self.blocklist != self.orglist:
             self.blocklist.save()

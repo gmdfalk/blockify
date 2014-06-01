@@ -66,7 +66,10 @@ class BlockifyDBus(object):
     def get_property(self, key):
         "Gets the value from any available property."
         if self.is_running():
-            return self.properties.Get(self.player_path, key)
+            try:
+                return self.properties.Get(self.player_path, key)
+            except dbus.exceptions.DBusException:
+                log.error("Failed to get dbus property.")
 
     def set_property(self, key, value):
         "Sets the value for any available property."
