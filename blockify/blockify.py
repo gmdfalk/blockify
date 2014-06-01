@@ -122,7 +122,6 @@ class Blockify(object):
         "Main loop. Checks for blocklist match and mutes accordingly."
         # It all relies on current_song.
         self.current_song = self.get_current_song()
-        print self.current_song
 
         if not self.automute:
             return
