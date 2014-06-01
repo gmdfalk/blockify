@@ -376,7 +376,7 @@ class BlockifyUI(gtk.Window):
             self.set_icon_from_file(self.muteonicon)
             self.b.automute = False
             self.mute_toggled = True
-            self.b.toggle_mute(True)
+            self.b.toggle_mute(1)
             if not self.automute_toggled:
                 self.set_title("Blockify (muted)")
                 lbl = self.toggleblock.get_label()
@@ -385,7 +385,7 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Mute")
             self.set_icon_from_file(self.muteofficon)
             self.mute_toggled = False
-            self.b.toggle_mute(False)
+            self.b.toggle_mute(2)
             if not self.automute_toggled:
                 self.b.automute = True
                 self.set_title("Blockify")
