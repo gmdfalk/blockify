@@ -10,6 +10,8 @@ import glib
 import gtk
 
 import blockifydbus
+
+
 # TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
@@ -18,8 +20,6 @@ import blockifydbus
 # display in the status label.
 # FIXME: Correct mutebutton state after disabling automute.
 # FIXME: Reconnect to DBus if it failed initially.
-
-
 log = logging.getLogger("gui")
 
 

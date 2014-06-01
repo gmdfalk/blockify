@@ -67,6 +67,13 @@ class Blocklist(list):
         except ValueError as e:
             log.warn("Could not remove {} from blocklist: {}".format(item, e))
 
+    def find(self, song):
+        while (len(song) > 4):
+            for item in self:
+                if song in item:
+                    return item
+            song = song[:len(song) / 2]
+
     def get_timestamp(self):
         return os.path.getmtime(self.location)
 
@@ -173,11 +180,11 @@ class Blockify(object):
 
     def unblock_current(self):
         if self.current_song:
-            try:
-                self.blocklist.remove(self.current_song)
-            except ValueError as e:
-                log.debug("Unable to unblock {}: {}".format(self.current_song,
-                                                            e))
+            song = self.blocklist.find(self.current_song)
+            if song:
+                self.blocklist.remove(song)
+            else:
+                log.error("Not found in blocklist or block pattern too short.")
 
     def get_channels(self):
         channel_list = ["Master"]
