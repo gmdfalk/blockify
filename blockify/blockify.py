@@ -133,7 +133,7 @@ class Blockify(object):
 
         for i in self.blocklist:
             if i in self.current_song:
-                self.toggle_mute(True)
+                self.toggle_mute(1)
                 return True  # Return boolean to use as self.found in GUI.
         else:
             self.toggle_mute()
@@ -184,9 +184,10 @@ class Blockify(object):
 
         return channel_list
 
-    def toggle_mute(self, force=False):
+    def toggle_mute(self, mode=0):
+        # 0 = automatic, 1 = force mute, 2 = force unmute
         mutemethod = getattr(self, self.mute_mode + "_mute")
-        mutemethod(force)
+        mutemethod(mode)
 
     def is_muted(self):
         for channel in self.channels:
@@ -195,31 +196,33 @@ class Blockify(object):
                 return True
         return False
 
-    def get_state(self, force):
+    def get_state(self, mode):
         muted = self.is_muted()
 
         state = None
-        if not muted and force:
+        if mode == 2:
+            state = "unmute"
+        elif not muted and mode:
             state = "mute"
             log.info("Muting {}.".format(self.current_song))
-        elif muted and not force:
+        elif muted and not mode:
             state = "unmute"
             log.info("Unmuting.")
 
         return state
 
-    def alsa_mute(self, force):
+    def alsa_mute(self, mode):
         "Mute method for systems without Pulseaudio. Mutes sound system-wide."
-        state = self.get_state(force)
+        state = self.get_state(mode)
         if not state:
             return
 
         for channel in self.channels:
             subprocess.Popen(["amixer", "-q", "set", channel, state])
 
-    def pulse_mute(self, force):
+    def pulse_mute(self, mode):
         "Used if pulseaudio is installed but no sinks are found. System-wide."
-        state = self.get_state(force)
+        state = self.get_state(mode)
         if not state:
             return
 
@@ -233,7 +236,7 @@ class Blockify(object):
 #             log.error("Muting with pulse failed. Trying alsa.")
 #             self.mute_mode = "alsa"
 
-    def pulsesink_mute(self, force):
+    def pulsesink_mute(self, mode):
         "Finds spotify's audio sink and toggles its mute state."
         try:
             pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
@@ -260,10 +263,13 @@ class Blockify(object):
         except IndexError:
             return
 
-        if muted == "no" and force:
+        if mode == 2:
+            log.info("Forcing unmute.")
+            subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
+        elif muted == "no" and mode:
             log.info("Muting {}.".format(self.current_song))
             subprocess.call(["pacmd", "set-sink-input-mute", index, "1"])
-        elif muted == "yes" and not force:
+        elif muted == "yes" and not mode:
             log.info("Unmuting.")
             subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
 
@@ -280,7 +286,7 @@ class Blockify(object):
         if self.blocklist != self.orglist:
             self.blocklist.save()
         # Unmute before exiting.
-        self.toggle_mute()
+        self.toggle_mute(2)
         sys.exit()
 
 
