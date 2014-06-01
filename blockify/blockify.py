@@ -144,7 +144,7 @@ class Blockify(object):
             self.blocklist.__init__()
 
         for i in self.blocklist:
-            if i in self.current_song:
+            if self.current_song.startswith(i):
                 self.toggle_mute(1)
                 return True  # Return boolean to use as self.found in GUI.
         else:
