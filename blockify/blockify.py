@@ -68,9 +68,9 @@ class Blocklist(list):
             log.warn("Could not remove {} from blocklist: {}".format(item, e))
 
     def find(self, song):
-        while (len(song) > 4):
+        while len(song) > 4:
             for item in self:
-                if song in item:
+                if item.startswith(song):
                     return item
             song = song[:len(song) / 2]
 
