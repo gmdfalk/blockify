@@ -306,6 +306,9 @@ class BlockifyUI(gtk.Window):
         # To influence responsiveness or CPU usage, decrease/increase ms here.
 #         glib.timeout_add_seconds(1, self.update)
         glib.timeout_add(self.update_interval, self.update)
+        # Initially correct the state of the autodetect button.
+        if self.b.autodetect:
+            self.toggleautodetect.set_active(True)
         log.info("Blockify-UI started.")
 
     def bind_signals(self):

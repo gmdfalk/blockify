@@ -99,9 +99,13 @@ class Blocklist(list):
 class Blockify(object):
 
     def __init__(self, blocklist):
+        try:
+            subprocess.check_output(["pidof", "spotify"])
+        except subprocess.CalledProcessError:
+            log.error("No spotify process found.")
+            sys.exit()
         self._automute = True
         self.connect_dbus()
-        self.dbus_song = None
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.channels = self.get_channels()
@@ -130,15 +134,14 @@ class Blockify(object):
             self._autodetect = False
 
     def is_ad_playing(self):
-        return self.current_song != self.dbus_song
+        """Compares the wnck song info to dbus song info."""
+        return self.current_song != self.dbus.get_song_artist() + \
+            u" \u2013 " + self.dbus.get_song_title()
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
         # It all relies on current_song.
         self.current_song = self.get_current_song()
-        if self.use_dbus:
-            self.dbus_song = self.dbus.get_song_artist() + u" \u2013 " + \
-            self.dbus.get_song_title()
 
         # Manual control is enabled so we return here.
         if not self.automute:
@@ -260,9 +263,8 @@ class Blockify(object):
         "Finds spotify's audio sink and toggles its mute state."
         try:
             pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
-            pidof_out = subprocess.check_output(["pidof", "spotify"])
         except subprocess.CalledProcessError:
-            log.error("Sink or process not found. Is Pulse/Spotify running?")
+            log.error("Sink or process not found. Is Pulse running?")
             log.error("Resorting to amixer as mute method.")
             self.mutemethod = self.pulse_mute  # Fall back to amixer mute mode.
             return

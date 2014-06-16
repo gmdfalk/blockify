@@ -19,6 +19,8 @@ Otherwise, the UI elements should be pretty obvious.
 
 ### CLI Usage
 
+New with v1.1: Automatic ad detection (won't work for the wine version)
+
 `blockify -h` will print out a help text with available options.
 
 When you find a song you want to mute, add it to ~/.blockify_list either manually or with:
