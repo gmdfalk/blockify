@@ -99,6 +99,12 @@ class Blocklist(list):
 class Blockify(object):
 
     def __init__(self, blocklist):
+        try:
+            # Test if spotify is running
+            subprocess.check_output(["pidof", "spotify"])
+        except subprocess.CalledProcessError:
+            log.error("Process not found. Is Spotify running?")
+            sys.exit()
         self._automute = True
         self.connect_dbus()
         self.dbus_song = None
