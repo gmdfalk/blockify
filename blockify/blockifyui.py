@@ -117,7 +117,6 @@ class BlockifyUI(gtk.Window):
     def __init__(self):
         super(BlockifyUI, self).__init__()
 
-        self.use_dbus = True
         self.automute_toggled = False
         self.block_toggled = False
         self.mute_toggled = False
@@ -183,6 +182,10 @@ class BlockifyUI(gtk.Window):
         self.toggleautomute.unset_flags(gtk.CAN_FOCUS)
         self.toggleautomute.connect("clicked", self.on_toggleautomute)
 
+        # Disable/Enable autodetect
+        self.toggleautodetect = gtk.ToggleButton("Enable Autodetection")
+        self.toggleautodetect.connect("clicked", self.on_toggleautodetect)
+
     def create_layout(self):
         vbox = gtk.VBox()
         vbox.add(self.artistlabel)
@@ -197,6 +200,7 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.togglemute)
         vbox.add(self.toggleautomute)
         vbox.add(self.togglelist)
+        vbox.add(self.toggleautodetect)
         return vbox
 
     def update(self):
@@ -220,17 +224,17 @@ class BlockifyUI(gtk.Window):
     def update_songinfo(self):
         # Grab some useful information from DBus.
         try:
-            self.songstatus = self.spotify.get_song_status()
+            self.songstatus = self.b.dbus.get_song_status()
             if self.songstatus:
-                self.use_dbus = True
+                self.b.use_dbus = True
         except (DBusException, AttributeError):
             # If we can't get a songstatus, we have to assume DBus is not
             # working correctly.
             self.songstatus = ""
-            self.use_dbus = False
+            self.b.use_dbus = False
 
     def update_labels(self):
-        if self.spotify and self.use_dbus:
+        if self.b.dbus and self.b.use_dbus:
             self.statuslabel.set_text(self.get_status_text())
 
         artist, title = self.format_current_song()
@@ -261,24 +265,24 @@ class BlockifyUI(gtk.Window):
             artist, title = song.split(" {} ".format(delimiter))
         except (ValueError, IndexError):
             try:
-                artist = self.spotify.get_song_artist()
-                title = self.spotify.get_song_title()
+                artist = self.b.dbus.get_song_artist()
+                title = self.b.dbus.get_song_title()
             except AttributeError:
                 artist, title = song, "No song playing?"
-                self.use_dbus = False
+                self.b.use_dbus = False
 
         # Sometimes song.split returns None, catch it here.
         if artist is None or title is None:
             artist, title = song, "No song playing?"
-            self.use_dbus = False
+            self.b.use_dbus = False
 
         return artist, title
 
     def get_status_text(self):
         status = ""
-        if self.spotify and self.use_dbus:
+        if self.b.dbus and self.b.use_dbus:
             try:
-                songlength = self.spotify.get_song_length()
+                songlength = self.b.dbus.get_song_length()
             except (TypeError, DBusException) as e:
                 log.error("Cannot use DBus. Some features (PlayPause etc.)"
                           " will be unavailable ({}).".format(e))
@@ -286,25 +290,13 @@ class BlockifyUI(gtk.Window):
 
             if songlength:
                 m, s = divmod(songlength, 60)
-                r = self.spotify.get_property("Metadata")["xesam:autoRating"]
+                r = self.b.dbus.get_property("Metadata")["xesam:autoRating"]
                 status = "{}m{}s, {} ({})".format(m, s, r, self.songstatus)
 
         return status
 
-    def connect_dbus(self):
-        try:
-            self.spotify = blockifydbus.BlockifyDBus()
-        except Exception as e:
-            log.error("Cannot connect to DBus. Some features (PlayPause etc.)"
-                      " will be unavailable ({}).".format(e))
-            self.spotify = None
-            self.use_dbus = False
-
     def start(self):
         "Start blockify and the main update routine."
-        # Try to find a Spotify process in the current DBus session.
-        self.connect_dbus()
-
         # Load the blocklist, start blockify, trap some signals and unmute.
         blocklist = blockify.Blocklist()
         self.b = blockify.Blockify(blocklist)
@@ -370,6 +362,16 @@ class BlockifyUI(gtk.Window):
             if not self.mute_toggled:
                 self.toggleblock.set_label("Block")
 
+    def on_toggleautodetect(self, widget):
+        if widget.get_active():
+            self.b.autodetect = True
+            widget.set_label("Disable Autodetection")
+            log.info("Enabled ad autodetection.")
+        else:
+            widget.set_label("Enable Autodetection")
+            self.b.autodetect = False
+            log.info("Disabled autodetection.")
+
     def on_togglemute(self, widget):
         if self.block_toggled:
             return
@@ -404,32 +406,32 @@ class BlockifyUI(gtk.Window):
 
     def on_toggleplay(self, widget):
         # Try to connect to DBus if it failed before.
-        if not self.spotify:
+        if not self.b.dbus:
             self.connect_dbus()
-        if self.spotify and self.use_dbus:
+        if self.b.dbus and self.b.use_dbus:
             if self.songstatus == "Playing":
                 widget.set_label("Play")
             else:
                 widget.set_label("Pause")
-            self.spotify.playpause()
+            self.b.dbus.playpause()
 
     def on_nextsong(self, widget):
-        if not self.spotify:
-            self.connect_dbus()
-        if self.spotify and self.use_dbus:
-            self.spotify.next()
+        if not self.b.dbus:
+            self.b.connect_dbus()
+        if self.b.dbus and self.b.use_dbus:
+            self.b.dbus.next()
 
     def on_prevsong(self, widget):
-        if not self.spotify:
-            self.connect_dbus()
-        if self.spotify and self.use_dbus:
-            self.spotify.prev()
+        if not self.b.dbus:
+            self.b.connect_dbus()
+        if self.b.dbus and self.b.use_dbus:
+            self.b.dbus.prev()
 
 
 def main():
     "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
-    blockify.init_logger(logpath=None, loglevel=2, quiet=False)
+    blockify.init_logger(logpath=None, loglevel=3, quiet=False)
     ui = BlockifyUI()
     gtk.main()
 

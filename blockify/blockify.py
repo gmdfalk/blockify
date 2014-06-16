@@ -25,6 +25,7 @@ import time
 import gtk
 import pygtk
 import wnck
+import blockifydbus
 
 
 try:
@@ -99,6 +100,8 @@ class Blockify(object):
 
     def __init__(self, blocklist):
         self._automute = True
+        self.connect_dbus()
+        self.dbus_song = None
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.channels = self.get_channels()
@@ -114,19 +117,29 @@ class Blockify(object):
 
         log.info("Blockify initialized.")
 
-    @property
-    def automute(self):
-        return self._automute
+    def connect_dbus(self):
+        try:
+            self.dbus = blockifydbus.BlockifyDBus()
+            self.use_dbus = True
+            self._autodetect = True
+        except Exception as e:
+            log.error("Cannot connect to DBus. Autodetection and Player Controls"
+                      " will be unavailable ({}).".format(e))
+            self.dbus = None
+            self.use_dbus = False
+            self._autodetect = False
 
-    @automute.setter
-    def automute(self, boolean):
-        log.debug("Setting automute to: {}.".format(boolean))
-        self._automute = boolean
+    def is_ad_playing(self):
+        print self.current_song != self.dbus_song, self.current_song, "to dbus", self.dbus_song
+        return self.current_song != self.dbus_song
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
         # It all relies on current_song.
         self.current_song = self.get_current_song()
+        if self.use_dbus:
+            self.dbus_song = self.dbus.get_song_artist() + u" \u2013 " + \
+            self.dbus.get_song_title()
 
         # Manual control is enabled so we return here.
         if not self.automute:
@@ -146,10 +159,16 @@ class Blockify(object):
         for i in self.blocklist:
             if self.current_song.startswith(i):
                 self.toggle_mute(1)
+                print "block entry found!"
                 return True  # Return boolean to use as self.found in GUI.
-        else:
-            self.toggle_mute()
 
+        if self.autodetect and self.use_dbus:
+            if self.is_ad_playing():
+                self.toggle_mute(1)
+                print "ad detected!"
+                return True
+
+        self.toggle_mute()
         return False
 
     def get_windows(self):
@@ -175,6 +194,7 @@ class Blockify(object):
         return ""
 
     def block_current(self):
+        print "Trying to block", self.current_song
         if self.current_song:
             self.blocklist.append(self.current_song)
 
@@ -292,6 +312,24 @@ class Blockify(object):
         # Unmute before exiting.
         self.toggle_mute(2)
         sys.exit()
+
+    @property
+    def automute(self):
+        return self._automute
+
+    @automute.setter
+    def automute(self, boolean):
+        log.debug("Setting automute to: {}.".format(boolean))
+        self._automute = boolean
+
+    @property
+    def autodetect(self):
+        return self._autodetect
+
+    @autodetect.setter
+    def autodetect(self, boolean):
+        log.debug("Setting autodetect to: {}.".format(boolean))
+        self._autodetect = boolean
 
 
 def init_logger(logpath=None, loglevel=1, quiet=False):
