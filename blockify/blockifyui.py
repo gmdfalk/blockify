@@ -431,7 +431,7 @@ class BlockifyUI(gtk.Window):
 def main():
     "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
-    blockify.init_logger(logpath=None, loglevel=3, quiet=False)
+    blockify.init_logger(logpath=None, loglevel=2, quiet=False)
     ui = BlockifyUI()
     gtk.main()
 

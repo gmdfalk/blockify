@@ -362,7 +362,7 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
 def main():
     "Entry point for the CLI-version of Blockify."
     try:
-        args = docopt(__doc__, version="1.0")
+        args = docopt(__doc__, version="1.1")
         init_logger(args["--log"], args["-v"], args["--quiet"])
     except NameError:
         init_logger(logpath=None, loglevel=2, quiet=False)
