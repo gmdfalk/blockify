@@ -130,7 +130,6 @@ class Blockify(object):
             self._autodetect = False
 
     def is_ad_playing(self):
-        print self.current_song != self.dbus_song, self.current_song, "to dbus", self.dbus_song
         return self.current_song != self.dbus_song
 
     def update(self):
@@ -150,6 +149,11 @@ class Blockify(object):
             self.toggle_mute(2)
             return
 
+        if self.autodetect and self.use_dbus:
+            if self.is_ad_playing():
+                self.toggle_mute(1)
+                return True
+
         # Check if the blockfile has changed.
         current_timestamp = self.blocklist.get_timestamp()
         if self.blocklist.timestamp != current_timestamp:
@@ -159,14 +163,7 @@ class Blockify(object):
         for i in self.blocklist:
             if self.current_song.startswith(i):
                 self.toggle_mute(1)
-                print "block entry found!"
                 return True  # Return boolean to use as self.found in GUI.
-
-        if self.autodetect and self.use_dbus:
-            if self.is_ad_playing():
-                self.toggle_mute(1)
-                print "ad detected!"
-                return True
 
         self.toggle_mute()
         return False
@@ -194,7 +191,6 @@ class Blockify(object):
         return ""
 
     def block_current(self):
-        print "Trying to block", self.current_song
         if self.current_song:
             self.blocklist.append(self.current_song)
 
