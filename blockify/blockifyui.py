@@ -369,8 +369,7 @@ class BlockifyUI(gtk.Window):
         if widget.get_active():
             if not self.b.dbus:
                 self.b.connect_dbus()
-            else:
-                self.b.autodetect = True
+            self.b.enable_dbus()
             widget.set_label("Disable Autodetection")
             log.info("Enabled ad autodetection.")
         else:

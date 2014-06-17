@@ -106,6 +106,7 @@ class Blockify(object):
             sys.exit()
         self._automute = True
         self.connect_dbus()
+        self.enable_dbus()
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.channels = self.get_channels()
@@ -124,12 +125,12 @@ class Blockify(object):
     def connect_dbus(self):
         try:
             self.dbus = blockifydbus.BlockifyDBus()
-
         except Exception as e:
             log.error("Cannot connect to DBus. Autodetection and Player Controls"
                       " will be unavailable ({}).".format(e))
             self.dbus = None
 
+    def enable_dbus(self):
         if self.dbus.is_running():
             self.use_dbus = True
             self._autodetect = True
