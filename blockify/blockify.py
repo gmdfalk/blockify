@@ -124,12 +124,16 @@ class Blockify(object):
     def connect_dbus(self):
         try:
             self.dbus = blockifydbus.BlockifyDBus()
-            self.use_dbus = True
-            self._autodetect = True
+
         except Exception as e:
             log.error("Cannot connect to DBus. Autodetection and Player Controls"
                       " will be unavailable ({}).".format(e))
             self.dbus = None
+
+        if self.dbus.is_running():
+            self.use_dbus = True
+            self._autodetect = True
+        else:
             self.use_dbus = False
             self._autodetect = False
 
