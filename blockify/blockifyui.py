@@ -367,13 +367,16 @@ class BlockifyUI(gtk.Window):
 
     def on_toggleautodetect(self, widget):
         if widget.get_active():
-            self.b.autodetect = True
+            if not self.b.dbus:
+                self.b.connect_dbus()
+            else:
+                self.b.autodetect = True
             widget.set_label("Disable Autodetection")
             log.info("Enabled ad autodetection.")
         else:
             widget.set_label("Enable Autodetection")
             self.b.autodetect = False
-            log.info("Disabled autodetection.")
+            log.info("Disabled ad autodetection.")
 
     def on_togglemute(self, widget):
         if self.block_toggled:
