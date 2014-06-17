@@ -31,7 +31,7 @@ import blockifydbus
 try:
     from docopt import docopt
 except ImportError:
-    print "ImportError: Please install docopt to use the CLI."
+    print "ImportError: Please install docopt to use the blockify CLI."
 
 
 pygtk.require("2.0")
@@ -100,7 +100,7 @@ class Blockify(object):
 
     def __init__(self, blocklist):
         try:
-            subprocess.check_output(["pidof", "spotify"])
+            subprocess.check_output(["pgrep", "spotify"])
         except subprocess.CalledProcessError:
             log.error("No spotify process found.")
             sys.exit()
