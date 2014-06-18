@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 """blockify
 
 Usage:
@@ -79,13 +80,14 @@ class Blocklist(list):
         return os.path.getmtime(self.location)
 
     def load(self):
-        log.debug("Loading blockfile from {}.".format(self.location))
+        log.info("Loading blockfile from {}.".format(self.location))
         try:
             with codecs.open(self.location, "r", encoding="utf-8") as f:
                 blocklist = f.read()
         except IOError:
             with codecs.open(self.location, "w+", encoding="utf-8") as f:
                 blocklist = f.read()
+            log.warn("No blockfile found. Created one.")
 
         return [i for i in blocklist.split("\n") if i]
 
@@ -106,7 +108,7 @@ class Blockify(object):
             sys.exit()
         self._automute = True
         self.connect_dbus()
-        self.enable_dbus()
+        self.try_enable_dbus()
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.channels = self.get_channels()
@@ -130,7 +132,7 @@ class Blockify(object):
                       " will be unavailable ({}).".format(e))
             self.dbus = None
 
-    def enable_dbus(self):
+    def try_enable_dbus(self):
         if self.dbus.is_running():
             self.use_dbus = True
             self._autodetect = True
@@ -138,7 +140,7 @@ class Blockify(object):
             self.use_dbus = False
             self._autodetect = False
 
-    def is_ad_playing(self):
+    def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
         return self.current_song != self.dbus.get_song_artist() + \
             u" \u2013 " + self.dbus.get_song_title()
@@ -158,12 +160,16 @@ class Blockify(object):
             return
 
         if self.autodetect and self.use_dbus:
-            if self.is_ad_playing():
+            if self.current_song_is_ad():
                 self.toggle_mute(1)
                 return True
 
         # Check if the blockfile has changed.
-        current_timestamp = self.blocklist.get_timestamp()
+        try:
+            current_timestamp = self.blocklist.get_timestamp()
+        except OSError:
+            self.blocklist.__init__()
+            current_timestamp = self.blocklist.timestamp
         if self.blocklist.timestamp != current_timestamp:
             log.info("Blockfile changed. Reloading.")
             self.blocklist.__init__()

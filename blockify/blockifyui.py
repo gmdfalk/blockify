@@ -95,8 +95,12 @@ class Notepad(gtk.Window):
 
     def open_file(self, *args):
         textbuffer = self.textview.get_buffer()
-        with codecs.open(self.location, "r", encoding="utf-8") as f:
-            textbuffer.set_text(f.read())
+        try:
+            with codecs.open(self.location, "r", encoding="utf-8") as f:
+                textbuffer.set_text(f.read())
+        except IOError:
+            with codecs.open(self.location, "w", encoding="utf-8"):
+                textbuffer.set_text("")
         self.set_title(self.location)
 
     def save(self, *args):
@@ -369,7 +373,7 @@ class BlockifyUI(gtk.Window):
         if widget.get_active():
             if not self.b.dbus:
                 self.b.connect_dbus()
-            self.b.enable_dbus()
+            self.b.try_enable_dbus()
             widget.set_label("Disable Autodetection")
             log.info("Enabled ad autodetection.")
         else:
