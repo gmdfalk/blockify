@@ -104,7 +104,7 @@ class Blockify(object):
         try:
             subprocess.check_output(["pgrep", "spotify"])
         except subprocess.CalledProcessError:
-            log.error("No spotify process found.")
+            log.error("No spotify process found. Exiting.")
             sys.exit()
         self._automute = True
         self.connect_dbus()
@@ -273,11 +273,16 @@ class Blockify(object):
     def pulsesink_mute(self, mode):
         "Finds spotify's audio sink and toggles its mute state."
         try:
+            pidof_out = None
+            pidof_out = subprocess.check_output(["pidof", "spotify"])
             pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
         except subprocess.CalledProcessError:
-            log.error("Sink or process not found. Is Pulse running?")
+            if not pidof_out:
+                log.error("(Native) Spotify process not found. Is it running?")
+                return
+            log.error("Spotify sink not found. Is Pulse running?")
             log.error("Resorting to amixer as mute method.")
-            self.mutemethod = self.pulse_mute  # Fall back to amixer mute mode.
+            self.mutemethod = self.pulse_mute  # Fall back to amixer mute.
             return
 
         pattern = re.compile(r"(?: index|muted|application\.process\.id).*?(\w+)")
