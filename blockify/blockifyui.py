@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import codecs
 import datetime
 import logging

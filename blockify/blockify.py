@@ -301,7 +301,7 @@ class Blockify(object):
         except IndexError:
             return
 
-        if mode == 2 or (not self.current_song and muted == "yes"):
+        if muted == "yes" and (mode == 2 or not self.current_song):
             log.info("Forcing unmute.")
             subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
         elif muted == "no" and mode == 1:
