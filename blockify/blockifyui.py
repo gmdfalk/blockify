@@ -166,7 +166,7 @@ class BlockifyUI(gtk.Window):
         self.togglemute.connect("clicked", self.on_togglemute)
 
         # Play/Pause button.
-        self.toggleplay = gtk.ToggleButton("Pause")
+        self.toggleplay = gtk.ToggleButton("Toggle Play/Pause")
         self.toggleplay.connect("clicked", self.on_toggleplay)
 
         # Open/Close Blocklist button.
