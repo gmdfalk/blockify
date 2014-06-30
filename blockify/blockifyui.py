@@ -10,9 +10,6 @@ import blockify
 import glib
 import gtk
 
-import blockifydbus
-
-
 # TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y

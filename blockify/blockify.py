@@ -142,8 +142,11 @@ class Blockify(object):
 
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
-        return self.current_song != self.dbus.get_song_artist() + \
+        try:
+            return self.current_song != self.dbus.get_song_artist() + \
             u" \u2013 " + self.dbus.get_song_title()
+        except TypeError:
+            return False
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
