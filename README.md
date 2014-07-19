@@ -5,17 +5,17 @@ It depends on gtk and wnck and will currently only work if Spotify is not minimi
 
 ### Installation
 Clone the repository with `git clone https://github.com/mikar/blockify`.  
-You can then either run the cli/gui directly or install it with `pip install .`. 
+You can then either run the cli/gui directly or install it with `pip install .`  
 Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/blockify/).
-Blockify comes with an example blockify_list which you may copy to ~/.blockify_list.  
-The list will quickly grow as you add your own entries. Keep in mind that you can edit the entries to broaden the matching pattern.  
+For the linux version of Spotify, blockify will automatically detect and block ads but it also comes with the option to complement or replace that functionality with a block list which will be saved as ~/.blockify_list.
+For the windows (wine) version of Spotify, you will have to use the block list as automatic detection is not supported.
+Keep in mind that you can edit the block list entries to broaden the matching pattern.  
 For instance, `Bloodhound Gang – The Bad Touch` will only block that song while `Blood` will block not only all Bloodhound Gang Songs but any artist whose name starts with "Blood".  
 
 ### GUI Usage
 ![ScreenShot](http://a.pomf.se/dzngqg.png)  
 Blockify comes with a GUI which is tailored for the native linux version of Spotify.  
 It does work with the Wine version but Play/Pause and Previous/Next will not be available.  
-Otherwise, the UI elements should be pretty obvious.
 
 ### CLI Usage
 
