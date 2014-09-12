@@ -295,8 +295,9 @@ class Blockify(object):
         # Every third element is a key, the value is the preceding two
         # elements in the form of a tuple - {pid : (index, muted)}
         info = pattern.findall(output)
-        idxd = {info[3 * n + 2]: (info[3 * n], info[3 * n + 1])
-                for n in range(len(info) // 3)}
+        info.sort()
+        mid = len(info) // 2
+        idxd = {info[mid] if len(info) % 2 else info[mid-1] : (info[0], info[-1])}
 
         try:
             pid = [k for k in idxd.keys() if k in pids][0]
