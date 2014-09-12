@@ -290,7 +290,7 @@ class Blockify(object):
 
         # Match muted and application.process.id values.
         pattern = re.compile(r"(?:muted|application\.process\.id).*?(\w+)")
-        # Put valid spotify IDs in a list
+        # Put valid spotify PIDs in a list
         pids = pidof_out.decode("utf-8").strip().split(" ")
         output = pacmd_out.decode("utf-8")
 
@@ -298,13 +298,11 @@ class Blockify(object):
         if not len(spotify_sink_list):
             return
 
-        infos = []
-        for sink in spotify_sink_list:
-            infos.append([sink[0]] + pattern.findall(sink))
+        sink_infos = [[sink[0]] + pattern.findall(sink) for sink in spotify_sink_list]
 
         # Every third element per sublist is a key, the value is the preceding
         # two elements in the form of a tuple - {pid : (index, muted)}
-        idxd = {info[2]: (info[0], info[1]) for info in infos if len(info) == 3}
+        idxd = {info[2]: (info[0], info[1]) for info in sink_infos if len(info) == 3}
 
         try:
             pid = [k for k in idxd.keys() if k in pids][0]
