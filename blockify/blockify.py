@@ -288,15 +288,23 @@ class Blockify(object):
             self.mutemethod = self.pulse_mute  # Fall back to amixer mute.
             return
 
-        pattern = re.compile(r"(?: index|muted|application\.process\.id).*?(\w+)")
+        # Match muted and application.process.id values.
+        pattern = re.compile(r"(?:muted|application\.process\.id).*?(\w+)")
+        # Put valid spotify IDs in a list
         pids = pidof_out.decode("utf-8").strip().split(" ")
         output = pacmd_out.decode("utf-8")
 
-        # Every third element is a key, the value is the preceding two
-        # elements in the form of a tuple - {pid : (index, muted)}
-        info = sorted(pattern.findall(output))
-        mid = len(info) // 2
-        idxd = {info[mid] if len(info) % 2 else info[mid-1] : (info[0], info[-1])}
+        spotify_sink_list = [i for i in output.split("index: ") if "Spotify" in i]
+        if not len(spotify_sink_list):
+            return
+
+        infos = []
+        for sink in spotify_sink_list:
+            infos.append([sink[0]] + pattern.findall(sink))
+
+        # Every third element per sublist is a key, the value is the preceding
+        # two elements in the form of a tuple - {pid : (index, muted)}
+        idxd = {info[2]: (info[0], info[1]) for info in infos if len(info) == 3}
 
         try:
             pid = [k for k in idxd.keys() if k in pids][0]
