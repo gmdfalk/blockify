@@ -104,8 +104,12 @@ class Blockify(object):
         try:
             subprocess.check_output(["pgrep", "spotify"])
         except subprocess.CalledProcessError:
-            log.error("No spotify process found. Exiting.")
-            sys.exit()
+            log.error("No spotify process found.")
+            FNULL = open('/dev/null', 'w')
+            spid = subprocess.Popen(['/usr/bin/spotify'], stdout=FNULL, stderr=FNULL).pid
+            if spid:
+                log.info("Spotify launched")
+                time.sleep(10)
         self._automute = True
         self.connect_dbus()
         self.try_enable_dbus()
@@ -282,6 +286,7 @@ class Blockify(object):
         except subprocess.CalledProcessError:
             if not pidof_out:
                 log.error("(Native) Spotify process not found. Is it running?")
+                sys.exit()
                 return
             log.error("Spotify sink not found. Is Pulse running?")
             log.error("Resorting to amixer as mute method.")
