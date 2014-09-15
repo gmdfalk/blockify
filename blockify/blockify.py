@@ -201,9 +201,9 @@ class Blockify(object):
         "Checks if a Spotify window exists and returns the current songname."
         spotify_window = self.get_windows()
         song = ""
-        
+
         if spotify_window:
-            song =  " ".join(spotify_window[0].split()[2:])
+            song = " ".join(spotify_window[0].split()[2:])
 
         return song
 
@@ -289,17 +289,17 @@ class Blockify(object):
             return
 
         # Match muted and application.process.id values.
-        pattern = re.compile(r"(?:muted|application\.process\.id).*?(\w+)")
+        pattern = re.compile(r"(?: index|muted|application\.process\.id).*?(\w+)")
         # Put valid spotify PIDs in a list
         pids = pidof_out.decode("utf-8").strip().split(" ")
         output = pacmd_out.decode("utf-8")
 
-        spotify_sink_list = [i for i in output.split("index: ") if "Spotify" in i]
+        spotify_sink_list = [" index: " + i for i in output.split("index: ") if "Spotify" in i]
+
         if not len(spotify_sink_list):
             return
 
-        sink_infos = [[sink[0]] + pattern.findall(sink) for sink in spotify_sink_list]
-
+        sink_infos = [pattern.findall(sink) for sink in spotify_sink_list]
         # Every third element per sublist is a key, the value is the preceding
         # two elements in the form of a tuple - {pid : (index, muted)}
         idxd = {info[2]: (info[0], info[1]) for info in sink_infos if len(info) == 3}
