@@ -100,12 +100,10 @@ class Blocklist(list):
 
 class Blockify(object):
 
+
     def __init__(self, blocklist):
-        try:
-            subprocess.check_output(["pgrep", "spotify"])
-        except subprocess.CalledProcessError:
-            log.error("No spotify process found. Exiting.")
-            sys.exit()
+        self.check_for_blockify_process()
+        self.check_for_spotify_process()
         self._automute = True
         self.connect_dbus()
         self.try_enable_dbus()
@@ -123,6 +121,23 @@ class Blockify(object):
             self.mutemethod = self.alsa_mute
 
         log.info("Blockify initialized.")
+
+    def check_for_spotify_process(self):
+        try:
+            subprocess.check_output(["pgrep", "spotify"])
+        except subprocess.CalledProcessError:
+            log.error("No spotify process found. Exiting.")
+            sys.exit()
+
+    def check_for_blockify_process(self):
+        try:
+            pid = subprocess.check_output(["pgrep", "-f", "blockify"])
+        except subprocess.CalledProcessError:
+            pass
+        else:
+            if pid.strip() != str(os.getpid()):
+                log.error("A blockify process is already running. Exiting.")
+                sys.exit()
 
     def connect_dbus(self):
         try:
@@ -244,14 +259,16 @@ class Blockify(object):
         muted = self.is_muted()
 
         state = None
-        if mode == 2 or (not self.current_song and muted):
+
+        if muted and (mode == 2 or not self.current_song):
             state = "unmute"
+        elif muted and mode == 0:
+            state = "unmute"
+            log.info("Unmuting.")
         elif not muted and mode == 1:
             state = "mute"
             log.info("Muting {}.".format(self.current_song))
-        elif muted and not mode:
-            state = "unmute"
-            log.info("Unmuting.")
+
 
         return state
 
