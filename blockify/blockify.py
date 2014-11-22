@@ -148,7 +148,7 @@ class Blockify(object):
             self.dbus = None
 
     def try_enable_dbus(self):
-        if self.dbus.is_running():
+        if self.dbus is not None and self.dbus.is_running():
             self.use_dbus = True
             self._autodetect = True
         else:

@@ -59,10 +59,8 @@ class BlockifyDBus(object):
             log.error("Spotify not found in DBus session. Is it running?")
 
     def is_running(self):
-        "TODO: Make this not redundant"
-        if self.spotify_path is None:
-            return False
-        return True
+        "TODO: This is  redundant"
+        return self.spotify_path is not None
 
     def get_property(self, key):
         "Gets the value from any available property."
