@@ -131,7 +131,7 @@ class Blockify(object):
 
     def check_for_blockify_process(self):
         try:
-            pid = subprocess.check_output(["pgrep", "-f", "blockify"])
+            pid = subprocess.check_output(["pgrep", "-f", "python.*blockify"])
         except subprocess.CalledProcessError:
             pass
         else:
@@ -161,7 +161,11 @@ class Blockify(object):
             return self.current_song != self.dbus.get_song_artist() + \
             u" \u2013 " + self.dbus.get_song_title()
         except TypeError:
-            return False
+            # Spotify has technically stopped playing and has stopped
+            # sending dbus metadata so we get NoneType-errors.
+            # However, it might still play one last ad so we assume that
+            # is the case here.
+            return True
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
