@@ -127,6 +127,7 @@ class BlockifyUI(gtk.Window):
         self.automute_toggled = False
         self.block_toggled = False
         self.mute_toggled = False
+        self.show_cover = False
         self.editor = None
         # Set the GUI/Blockify update interval to 500ms. Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
@@ -158,6 +159,7 @@ class BlockifyUI(gtk.Window):
         basedir = os.path.dirname(os.path.realpath(__file__))
         self.muteofficon = os.path.join(basedir, "data/not_muted.png")
         self.muteonicon = os.path.join(basedir, "data/muted.png")
+        self.adicon = os.path.join(basedir, "data/muted_big.png")
         self.set_icon_from_file(self.muteofficon)
 
         # Window setup.
@@ -210,7 +212,6 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.statuslabel)
         hbox = gtk.HBox()
         vbox.pack_start(hbox)
-        vbox.add(self.togglecover)
         vbox.add(self.toggleplay)
         hbox.add(self.prevsong)
         hbox.add(self.nextsong)
@@ -219,6 +220,8 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.toggleautomute)
         vbox.add(self.togglelist)
         vbox.add(self.toggleautodetect)
+        vbox.add(self.togglecover)
+
         return vbox
 
     def update(self):
@@ -226,6 +229,8 @@ class BlockifyUI(gtk.Window):
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
+        if self.show_cover:
+            self.display_cover()
 
         # Correct the automute state, if necessary.
         if not any([self.mute_toggled, self.automute_toggled, self.b.automute]):
@@ -240,22 +245,28 @@ class BlockifyUI(gtk.Window):
         return True
     
     def get_branded_cover(self):
-        art_url = self.b.dbus.get_art_url()
-        art_filename = os.path.basename(art_url) + ".png"
+        cover_url = self.b.dbus.get_art_url()
+        cover_file = os.path.join(self.thumbnaildir, os.path.basename(cover_url) + ".png")
          
-        if not os.path.exists(art_filename):
-            log.info("Downloading cover: {}.".format(art_filename))
-            urllib.urlretrieve(art_url, art_filename)
+        if not os.path.exists(cover_file):
+            log.info("Downloading cover art: {}".format(cover_file))
+            urllib.urlretrieve(cover_url, cover_file)
          
-        return art_filename
-#         art_url = self.b.dbus.get
+        return cover_file
+#         cover_url = self.b.dbus.get
     
     def display_cover(self):
-        art_filename = self.get_branded_cover()
-        pixbuf = gtk.gdk.pixbuf_new_from_file(art_filename)  # @UndefinedVariable
-        scaled_buf = pixbuf.scale_simple(200,200,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
-        self.coverimage.set_from_pixbuf(scaled_buf)
-#         self.coverimage.set_from_file(art_filename)
+        if self.b.is_sink_muted:
+            self.disable_cover()
+#             self.coverimage.hide()
+#             self.coverimage.set_from_file(self.adicon)
+        else:
+            cover_file = self.get_branded_cover()
+            pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
+            scaled_buf = pixbuf.scale_simple(195,195,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
+            self.coverimage.set_from_pixbuf(scaled_buf)
+            self.enable_cover()
+#         self.coverimage.set_from_file(cover_file)
             
 
     def update_songinfo(self):
@@ -264,7 +275,6 @@ class BlockifyUI(gtk.Window):
             self.songstatus = self.b.dbus.get_song_status()
             if self.songstatus:
                 self.b.use_dbus = True
-                self.display_cover()
 
         except (DBusException, AttributeError):
             # If we can't get a songstatus, we have to assume DBus is not
@@ -338,6 +348,7 @@ class BlockifyUI(gtk.Window):
         # Load the blocklist, start blockify, trap some signals and unmute.
         blocklist = blockify.Blocklist(blockify.get_configdir())
         self.b = blockify.Blockify(blocklist)
+        self.thumbnaildir = os.path.join(self.b.configdir, "thumbnails")
         self.bind_signals()
         self.b.toggle_mute()
         # Start and loop the main update routine once every 250ms.
@@ -362,16 +373,25 @@ class BlockifyUI(gtk.Window):
         log.debug("Exiting GUI.")
         gtk.main_quit()
         
-    def on_togglecover(self, widget):
-        if widget.get_active():
-            widget.set_label("Hide Cover")
+    def enable_cover(self):
+        if not self.coverimage.flags() & gtk.VISIBLE:
+            self.show_cover = True
             self.coverimage.show()
-            log.info("Enabled cover art.")
-        else:
-            widget.set_label("Show Cover")
+    
+    def disable_cover(self):
+        if self.coverimage.flags() & gtk.VISIBLE:
             self.coverimage.hide()
             width, height = self.get_default_size()
             self.resize(width, height)
+        
+    def on_togglecover(self, widget):
+        if widget.get_active():
+            widget.set_label("Hide Cover")
+            self.enable_cover()
+            log.info("Enabled cover art.")
+        else:
+            widget.set_label("Show Cover")
+            self.disable_cover()
             log.info("Disabled cover art.")
 
     def on_toggleblock(self, widget):

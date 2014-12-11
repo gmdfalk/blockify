@@ -112,6 +112,7 @@ class Blockify(object):
         self.configdir = blocklist.configdir
         self.channels = self.get_channels()
         self.current_song = ""
+        self.is_sink_muted = False
 
         # Determine if we can use sinks or have to use alsa.
         try:
@@ -329,6 +330,7 @@ class Blockify(object):
         try:
             pid = [k for k in idxd.keys() if k in pids][0]
             index, muted = idxd[pid]
+            self.is_sink_muted = True if muted == "yes" else False
         except IndexError:
             return
 
@@ -415,6 +417,11 @@ def get_configdir():
         log.info("Creating config directory.")
         os.makedirs(configdir)
     
+    thumbnaildir = os.path.join(configdir, "thumbnails")
+    if not os.path.isdir(thumbnaildir):
+        log.info("Creating thumbnail directory.")
+        os.makedirs(thumbnaildir)
+    
     return configdir
 
 def main():
@@ -437,7 +444,7 @@ def main():
         while gtk.events_pending():
             gtk.main_iteration(False)
         blockify.update()
-        time.sleep(0.3)
+        time.sleep(0.25)
 
 
 if __name__ == "__main__":
