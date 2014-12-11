@@ -427,7 +427,7 @@ def get_configdir():
 def main():
     "Entry point for the CLI-version of Blockify."
     try:
-        args = docopt(__doc__, version="1.1")
+        args = docopt(__doc__, version="1.2")
         init_logger(args["--log"], args["-v"], args["--quiet"])
     except NameError:
         init_logger(logpath=None, loglevel=2, quiet=False)
