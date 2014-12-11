@@ -264,7 +264,6 @@ class BlockifyUI(gtk.Window):
             pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
             scaled_buf = pixbuf.scale_simple(195,195,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
             self.coverimage.set_from_pixbuf(scaled_buf)
-#             self.enable_cover()
 
     def update_songinfo(self):
         # Grab some useful information from DBus.
@@ -377,6 +376,7 @@ class BlockifyUI(gtk.Window):
     
     def disable_cover(self):
         if self.coverimage.flags() & gtk.VISIBLE:
+            self.show_cover = False
             self.coverimage.hide()
             width, height = self.get_default_size()
             self.resize(width, height)
