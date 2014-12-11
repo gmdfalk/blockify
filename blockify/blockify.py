@@ -196,7 +196,7 @@ class Blockify(object):
             current_timestamp = self.blocklist.timestamp
         if self.blocklist.timestamp != current_timestamp:
             log.info("Blockfile changed. Reloading.")
-            self.blocklist.__init__()
+            self.blocklist.__init__(self.configdir)
 
         for i in self.blocklist:
             if self.current_song.startswith(i):
