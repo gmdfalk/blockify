@@ -80,14 +80,14 @@ class Notepad(gtk.Window):
     def create_keybinds(self):
         "Register Ctrl+Q/W to quit and Ctrl+S to save the blocklist."
         quit_group = gtk.AccelGroup()
-        quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,  # @UndefinedVariable
+        quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,  
                                  gtk.ACCEL_LOCKED, self.destroy)
-        quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,  # @UndefinedVariable
+        quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,  
                                  gtk.ACCEL_LOCKED, self.destroy)
         self.add_accel_group(quit_group)
 
         save_group = gtk.AccelGroup()
-        save_group.connect_group(ord("s"), gtk.gdk.CONTROL_MASK,  # @UndefinedVariable
+        save_group.connect_group(ord("s"), gtk.gdk.CONTROL_MASK,
                                  gtk.ACCEL_LOCKED, self.save)
         self.add_accel_group(save_group)
 
@@ -159,13 +159,13 @@ class BlockifyUI(gtk.Window):
         basedir = os.path.dirname(os.path.realpath(__file__))
         self.muteofficon = os.path.join(basedir, "data/not_muted.png")
         self.muteonicon = os.path.join(basedir, "data/muted.png")
-        self.adicon = os.path.join(basedir, "data/muted_big.png")
+        self.adicon = os.path.join(basedir, "data/muted_cover.png")
         self.set_icon_from_file(self.muteofficon)
 
         # Window setup.
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
-        self.set_default_size(220, 240)
+        self.set_default_size(210, 240)
 
     def create_buttons(self):
         # Show/Hide cover button.
@@ -225,7 +225,7 @@ class BlockifyUI(gtk.Window):
         return vbox
 
     def update(self):
-        "Main GUI loop, 250ms interval (self.update_interval)."
+        "Main GUI loop, 500ms update interval (self.update_interval)."
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
@@ -244,8 +244,9 @@ class BlockifyUI(gtk.Window):
         # The glib.timeout loop will only break if we return False here.
         return True
     
-    def get_branded_cover(self):
-        cover_url = self.b.dbus.get_art_url()
+    def get_cover_art(self):
+#         cover_url = self.b.dbus.get_art_url()
+        cover_url = "https://i.scdn.co/image/" + os.path.basename(self.b.dbus.get_art_url())
         cover_file = os.path.join(self.thumbnaildir, os.path.basename(cover_url) + ".png")
          
         if not os.path.exists(cover_file):
@@ -257,17 +258,13 @@ class BlockifyUI(gtk.Window):
     
     def display_cover(self):
         if self.b.is_sink_muted:
-            self.disable_cover()
-#             self.coverimage.hide()
-#             self.coverimage.set_from_file(self.adicon)
+            self.coverimage.set_from_file(self.adicon)
         else:
-            cover_file = self.get_branded_cover()
+            cover_file = self.get_cover_art()
             pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
             scaled_buf = pixbuf.scale_simple(195,195,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
             self.coverimage.set_from_pixbuf(scaled_buf)
-            self.enable_cover()
-#         self.coverimage.set_from_file(cover_file)
-            
+#             self.enable_cover()
 
     def update_songinfo(self):
         # Grab some useful information from DBus.
