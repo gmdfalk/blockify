@@ -44,10 +44,10 @@ class Blocklist(list):
     # Could subclass UserList.UserList here instead which inherits from
     # collections.MutableSequence. In Python3 it's collections.UserList.
 
-    def __init__(self):
+    def __init__(self, configdir):
         super(Blocklist, self).__init__()
-        self.home = os.path.expanduser("~")
-        self.location = os.path.join(self.home, ".blockify_list")
+        self.configdir = configdir
+        self.location = os.path.join(self.configdir, "blocklist")
         self.extend(self.load())
         self.timestamp = self.get_timestamp()
 
@@ -101,15 +101,15 @@ class Blocklist(list):
 class Blockify(object):
 
 
-    def __init__(self, configdir, blocklist):
+    def __init__(self, blocklist):
         self.check_for_blockify_process()
         self.check_for_spotify_process()
-        self.configdir = configdir
         self._automute = True
         self.connect_dbus()
         self.try_enable_dbus()
         self.blocklist = blocklist
         self.orglist = blocklist[:]
+        self.configdir = blocklist.configdir
         self.channels = self.get_channels()
         self.current_song = ""
 
@@ -407,7 +407,7 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
         except IOError:
             log.error("Could not attach file handler.")
             
-def get_configdir(self):
+def get_configdir():
     "Determine if an XDG_CONFIG_DIR for blockify exists and if not, create it."
     configdir = os.path.join(os.path.expanduser("~"), ".config/blockify")
     
@@ -426,9 +426,8 @@ def main():
         init_logger(logpath=None, loglevel=2, quiet=False)
         log.error("Please install docopt to use the CLI.")
 
-    configdir = get_configdir()
-    blocklist = Blocklist(configdir)
-    blockify = Blockify(configdir, blocklist)
+    blocklist = Blocklist(get_configdir())
+    blockify = Blockify(blocklist)
 
     blockify.bind_signals()
     blockify.toggle_mute()

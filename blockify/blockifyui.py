@@ -137,7 +137,7 @@ class BlockifyUI(gtk.Window):
         self.init_window()
 
         self.coverimage = gtk.Image()
-        self.coverimage.hide()
+        self.coverimage.hide_all()
         self.artistlabel = gtk.Label()
         self.artistlabel.set_line_wrap(True)
         self.titlelabel = gtk.Label()
@@ -166,6 +166,11 @@ class BlockifyUI(gtk.Window):
         self.set_default_size(220, 240)
 
     def create_buttons(self):
+        # Show/Hide cover button.
+        self.togglecover = gtk.ToggleButton("Show/Hide Cover")
+        self.togglecover.connect("clicked", self.on_togglecover)
+        self.togglecover.set_active(True)
+        
         # Block/Unblock button.
         self.toggleblock = gtk.ToggleButton("Block")
         self.toggleblock.connect("clicked", self.on_toggleblock)
@@ -205,6 +210,7 @@ class BlockifyUI(gtk.Window):
         vbox.add(self.statuslabel)
         hbox = gtk.HBox()
         vbox.pack_start(hbox)
+        vbox.add(self.togglecover)
         vbox.add(self.toggleplay)
         hbox.add(self.prevsong)
         hbox.add(self.nextsong)
@@ -233,11 +239,10 @@ class BlockifyUI(gtk.Window):
         # The glib.timeout loop will only break if we return False here.
         return True
     
-    def get_cover(self):
+    def get_branded_cover(self):
         art_url = self.b.dbus.get_art_url()
         art_filename = os.path.basename(art_url) + ".png"
          
-        self.coverimage.show()
         if not os.path.exists(art_filename):
             log.info("Downloading cover: {}.".format(art_filename))
             urllib.urlretrieve(art_url, art_filename)
@@ -246,7 +251,7 @@ class BlockifyUI(gtk.Window):
 #         art_url = self.b.dbus.get
     
     def display_cover(self):
-        art_filename = self.get_cover()
+        art_filename = self.get_branded_cover()
         pixbuf = gtk.gdk.pixbuf_new_from_file(art_filename)  # @UndefinedVariable
         scaled_buf = pixbuf.scale_simple(200,200,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
         self.coverimage.set_from_pixbuf(scaled_buf)
@@ -331,7 +336,7 @@ class BlockifyUI(gtk.Window):
     def start(self):
         "Start blockify and the main update routine."
         # Load the blocklist, start blockify, trap some signals and unmute.
-        blocklist = blockify.Blocklist()
+        blocklist = blockify.Blocklist(blockify.get_configdir())
         self.b = blockify.Blockify(blocklist)
         self.bind_signals()
         self.b.toggle_mute()
@@ -356,6 +361,18 @@ class BlockifyUI(gtk.Window):
         self.b.stop()
         log.debug("Exiting GUI.")
         gtk.main_quit()
+        
+    def on_togglecover(self, widget):
+        if widget.get_active():
+            widget.set_label("Hide Cover")
+            self.coverimage.show()
+            log.info("Enabled cover art.")
+        else:
+            widget.set_label("Show Cover")
+            self.coverimage.hide()
+            width, height = self.get_default_size()
+            self.resize(width, height)
+            log.info("Disabled cover art.")
 
     def on_toggleblock(self, widget):
         # Block the blockbutton if blockbutton-blocking togglebuttons are toggled.
