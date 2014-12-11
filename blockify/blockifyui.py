@@ -246,6 +246,7 @@ class BlockifyUI(gtk.Window):
     
     def get_cover_art(self):
 #         cover_url = self.b.dbus.get_art_url()
+        # The server spotify gets its images from. Filename is a hash, the last part of metadata["artUrl"]
         cover_url = "https://i.scdn.co/image/" + os.path.basename(self.b.dbus.get_art_url())
         cover_file = os.path.join(self.thumbnaildir, os.path.basename(cover_url) + ".png")
          
@@ -254,7 +255,6 @@ class BlockifyUI(gtk.Window):
             urllib.urlretrieve(cover_url, cover_file)
          
         return cover_file
-#         cover_url = self.b.dbus.get
     
     def display_cover(self):
         if self.b.is_sink_muted:
