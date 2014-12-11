@@ -26,7 +26,11 @@ import time
 import gtk
 import pygtk
 import wnck
+
 import blockifydbus
+import pygst
+pygst.require("0.10")
+import gst
 
 
 try:
