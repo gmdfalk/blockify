@@ -101,9 +101,10 @@ class Blocklist(list):
 class Blockify(object):
 
 
-    def __init__(self, blocklist):
+    def __init__(self, configdir, blocklist):
         self.check_for_blockify_process()
         self.check_for_spotify_process()
+        self.configdir = configdir
         self._automute = True
         self.connect_dbus()
         self.try_enable_dbus()
@@ -121,7 +122,7 @@ class Blockify(object):
             self.mutemethod = self.alsa_mute
 
         log.info("Blockify initialized.")
-
+        
     def check_for_spotify_process(self):
         try:
             subprocess.check_output(["pgrep", "spotify"])
@@ -405,7 +406,16 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
             log.debug("Added logging file handler: {}.".format(logfile))
         except IOError:
             log.error("Could not attach file handler.")
-
+            
+def get_configdir(self):
+    "Determine if an XDG_CONFIG_DIR for blockify exists and if not, create it."
+    configdir = os.path.join(os.path.expanduser("~"), ".config/blockify")
+    
+    if not os.path.isdir(configdir):
+        log.info("Creating config directory.")
+        os.makedirs(configdir)
+    
+    return configdir
 
 def main():
     "Entry point for the CLI-version of Blockify."
@@ -416,8 +426,9 @@ def main():
         init_logger(logpath=None, loglevel=2, quiet=False)
         log.error("Please install docopt to use the CLI.")
 
-    blocklist = Blocklist()
-    blockify = Blockify(blocklist)
+    configdir = get_configdir()
+    blocklist = Blocklist(configdir)
+    blockify = Blockify(configdir, blocklist)
 
     blockify.bind_signals()
     blockify.toggle_mute()
@@ -427,7 +438,7 @@ def main():
         while gtk.events_pending():
             gtk.main_iteration(False)
         blockify.update()
-        time.sleep(0.5)
+        time.sleep(0.3)
 
 
 if __name__ == "__main__":

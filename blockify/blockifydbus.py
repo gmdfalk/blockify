@@ -134,6 +134,13 @@ class BlockifyDBus(object):
                 self.player.Seek(seconds)
             else:
                 log.warn("Cannot Seek.")
+    
+    def get_art_url(self):
+        "Get album cover"
+        if self.is_running():
+            metadata = self.get_property("Metadata")
+            if metadata:
+                return metadata["mpris:artUrl"].encode("utf-8")
 
     def get_song_status(self):
         "Get current PlaybackStatus (Paused/Playing...)."
@@ -166,7 +173,7 @@ class BlockifyDBus(object):
         if self.is_running():
             metadata = self.get_property("Metadata")
             if metadata:
-                return str(metadata["xesam:artist"][0])
+                return metadata["xesam:artist"][0].encode("utf-8")
 
     def print_info(self):
         "Print all the DBus info we can get our hands on."

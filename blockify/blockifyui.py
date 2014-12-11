@@ -9,6 +9,11 @@ from dbus.exceptions import DBusException
 import blockify
 import glib
 import gtk
+import urllib
+
+# TODO: audio player (toggle, next, prev, shuffle, interactive progress bar)
+# TODO: config file, playlist file
+# TODO: album image wth hide/show checkbox (artUrl)
 
 # TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
@@ -75,14 +80,14 @@ class Notepad(gtk.Window):
     def create_keybinds(self):
         "Register Ctrl+Q/W to quit and Ctrl+S to save the blocklist."
         quit_group = gtk.AccelGroup()
-        quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,
+        quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,  # @UndefinedVariable
                                  gtk.ACCEL_LOCKED, self.destroy)
-        quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,
+        quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,  # @UndefinedVariable
                                  gtk.ACCEL_LOCKED, self.destroy)
         self.add_accel_group(quit_group)
 
         save_group = gtk.AccelGroup()
-        save_group.connect_group(ord("s"), gtk.gdk.CONTROL_MASK,
+        save_group.connect_group(ord("s"), gtk.gdk.CONTROL_MASK,  # @UndefinedVariable
                                  gtk.ACCEL_LOCKED, self.save)
         self.add_accel_group(save_group)
 
@@ -131,8 +136,12 @@ class BlockifyUI(gtk.Window):
 
         self.init_window()
 
+        self.coverimage = gtk.Image()
+        self.coverimage.hide()
         self.artistlabel = gtk.Label()
+        self.artistlabel.set_line_wrap(True)
         self.titlelabel = gtk.Label()
+        self.titlelabel.set_line_wrap(True)
         self.statuslabel = gtk.Label()
         self.create_buttons()
 
@@ -190,6 +199,7 @@ class BlockifyUI(gtk.Window):
 
     def create_layout(self):
         vbox = gtk.VBox()
+        vbox.add(self.coverimage)
         vbox.add(self.artistlabel)
         vbox.add(self.titlelabel)
         vbox.add(self.statuslabel)
@@ -222,6 +232,26 @@ class BlockifyUI(gtk.Window):
 
         # The glib.timeout loop will only break if we return False here.
         return True
+    
+    def get_cover(self):
+        art_url = self.b.dbus.get_art_url()
+        art_filename = os.path.basename(art_url) + ".png"
+         
+        self.coverimage.show()
+        if not os.path.exists(art_filename):
+            log.info("Downloading cover: {}.".format(art_filename))
+            urllib.urlretrieve(art_url, art_filename)
+         
+        return art_filename
+#         art_url = self.b.dbus.get
+    
+    def display_cover(self):
+        art_filename = self.get_cover()
+        pixbuf = gtk.gdk.pixbuf_new_from_file(art_filename)  # @UndefinedVariable
+        scaled_buf = pixbuf.scale_simple(200,200,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
+        self.coverimage.set_from_pixbuf(scaled_buf)
+#         self.coverimage.set_from_file(art_filename)
+            
 
     def update_songinfo(self):
         # Grab some useful information from DBus.
@@ -229,6 +259,8 @@ class BlockifyUI(gtk.Window):
             self.songstatus = self.b.dbus.get_song_status()
             if self.songstatus:
                 self.b.use_dbus = True
+                self.display_cover()
+
         except (DBusException, AttributeError):
             # If we can't get a songstatus, we have to assume DBus is not
             # working correctly.
@@ -306,7 +338,7 @@ class BlockifyUI(gtk.Window):
         # Start and loop the main update routine once every 250ms.
         # To influence responsiveness or CPU usage, decrease/increase ms here.
 #         glib.timeout_add_seconds(1, self.update)
-        glib.timeout_add(self.update_interval, self.update)
+        glib.timeout_add(self.update_interval, self.update)  # @UndefinedVariable
         # Initially correct the state of the autodetect button.
         if self.b.autodetect:
             self.toggleautodetect.set_active(True)
@@ -438,7 +470,7 @@ def main():
     "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
     blockify.init_logger(logpath=None, loglevel=2, quiet=False)
-    ui = BlockifyUI()
+    BlockifyUI()
     gtk.main()
 
 
