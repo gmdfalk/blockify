@@ -105,7 +105,6 @@ class Blockify(object):
         self.check_for_spotify_process()
         self._automute = True
         self.connect_dbus()
-        self.try_enable_dbus()
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.configdir = blocklist.configdir
@@ -146,17 +145,8 @@ class Blockify(object):
         try:
             self.dbus = blockifydbus.BlockifyDBus()
         except Exception as e:
-            log.error("Cannot connect to DBus. Autodetection and Player Controls"
-                      " will be unavailable ({}).".format(e))
-            self.dbus = None
-
-    def try_enable_dbus(self):
-        if self.dbus is not None and self.dbus.is_running():
-            self.use_dbus = True
-            self._autodetect = True
-        else:
-            self.use_dbus = False
-            self._autodetect = False
+            log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
+            sys.exit()
 
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
@@ -186,7 +176,7 @@ class Blockify(object):
             self.toggle_mute(2)
             return False
 
-        if self.autodetect and self.use_dbus:
+        if self.autodetect:
             if self.current_song_is_ad():
                 # Ad found, force mute.
                 self.toggle_mute(1)

@@ -245,7 +245,6 @@ class BlockifyUI(gtk.Window):
             self.b.automute = True
 
         # Our main GUI workers here, updating labels, buttons and the likes.
-        self.update_songinfo()
         self.update_labels()
         self.update_togglebuttons()
 
@@ -279,25 +278,12 @@ class BlockifyUI(gtk.Window):
             if self.autohide_cover:
                 self.enable_cover()
 
-    def update_songinfo(self):
-        # Grab some useful information from DBus.
-        try:
-            if self.b.song_status:
-                self.b.use_dbus = True
-
-        except (DBusException, AttributeError):
-            # If we can't get a songstatus, we have to assume DBus is not
-            # working correctly.
-            self.b.song_status = ""
-            self.b.use_dbus = False
-
     def update_labels(self):
-        if self.b.dbus and self.b.use_dbus:
-            self.statuslabel.set_text(self.get_status_text())
-            if self.b.current_song_is_ad():
-                self.albumlabel.set_text("(commercial)")
-            else:
-                self.albumlabel.set_text(self.b.dbus.get_song_album())
+        self.statuslabel.set_text(self.get_status_text())
+        if self.b.current_song_is_ad():
+            self.albumlabel.set_text("(commercial)")
+        else:
+            self.albumlabel.set_text(self.b.dbus.get_song_album())
 
         artist, title = self.format_current_song()
         self.artistlabel.set_text(artist)
@@ -326,33 +312,23 @@ class BlockifyUI(gtk.Window):
         try:
             artist, title = song.split(" {} ".format(delimiter))
         except (ValueError, IndexError):
-            try:
-                artist = self.b.dbus.get_song_artist()
-                title = self.b.dbus.get_song_title()
-            except (DBusException, AttributeError):
-                artist = title = None
+            artist = self.b.dbus.get_song_artist()
+            title = self.b.dbus.get_song_title()
 
         # Sometimes song.split returns None, catch it here.
         if artist is None or title is None:
             artist, title = song, "No song playing?"
-            self.b.use_dbus = False
 
         return artist, title
 
     def get_status_text(self):
         status = ""
-        if self.b.dbus and self.b.use_dbus:
-            try:
-                songlength = self.b.dbus.get_song_length()
-            except (TypeError, DBusException) as e:
-                log.error("Cannot use DBus. Some features (PlayPause etc.)"
-                          " will be unavailable ({}).".format(e))
-                return status
+        songlength = self.b.dbus.get_song_length()
 
-            if songlength:
-                m, s = divmod(songlength, 60)
-                r = self.b.dbus.get_property("Metadata")["xesam:autoRating"]
-                status = "{}m{}s, {} ({})".format(m, s, r, self.b.song_status)
+        if songlength:
+            m, s = divmod(songlength, 60)
+            r = self.b.dbus.get_property("Metadata")["xesam:autoRating"]
+            status = "{}m{}s, {} ({})".format(m, s, r, self.b.song_status)
 
         return status
 
@@ -457,9 +433,7 @@ class BlockifyUI(gtk.Window):
 
     def on_checkautoblock(self, widget):
         if widget.get_active():
-            if not self.b.dbus:
-                self.b.connect_dbus()
-            self.b.try_enable_dbus()
+            self.b.autodetect = True
             log.info("Enabled ad autodetection.")
         else:
             self.b.autodetect = False
@@ -499,26 +473,17 @@ class BlockifyUI(gtk.Window):
 
     def on_toggleplay(self, widget):
         # Try to connect to DBus if it failed before.
-        if not self.b.dbus:
-            self.connect_dbus()
-        if self.b.dbus and self.b.use_dbus:
-            if self.b.song_status == "Playing":
-                widget.set_label("Play")
-            else:
-                widget.set_label("Pause")
-            self.b.dbus.playpause()
+        if self.b.song_status == "Playing":
+            widget.set_label("Play")
+        else:
+            widget.set_label("Pause")
+        self.b.dbus.playpause()
 
     def on_nextsong(self, widget):
-        if not self.b.dbus:
-            self.b.connect_dbus()
-        if self.b.dbus and self.b.use_dbus:
-            self.b.dbus.next()
+        self.b.dbus.next()
 
     def on_prevsong(self, widget):
-        if not self.b.dbus:
-            self.b.connect_dbus()
-        if self.b.dbus and self.b.use_dbus:
-            self.b.dbus.prev()
+        self.b.dbus.prev()
 
 
 def main():
