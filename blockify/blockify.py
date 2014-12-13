@@ -103,12 +103,13 @@ class Blockify(object):
     def __init__(self, blocklist):
         self.check_for_blockify_process()
         self.check_for_spotify_process()
-        self._automute = True
         self.connect_dbus()
+        self.channels = self.get_channels()
+        self.automute = True
+        self.autodetect = True
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.configdir = blocklist.configdir
-        self.channels = self.get_channels()
         self.current_song = ""
         self.song_status = ""
         self.is_fully_muted = False
@@ -121,6 +122,7 @@ class Blockify(object):
             self.mutemethod = self.pulsesink_mute
         except (OSError, subprocess.CalledProcessError):
             self.mutemethod = self.alsa_mute
+            
 
         log.info("Blockify initialized.")
         
@@ -309,11 +311,11 @@ class Blockify(object):
         # Put valid spotify PIDs in a list
         output = pacmd_out.decode("utf-8")
 
-        spotify_sink_list = [" index: " + i for i in output.split("index: ") if "Spotify" in i]
+        spotify_sink_list = [" index: " + i for i in output.split("index: ") if "spotify" in i]
 
         if not len(spotify_sink_list):
             return
-
+        
         sink_infos = [pattern.findall(sink) for sink in spotify_sink_list]
         # Every third element per sublist is a key, the value is the preceding
         # two elements in the form of a tuple - {pid : (index, muted)}
