@@ -25,11 +25,7 @@ import time
 import gtk
 import pygtk
 import wnck
-
 import blockifydbus
-import pygst
-pygst.require("0.10")
-import gst
 
 
 try:
@@ -129,8 +125,6 @@ class Blockify(object):
 
         log.info("Blockify initialized.")
         
-        self.read_interlude_playlist()
-        
     def check_for_spotify_process(self):
         try:
             subprocess.check_output(["pgrep", "spotify"])
@@ -163,13 +157,6 @@ class Blockify(object):
         else:
             self.use_dbus = False
             self._autodetect = False
-            
-    def read_interlude_playlist(self):
-        "Read the music to be played instead of commercials into a list"
-        playlist_file = os.path.join(self.configdir, "playlist")
-        if os.path.exists(playlist_file):
-            playlist = [line for line in open(playlist_file)]
-            print playlist
 
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
