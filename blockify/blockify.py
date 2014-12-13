@@ -115,6 +115,7 @@ class Blockify(object):
         self.configdir = blocklist.configdir
         self.channels = self.get_channels()
         self.current_song = ""
+        self.song_status = ""
         self.is_fully_muted = False
         self.is_sink_muted = False
 
@@ -172,22 +173,24 @@ class Blockify(object):
 
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
-        try:
-            return self.current_song != self.dbus.get_song_artist() + \
-            u" \u2013 " + self.dbus.get_song_title()
-        except TypeError:
-            # Spotify has technically stopped playing and has stopped
-            # sending dbus metadata so we get NoneType-errors.
-            # However, it might still play one last ad so we assume that
-            # is the case here.
-            return True
+        if self.song_status == "Playing":
+            try:
+                return self.current_song != self.dbus.get_song_artist() + \
+                u" \u2013 " + self.dbus.get_song_title()
+            except TypeError:
+                # Spotify has technically stopped playing and has stopped
+                # sending dbus metadata so we get NoneType-errors.
+                # However, it might still play one last ad so we assume that
+                # is the case here.
+                return True
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
-        # It all relies on current_song.
-        self.current_song = self.get_current_song()
 
-        # Manual control is enabled so we return here.
+        self.current_song = self.get_current_song()
+        self.song_status = self.dbus.get_song_status()
+
+        # Manual control is enabled so we exit here.
         if not self.automute:
             return False
 
