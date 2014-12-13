@@ -117,22 +117,18 @@ class BlockifyUI(gtk.Window):
         super(BlockifyUI, self).__init__()
         #gtk.threads_init()
 
-        self.automute_toggled = False
-        self.block_toggled = False
-        self.mute_toggled = False
         self.autohide_cover = False
-        self.editor = None
         self.previous_cover_file = ""
+        self.editor = None
         
-        # Set the GUI/Blockify update interval to 500ms. Increase this to
+        # Set the GUI/Blockify update interval to 400ms. Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
-        # If you need absolutely minimal CPU usage you could, in self.start_blockify(),
+        # If you need absolutely minimal CPU usage you could, in self.start(),
         # change the line to glib.timeout_add_seconds(2, self.update) or more.
-        self.update_interval = 500
+        self.update_interval = 400
 
         self.init_window()
-        self.start_blockify()
-
+        self.init_blockify()
         self.coverimage = gtk.Image()
         self.create_labels()
         self.create_buttons()
@@ -141,6 +137,7 @@ class BlockifyUI(gtk.Window):
         # "Trap" the exit.
         self.connect("destroy", self.stop)
 
+        self.start()
         self.show_all()
 
     def init_window(self):
@@ -154,6 +151,36 @@ class BlockifyUI(gtk.Window):
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
         self.set_default_size(216, 188)
+    
+    def init_blockify(self):
+        blocklist = blockify.Blocklist(blockify.get_configdir())
+        self.b = blockify.Blockify(blocklist)
+        self.thumbnaildir = os.path.join(self.b.configdir, "thumbnails")
+        self.bind_signals()
+        self.b.toggle_mute()
+
+    def start(self):
+        "Start blockify and the main update routine."
+        
+        # Start and loop the main update routine once every 400ms.
+        # To influence responsiveness or CPU usage, decrease/increase ms here.
+        # glib.timeout_add_seconds(2, self.update)
+        glib.timeout_add(self.update_interval, self.update)  # @UndefinedVariable
+
+        log.info("Blockify-UI started.")
+
+    def stop(self, *args):
+        "Cleanly shut down, unmuting sound and saving the blocklist."
+        self.b.stop()
+        log.debug("Exiting GUI.")
+        gtk.main_quit()
+        
+    def bind_signals(self):
+        "Binds SIGTERM, SIGINT and SIGUSR1 to custom actions."
+        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())
+        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.b.unblock_current())
+        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
+        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
 
     def create_labels(self):
         self.albumlabel = gtk.Label()
@@ -193,7 +220,10 @@ class BlockifyUI(gtk.Window):
         
         for checkbox in [self.checkautodetect]:
             checkbox.set_active(True)
-
+        
+        for checkbox in [self.checkautohidecover, self.checkmanualmute]:
+            checkbox.set_active(False)
+        
     def create_layout(self):
         main = gtk.VBox()
         
@@ -241,17 +271,6 @@ class BlockifyUI(gtk.Window):
 
         # The glib.timeout loop will only break if we return False here.
         return True
-    
-    def get_cover_art(self):
-        # The server spotify gets its images from. Filename is a hash, the last part of metadata["artUrl"]
-        cover_url = "https://i.scdn.co/image/" + os.path.basename(self.b.dbus.get_art_url())
-        cover_file = os.path.join(self.thumbnaildir, os.path.basename(cover_url) + ".png")
-         
-        if not os.path.exists(cover_file):
-            log.info("Downloading cover art: {}".format(cover_file))
-            urllib.urlretrieve(cover_url, cover_file)
-         
-        return cover_file
     
     def update_cover(self):
         if self.b.is_sink_muted or self.b.is_fully_muted:
@@ -335,6 +354,17 @@ class BlockifyUI(gtk.Window):
 
         return artist, title
 
+    def get_cover_art(self):
+        # The server spotify gets its images from. Filename is a hash, the last part of metadata["artUrl"]
+        cover_url = "https://i.scdn.co/image/" + os.path.basename(self.b.dbus.get_art_url())
+        cover_file = os.path.join(self.thumbnaildir, os.path.basename(cover_url) + ".png")
+         
+        if not os.path.exists(cover_file):
+            log.info("Downloading cover art: {}".format(cover_file))
+            urllib.urlretrieve(cover_url, cover_file)
+         
+        return cover_file
+
     def get_status_text(self):
         status = ""
         songlength = self.b.dbus.get_song_length()
@@ -346,34 +376,6 @@ class BlockifyUI(gtk.Window):
 
         return status
 
-    def start_blockify(self):
-        "Start blockify and the main update routine."
-        # Load the blocklist, start_blockify blockify, trap some signals and unmute.
-        blocklist = blockify.Blocklist(blockify.get_configdir())
-        self.b = blockify.Blockify(blocklist)
-        self.thumbnaildir = os.path.join(self.b.configdir, "thumbnails")
-        self.bind_signals()
-        self.b.toggle_mute()
-        # Start and loop the main update routine once every 250ms.
-        # To influence responsiveness or CPU usage, decrease/increase ms here.
-#         glib.timeout_add_seconds(1, self.update)
-        glib.timeout_add(self.update_interval, self.update)  # @UndefinedVariable
-
-        log.info("Blockify-UI started.")
-
-    def bind_signals(self):
-        "Binds SIGTERM, SIGINT and SIGUSR1 to custom actions."
-        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())
-        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.b.unblock_current())
-        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
-        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
-
-    def stop(self, *args):
-        "Cleanly shut down, unmuting sound and saving the blocklist."
-        self.b.stop()
-        log.debug("Exiting GUI.")
-        gtk.main_quit()
-        
     def restore_size(self):
         width, height = self.get_default_size()
         self.resize(width, height)
@@ -422,55 +424,22 @@ class BlockifyUI(gtk.Window):
             self.b.autodetect = False
 
     def on_togglemute(self, widget):
+        print self.b.is_sink_muted, self.b.is_fully_muted
         if self.b.is_sink_muted or self.b.is_fully_muted:
             self.b.toggle_mute(2)
         else:
             self.b.toggle_mute(1)
-#         if self.block_toggled:
-#             return
-#         if widget.get_active():
-#             widget.set_label("Unmute")
-#             self.set_icon_from_file(self.muteon_icon)
-#             self.b.automute = False
-#             self.mute_toggled = True
-#             self.b.toggle_mute(1)
-#             if not self.automute_toggled:
-#                 self.set_title("Blockify (muted)")
-#                 lbl = self.toggleblock.get_label()
-#                 self.toggleblock.set_label(lbl + " (disabled)")
-#         else:
-#             widget.set_label("Mute")
-#             self.set_icon_from_file(self.muteoff_icon)
-#             self.mute_toggled = False
-#             self.b.toggle_mute(2)
-#             if not self.automute_toggled:
-#                 self.b.automute = True
-#                 self.set_title("Blockify")
-#                 self.toggleblock.set_label("Block")
 
     def on_checkmanualmute(self, widget):
         if widget.get_active():
             self.b.automute = False
+            self.togglemute.set_sensitive(True)
             self.b.toggle_mute(2)
             log.debug("Enabled manual mute mode.")
         else:
+            self.togglemute.set_sensitive(False)
             self.b.automute = True
             log.debug("Disabled manual mute mode.")
-#         if widget.get_active():
-#             self.set_title("Blockify")
-#             self.b.automute = True
-#             self.automute_toggled = False
-#             if not self.mute_toggled:
-#                 self.toggleblock.set_label("Block")
-#                 self.toggleblock.set_sensitive(True)
-#         else:
-#             self.set_title("Blockify (inactive)")
-#             self.b.automute = False
-#             self.automute_toggled = True
-#             self.block_toggled = False
-#             if not self.mute_toggled:
-#                 self.b.toggle_mute()
-#                 self.toggleblock.set_sensitive(False)
 
     def on_togglelist(self, widget):
         if widget.get_active():
@@ -480,7 +449,6 @@ class BlockifyUI(gtk.Window):
                 self.editor.destroy()
 
     def on_toggleplay(self, widget):
-        # Try to connect to DBus if it failed before.
         self.b.dbus.playpause()
 
     def on_nextsong(self, widget):

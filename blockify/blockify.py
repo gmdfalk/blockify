@@ -103,13 +103,13 @@ class Blockify(object):
     def __init__(self, blocklist):
         self.check_for_blockify_process()
         self.check_for_spotify_process()
-        self._automute = True
         self.connect_dbus()
-        self.try_enable_dbus()
+        self.channels = self.get_channels()
+        self.automute = True
+        self.autodetect = True
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.configdir = blocklist.configdir
-        self.channels = self.get_channels()
         self.current_song = ""
         self.song_status = ""
         self.is_fully_muted = False
@@ -122,6 +122,7 @@ class Blockify(object):
             self.mutemethod = self.pulsesink_mute
         except (OSError, subprocess.CalledProcessError):
             self.mutemethod = self.alsa_mute
+            
 
         log.info("Blockify initialized.")
         
@@ -148,17 +149,8 @@ class Blockify(object):
         try:
             self.dbus = blockifydbus.BlockifyDBus()
         except Exception as e:
-            log.error("Cannot connect to DBus. Autodetection and Player Controls"
-                      " will be unavailable ({}).".format(e))
-            self.dbus = None
-
-    def try_enable_dbus(self):
-        if self.dbus is not None and self.dbus.is_running():
-            self.use_dbus = True
-            self._autodetect = True
-        else:
-            self.use_dbus = False
-            self._autodetect = False
+            log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
+            sys.exit()
 
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
@@ -188,7 +180,7 @@ class Blockify(object):
             self.toggle_mute(2)
             return False
 
-        if self.autodetect and self.use_dbus:
+        if self.autodetect:
             if self.current_song_is_ad():
                 # Ad found, force mute.
                 self.toggle_mute(1)
@@ -319,11 +311,11 @@ class Blockify(object):
         # Put valid spotify PIDs in a list
         output = pacmd_out.decode("utf-8")
 
-        spotify_sink_list = [" index: " + i for i in output.split("index: ") if "Spotify" in i]
+        spotify_sink_list = [" index: " + i for i in output.split("index: ") if "spotify" in i]
 
         if not len(spotify_sink_list):
             return
-
+        
         sink_infos = [pattern.findall(sink) for sink in spotify_sink_list]
         # Every third element per sublist is a key, the value is the preceding
         # two elements in the form of a tuple - {pid : (index, muted)}
