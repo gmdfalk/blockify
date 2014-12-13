@@ -12,17 +12,11 @@ import gtk
 import urllib
 
 # TODO: audio player (toggle, next, prev, shuffle, interactive progress bar)
-# TODO: config file, playlist file
-# TODO: album image wth hide/show checkbox (artUrl)
-
+# TODO: threading for cover art dl
+# TODO: toggle button for cover autohide
 # TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
-# TODO: Album label.
-# TODO: Differentiate better between Spotify not running and no song playing to
-# display in the status label.
-# FIXME: Correct mutebutton state after disabling automute.
-# FIXME: Reconnect to DBus if it failed initially.
 log = logging.getLogger("gui")
 
 
@@ -123,11 +117,13 @@ class BlockifyUI(gtk.Window):
     "PyQT4 interface for blockify."
     def __init__(self):
         super(BlockifyUI, self).__init__()
+        gtk.threads_init()
 
         self.automute_toggled = False
         self.block_toggled = False
         self.mute_toggled = False
         self.show_cover = False
+        self.autohide_cover = False
         self.editor = None
         # Set the GUI/Blockify update interval to 500ms. Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
@@ -139,15 +135,18 @@ class BlockifyUI(gtk.Window):
 
         self.coverimage = gtk.Image()
         self.coverimage.hide_all()
+        self.albumlabel = gtk.Label()
         self.artistlabel = gtk.Label()
-        self.artistlabel.set_line_wrap(True)
         self.titlelabel = gtk.Label()
-        self.titlelabel.set_line_wrap(True)
         self.statuslabel = gtk.Label()
+        
+        for label in [self.albumlabel, self.artistlabel, self.titlelabel]:
+#             label.set_line_wrap(True)
+            label.set_width_chars(27)
+
         self.create_buttons()
 
-        vbox = self.create_layout()
-        self.add(vbox)
+        self.add(self.create_layout())
 
         # "Trap" the exit.
         self.connect("destroy", self.stop)
@@ -165,64 +164,68 @@ class BlockifyUI(gtk.Window):
         # Window setup.
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
-        self.set_default_size(210, 240)
+        self.set_default_size(216, 232)
 
     def create_buttons(self):
-        # Show/Hide cover button.
-        self.togglecover = gtk.ToggleButton("Show/Hide Cover")
-        self.togglecover.connect("clicked", self.on_togglecover)
-        self.togglecover.set_active(True)
+        self.toggleplay = gtk.ToggleButton("Play/Pause")
+        self.toggleplay.connect("clicked", self.on_toggleplay)
+        self.prevsong = gtk.Button("Previous")
+        self.prevsong.connect("clicked", self.on_prevsong)
+        self.nextsong = gtk.Button("Next")
+        self.nextsong.connect("clicked", self.on_nextsong)
         
-        # Block/Unblock button.
         self.toggleblock = gtk.ToggleButton("Block")
         self.toggleblock.connect("clicked", self.on_toggleblock)
+        self.checkautoblock = gtk.CheckButton("Automatic")
+        self.checkautoblock.connect("clicked", self.on_checkautoblock)
 
-        # Mute/Unmute button.
-        self.togglemute = gtk.ToggleButton("(Manual) Mute")
+        self.togglemute = gtk.ToggleButton("Mute")
         self.togglemute.connect("clicked", self.on_togglemute)
+        self.checkautomute = gtk.CheckButton("Automatic")
+        self.checkautomute.connect("clicked", self.on_checkautomute)
+        
+        self.togglecover = gtk.ToggleButton("Toggle Cover")
+        self.togglecover.connect("clicked", self.on_togglecover)
+        self.togglecover.set_active(True)
+        self.checkautocover = gtk.CheckButton("Automatic")
+        self.checkautocover.connect("clicked", self.on_checkautocover)
 
-        # Play/Pause button.
-        self.toggleplay = gtk.ToggleButton("Toggle Play/Pause")
-        self.toggleplay.connect("clicked", self.on_toggleplay)
-
-        # Open/Close Blocklist button.
         self.togglelist = gtk.ToggleButton("Open List")
         self.togglelist.connect("clicked", self.on_togglelist)
 
-        self.nextsong = gtk.Button("Next")
-        self.nextsong.connect("clicked", self.on_nextsong)
-
-        self.prevsong = gtk.Button("Previous")
-        self.prevsong.connect("clicked", self.on_prevsong)
-
-        # Disable/Enable mute checkbutton.
-        self.toggleautomute = gtk.ToggleButton("Disable AutoMute")
-        self.toggleautomute.unset_flags(gtk.CAN_FOCUS)
-        self.toggleautomute.connect("clicked", self.on_toggleautomute)
-
-        # Disable/Enable autodetect
-        self.toggleautodetect = gtk.ToggleButton("Enable Autodetection")
-        self.toggleautodetect.connect("clicked", self.on_toggleautodetect)
-
     def create_layout(self):
-        vbox = gtk.VBox()
-        vbox.add(self.coverimage)
-        vbox.add(self.artistlabel)
-        vbox.add(self.titlelabel)
-        vbox.add(self.statuslabel)
-        hbox = gtk.HBox()
-        vbox.pack_start(hbox)
-        vbox.add(self.toggleplay)
-        hbox.add(self.prevsong)
-        hbox.add(self.nextsong)
-        vbox.add(self.toggleblock)
-        vbox.add(self.togglemute)
-        vbox.add(self.toggleautomute)
-        vbox.add(self.togglelist)
-        vbox.add(self.toggleautodetect)
-        vbox.add(self.togglecover)
+        main = gtk.VBox()
+        
+        main.add(self.coverimage)
+        main.add(self.artistlabel)
+        main.add(self.albumlabel)
+        main.add(self.titlelabel)
+        main.add(self.statuslabel)
+        main.add(self.toggleplay)
+        
+        controlbuttons = gtk.HBox(True)
+        controlbuttons.add(self.prevsong)
+        controlbuttons.add(self.nextsong)
+        main.pack_start(controlbuttons)
+        
+        blockbuttons = gtk.HBox(True)
+        blockbuttons.add(self.toggleblock)
+        blockbuttons.add(self.checkautoblock)
+        main.pack_start(blockbuttons)
+        
+        mutebuttons = gtk.HBox(True)
+        mutebuttons.add(self.togglemute)
+        mutebuttons.add(self.checkautomute)
+        main.pack_start(mutebuttons)
+        
+        coverbuttons = gtk.HBox(True)
+        coverbuttons.add(self.togglecover)
+        coverbuttons.add(self.checkautocover)
+        main.pack_start(coverbuttons)
 
-        return vbox
+        main.add(self.togglelist)
+        
+        return main
 
     def update(self):
         "Main GUI loop, 500ms update interval (self.update_interval)."
@@ -245,7 +248,6 @@ class BlockifyUI(gtk.Window):
         return True
     
     def get_cover_art(self):
-#         cover_url = self.b.dbus.get_art_url()
         # The server spotify gets its images from. Filename is a hash, the last part of metadata["artUrl"]
         cover_url = "https://i.scdn.co/image/" + os.path.basename(self.b.dbus.get_art_url())
         cover_file = os.path.join(self.thumbnaildir, os.path.basename(cover_url) + ".png")
@@ -257,13 +259,18 @@ class BlockifyUI(gtk.Window):
         return cover_file
     
     def display_cover(self):
-        if self.b.is_sink_muted:
-            self.coverimage.set_from_file(self.adicon)
+        if self.b.is_sink_muted or self.b.is_fully_muted:
+            if self.autohide_cover:
+                self.coverimage.hide()
+            else:
+                self.coverimage.set_from_file(self.adicon)
         else:
             cover_file = self.get_cover_art()
             pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
             scaled_buf = pixbuf.scale_simple(195,195,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
             self.coverimage.set_from_pixbuf(scaled_buf)
+            if self.autohide_cover:
+                self.coverimage.show()
 
     def update_songinfo(self):
         # Grab some useful information from DBus.
@@ -281,6 +288,11 @@ class BlockifyUI(gtk.Window):
     def update_labels(self):
         if self.b.dbus and self.b.use_dbus:
             self.statuslabel.set_text(self.get_status_text())
+            if self.b.current_song_is_ad():
+                self.albumlabel.hide()
+            else:
+                self.albumlabel.show()
+                self.albumlabel.set_text(self.b.dbus.get_song_album())
 
         artist, title = self.format_current_song()
         self.artistlabel.set_text(artist)
@@ -353,7 +365,7 @@ class BlockifyUI(gtk.Window):
         glib.timeout_add(self.update_interval, self.update)  # @UndefinedVariable
         # Initially correct the state of the autodetect button.
         if self.b.autodetect:
-            self.toggleautodetect.set_active(True)
+            self.checkautoblock.set_active(True)
         log.info("Blockify-UI started.")
 
     def bind_signals(self):
@@ -369,6 +381,10 @@ class BlockifyUI(gtk.Window):
         log.debug("Exiting GUI.")
         gtk.main_quit()
         
+    def restore_size(self):
+        width, height = self.get_default_size()
+        self.resize(width, height)
+        
     def enable_cover(self):
         if not self.coverimage.flags() & gtk.VISIBLE:
             self.show_cover = True
@@ -378,8 +394,7 @@ class BlockifyUI(gtk.Window):
         if self.coverimage.flags() & gtk.VISIBLE:
             self.show_cover = False
             self.coverimage.hide()
-            width, height = self.get_default_size()
-            self.resize(width, height)
+            self.restore_size()
         
     def on_togglecover(self, widget):
         if widget.get_active():
@@ -390,6 +405,12 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Show Cover")
             self.disable_cover()
             log.info("Disabled cover art.")
+    
+    def on_checkautocover(self, widget):
+        if widget.get_active():
+            self.autohide_cover = True
+        else:
+            self.autohide_cover = False
 
     def on_toggleblock(self, widget):
         # Block the blockbutton if blockbutton-blocking togglebuttons are toggled.
@@ -413,7 +434,7 @@ class BlockifyUI(gtk.Window):
                 self.set_title("Blockify")
                 self.block_toggled = False
 
-    def on_toggleautomute(self, widget):
+    def on_checkautomute(self, widget):
         if widget.get_active():
             self.set_title("Blockify (inactive)")
             self.b.automute = False
@@ -432,12 +453,13 @@ class BlockifyUI(gtk.Window):
             if not self.mute_toggled:
                 self.toggleblock.set_label("Block")
 
-    def on_toggleautodetect(self, widget):
+    def on_checkautoblock(self, widget):
         if widget.get_active():
             if not self.b.dbus:
                 self.b.connect_dbus()
+                self.albumlabel.hide()
             self.b.try_enable_dbus()
-            widget.set_label("Disable Autodetection")
+            widget.set_label("Automatic")
             log.info("Enabled ad autodetection.")
         else:
             widget.set_label("Enable Autodetection")

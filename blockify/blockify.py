@@ -12,8 +12,7 @@ Options:
     --version         Show current version of blockify.
 """
 # TODO: Try xlib/_net for minimized window detection.
-# TODO: Play local mp3s when ads are muted? Currently only possible with pulse.
-# TODO: Fix fallback mode from pulse to alsa.
+# TODO: Play local mp3s when ads are muted? Currently only possible with pulse sinks.
 import codecs
 import logging
 import os
@@ -112,6 +111,7 @@ class Blockify(object):
         self.configdir = blocklist.configdir
         self.channels = self.get_channels()
         self.current_song = ""
+        self.is_fully_muted = False
         self.is_sink_muted = False
 
         # Determine if we can use sinks or have to use alsa.
@@ -263,6 +263,7 @@ class Blockify(object):
 
     def get_state(self, mode):
         muted = self.is_muted()
+        self.is_fully_muted = muted
 
         state = None
 
