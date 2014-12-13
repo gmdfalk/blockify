@@ -127,6 +127,8 @@ class Blockify(object):
     def check_for_spotify_process(self):
         try:
             subprocess.check_output(["pgrep", "spotify"])
+            pidof_out = subprocess.check_output(["pidof", "spotify"])
+            self.spotify_pids = pidof_out.decode("utf-8").strip().split(" ")
         except subprocess.CalledProcessError:
             log.error("No spotify process found. Exiting.")
             sys.exit()
@@ -218,8 +220,9 @@ class Blockify(object):
         song = ""
 
         if spotify_window:
-            song = " ".join(spotify_window[0].split()[2:])
+            song = " ".join(spotify_window[0].split()[2:]).decode("utf-8")
 
+        print song
         return song
 
     def block_current(self):
@@ -294,13 +297,8 @@ class Blockify(object):
     def pulsesink_mute(self, mode):
         "Finds spotify's audio sink and toggles its mute state."
         try:
-            pidof_out = None
-            pidof_out = subprocess.check_output(["pidof", "spotify"])
             pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
         except subprocess.CalledProcessError:
-            if not pidof_out:
-                log.error("(Native) Spotify process not found. Is it running?")
-                return
             log.error("Spotify sink not found. Is Pulse running?")
             log.error("Resorting to amixer as mute method.")
             self.mutemethod = self.pulse_mute  # Fall back to amixer mute.
@@ -309,7 +307,6 @@ class Blockify(object):
         # Match muted and application.process.id values.
         pattern = re.compile(r"(?: index|muted|application\.process\.id).*?(\w+)")
         # Put valid spotify PIDs in a list
-        pids = pidof_out.decode("utf-8").strip().split(" ")
         output = pacmd_out.decode("utf-8")
 
         spotify_sink_list = [" index: " + i for i in output.split("index: ") if "Spotify" in i]
@@ -323,7 +320,7 @@ class Blockify(object):
         idxd = {info[2]: (info[0], info[1]) for info in sink_infos if len(info) == 3}
 
         try:
-            pid = [k for k in idxd.keys() if k in pids][0]
+            pid = [k for k in idxd.keys() if k in self.spotify_pids][0]
             index, muted = idxd[pid]
             self.is_sink_muted = True if muted == "yes" else False
         except IndexError:
@@ -370,7 +367,7 @@ class Blockify(object):
 
     @autodetect.setter
     def autodetect(self, boolean):
-        log.debug("Setting autodetect to: {}.".format(boolean))
+        log.info("Setting autodetect to: {}.".format(boolean))
         self._autodetect = boolean
 
 
