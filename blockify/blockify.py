@@ -189,15 +189,16 @@ class Blockify(object):
 
         # Manual control is enabled so we return here.
         if not self.automute:
-            return
+            return False
 
-        # No song playing, unmute.
+        # No song playing, force unmute.
         if not self.current_song:
             self.toggle_mute(2)
-            return
+            return False
 
         if self.autodetect and self.use_dbus:
             if self.current_song_is_ad():
+                # Ad found, force mute.
                 self.toggle_mute(1)
                 return True
 

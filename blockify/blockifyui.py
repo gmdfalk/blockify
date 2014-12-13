@@ -122,9 +122,9 @@ class BlockifyUI(gtk.Window):
         self.automute_toggled = False
         self.block_toggled = False
         self.mute_toggled = False
-        self.show_cover = False
-        self.autohide_cover = False
+        self.autohide_cover = True
         self.editor = None
+        self.previous_cover_file = ""
         # Set the GUI/Blockify update interval to 500ms. Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
@@ -184,10 +184,10 @@ class BlockifyUI(gtk.Window):
         self.checkautomute = gtk.CheckButton("Automatic")
         self.checkautomute.connect("clicked", self.on_checkautomute)
         
-        self.togglecover = gtk.ToggleButton("Toggle Cover")
+        self.togglecover = gtk.Button("Toggle Cover")
         self.togglecover.connect("clicked", self.on_togglecover)
-        self.togglecover.set_active(True)
         self.checkautocover = gtk.CheckButton("Automatic")
+        self.checkautocover.set_active(self.autohide_cover)
         self.checkautocover.connect("clicked", self.on_checkautocover)
 
         self.togglelist = gtk.ToggleButton("Open List")
@@ -232,8 +232,8 @@ class BlockifyUI(gtk.Window):
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
-        if self.show_cover:
-            self.display_cover()
+#         if self.coverimage.get_visible()
+        self.update_cover()
 
         # Correct the automute state, if necessary.
         if not any([self.mute_toggled, self.automute_toggled, self.b.automute]):
@@ -258,19 +258,22 @@ class BlockifyUI(gtk.Window):
          
         return cover_file
     
-    def display_cover(self):
+    def update_cover(self):
         if self.b.is_sink_muted or self.b.is_fully_muted:
             if self.autohide_cover:
-                self.coverimage.hide()
+                self.disable_cover()
             else:
                 self.coverimage.set_from_file(self.adicon)
         else:
             cover_file = self.get_cover_art()
-            pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
-            scaled_buf = pixbuf.scale_simple(195,195,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
-            self.coverimage.set_from_pixbuf(scaled_buf)
+            if self.previous_cover_file != cover_file:
+                print "ble"
+                pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
+                scaled_buf = pixbuf.scale_simple(195,195,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
+                self.coverimage.set_from_pixbuf(scaled_buf)
+                self.previous_cover_file = cover_file
             if self.autohide_cover:
-                self.coverimage.show()
+                self.enable_cover()
 
     def update_songinfo(self):
         # Grab some useful information from DBus.
@@ -387,24 +390,22 @@ class BlockifyUI(gtk.Window):
         
     def enable_cover(self):
         if not self.coverimage.flags() & gtk.VISIBLE:
-            self.show_cover = True
             self.coverimage.show()
     
     def disable_cover(self):
         if self.coverimage.flags() & gtk.VISIBLE:
-            self.show_cover = False
             self.coverimage.hide()
             self.restore_size()
         
     def on_togglecover(self, widget):
-        if widget.get_active():
-            widget.set_label("Hide Cover")
-            self.enable_cover()
-            log.info("Enabled cover art.")
-        else:
+        if self.coverimage.get_visible():
             widget.set_label("Show Cover")
             self.disable_cover()
             log.info("Disabled cover art.")
+        else:
+            widget.set_label("Hide Cover")
+            self.enable_cover()
+            log.info("Enabled cover art.")
     
     def on_checkautocover(self, widget):
         if widget.get_active():
@@ -440,7 +441,6 @@ class BlockifyUI(gtk.Window):
             self.b.automute = False
             self.automute_toggled = True
             self.block_toggled = False
-            widget.set_label("Enable AutoMute")
             if not self.mute_toggled:
                 self.b.toggle_mute()
                 lbl = self.toggleblock.get_label()
@@ -449,7 +449,6 @@ class BlockifyUI(gtk.Window):
             self.set_title("Blockify")
             self.b.automute = True
             self.automute_toggled = False
-            widget.set_label("Disable AutoMute")
             if not self.mute_toggled:
                 self.toggleblock.set_label("Block")
 
@@ -459,10 +458,8 @@ class BlockifyUI(gtk.Window):
                 self.b.connect_dbus()
                 self.albumlabel.hide()
             self.b.try_enable_dbus()
-            widget.set_label("Automatic")
             log.info("Enabled ad autodetection.")
         else:
-            widget.set_label("Enable Autodetection")
             self.b.autodetect = False
             log.info("Disabled ad autodetection.")
 
