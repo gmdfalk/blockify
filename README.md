@@ -1,48 +1,46 @@
 # blockify
+Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.  
 
-Blockify is a linux only application that allows you to automatically mute songs and advertisements in both the wine and native versions of Spotify.  
-It depends on gtk and wnck and will currently only work if Spotify is not minimized to the system tray (minimized to task bar is fine). 
+## Installation
+##### AUR
+Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/blockify/).  
 
-### Installation
-Clone the repository with `git clone https://github.com/mikar/blockify`.  
-You can then either run the cli/gui directly or install it with `pip install .`  
-Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/blockify/).
-For the linux version of Spotify, blockify will automatically detect and block ads but it also comes with the option to complement or replace that functionality with a block list which will be saved as ~/.blockify_list.
-For the windows (wine) version of Spotify, you will have to use the block list as automatic detection is not supported.
-Keep in mind that you can edit the block list entries to broaden the matching pattern.  
-For instance, `Bloodhound Gang – The Bad Touch` will only block that song while `Blood` will block not only all Bloodhound Gang Songs but any artist whose name starts with "Blood".  
+##### Manually
+Before installing blockify, please make sure you have the appropriate dependencies installed.  
+- Hard dependencies: pygtk python2-wnck python2-dbus alsa-utils python2-docopt  
+- Soft dependencies: pulseaudio  
+- Installation tools: python2-pip (preferred) OR python2-setuptools  
 
-### GUI Usage
-![ScreenShot](http://a.pomf.se/dzngqg.png)  
-Blockify comes with a GUI which is tailored for the native linux version of Spotify.  
-It does work with the Wine version but Play/Pause and Previous/Next will not be available.  
-
-### CLI Usage
-
-New with v1.1: Automatic ad detection (won't work for the wine version)
-
-`blockify -h` will print out a help text with available options.
-
-When you find a song you want to mute, add it to ~/.blockify_list either manually or with:
+Actual installation procedure is as follows:  
 ``` bash
-pkill -USR1 -f "python2.*blockify"
+git clone https://github.com/mikar/blockify
+cd blockify
+sudo pip2 install . OR python2 setup.py install
 ```
 
-Similarly, to unblock a song, you can either remove it manually from the textfile or send SIGUSR2:
-``` bash
-pkill -USR2 -f "python2.*blockify"
-```
-Note that this will only work for unedited block entries.  
+## Usage
+Blockify will automatically detect and block ads but it also comes with the option to complement or replace that functionality with a block list which will be saved as ~/.config/blockify/blocklist.  
 
-Alternatively, this command will remove the last added entry from the blocklist:
-``` bash
-sed -ie '$d' ~/.blockify_list
-```
+Blockify has a CLI/daemon that you can start with `blockify`.  
+`blockify -h` will print out a help text with available options.  
+To block or unblock a song with the cli running, use `pkill -USR1 -f "python2.*blockify"` and `pkill -USR2 -f "python2.*blockify"` respectively.  
 
-Aliasing/Binding this to your shell/WM/DE is probably the most comfortable and safe way to deal with it.
+Alternatively, you can use the GUI with `blockify-ui` which spawns this window.  
+![ScreenShot](http://a.pomf.se/vxnnwo.jpg)  
+- Play, Previous, Next: These buttons use dbus to send audio control commands to spotify.
+- Block/Unblock: Add/Remove the currently playing song to/from the blocklist.
+- Mute/Unmute: Mute/Unmute the current song. Only works if "Manual" checkbox is activated.
+- Manual: Disables automatic mute of ads and instead allows you to mute manually.
+- Show/Hide Cover: Enable/Disable display of cover art image.
+- Autohide: If this option is checked, the cover art will be automatically hidden whenever a commercial is playing.
 
-### DBus Interface
+## Changelog
+- v1.4 (coming soon): Interlude music of your choice during commercials  
+- v1.3 (2014-12-13): GUI-Update and Refactoring  
+- v1.2 (2014-12-11): Cover-Art and config/cache folder in ~/.config/blockify  
+- v1.1 (2014-06-17): Autodetection of commercials  
+- v1.0 (2014-05-02): First moderately stable version  
+- v0.9 (2014-04-29): Pulseaudio (sink) support  
 
-Thanks to [kerbertx](https://github.com/kebertx/blockify), a dbus interface for the native Spotify client is now included, too.  
-The docstring inside spotifydbus.py explains how it's used.  
-If you're using the wine version of Spotify you might want to take a look at [spotify_cmd](https://code.google.com/p/spotifycmd/) for similar functionality.
+## Known Issues
+- If Spotify is minimized to the system tray, ad detection will not work. 
