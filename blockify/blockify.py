@@ -232,7 +232,7 @@ class Blockify(object):
         if spotify_window:
             song = " ".join(spotify_window[0].split()[2:]).decode("utf-8")
 
-        print song
+#         print song
         return song
 
     def block_current(self):

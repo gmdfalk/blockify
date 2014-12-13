@@ -10,7 +10,6 @@ import glib
 import gtk
 import urllib
 
-# FIXME: unblock -> recover cover art
 # TODO: audio player (toggle, next, prev, shuffle, interactive progress bar)
 # TODO: threading for cover art dl
 # TODO: Minimize to system-tray
@@ -121,7 +120,7 @@ class BlockifyUI(gtk.Window):
         self.automute_toggled = False
         self.block_toggled = False
         self.mute_toggled = False
-        self.autohide_cover = True
+        self.autohide_cover = False
         self.editor = None
         self.previous_cover_file = ""
         
@@ -174,25 +173,25 @@ class BlockifyUI(gtk.Window):
         self.nextsong = gtk.Button("Next")
         self.nextsong.connect("clicked", self.on_nextsong)
         
-        self.toggleblock = gtk.ToggleButton("Block")
+        self.toggleblock = gtk.Button("Block")
         self.toggleblock.connect("clicked", self.on_toggleblock)
-        self.checkautoblock = gtk.CheckButton("Autodetect")
-        self.checkautoblock.connect("clicked", self.on_checkautodetect)
+        self.checkautodetect = gtk.CheckButton("Autodetect")
+        self.checkautodetect.connect("clicked", self.on_checkautodetect)
 
-        self.togglemute = gtk.ToggleButton("Mute")
+        self.togglemute = gtk.Button("Mute")
         self.togglemute.connect("clicked", self.on_togglemute)
         self.checkmanualmute = gtk.CheckButton("Manual")
         self.checkmanualmute.connect("clicked", self.on_checkmanualmute)
         
         self.togglecover = gtk.Button("Toggle Cover")
         self.togglecover.connect("clicked", self.on_togglecover)
-        self.checkautocover = gtk.CheckButton("Autohide")
-        self.checkautocover.connect("clicked", self.on_checkautocover)
+        self.checkautohidecover = gtk.CheckButton("Autohide")
+        self.checkautohidecover.connect("clicked", self.on_checkautohidecover)
 
         self.togglelist = gtk.ToggleButton("Open List")
         self.togglelist.connect("clicked", self.on_togglelist)
         
-        for checkbox in [self.checkautoblock, self.checkautocover]:
+        for checkbox in [self.checkautodetect]:
             checkbox.set_active(True)
 
     def create_layout(self):
@@ -212,7 +211,7 @@ class BlockifyUI(gtk.Window):
         
         blockbuttons = gtk.HBox(True)
         blockbuttons.add(self.toggleblock)
-        blockbuttons.add(self.checkautoblock)
+        blockbuttons.add(self.checkautodetect)
         main.pack_start(blockbuttons)
         
         mutebuttons = gtk.HBox(True)
@@ -222,7 +221,7 @@ class BlockifyUI(gtk.Window):
         
         coverbuttons = gtk.HBox(True)
         coverbuttons.add(self.togglecover)
-        coverbuttons.add(self.checkautocover)
+        coverbuttons.add(self.checkautohidecover)
         main.pack_start(coverbuttons)
 
         main.add(self.togglelist)
@@ -283,17 +282,14 @@ class BlockifyUI(gtk.Window):
 
     def update_buttons(self):
         # Correct the state of the Block/Unblock toggle button.
-#         if self.found:
-#             self.toggleblock.set_active(True)
-#         elif not self.found:
-#             self.toggleblock.set_active(False)
-
         if self.found:
-#             self.toggleblock.set_active(True)
             self.toggleblock.set_label("Unblock")
+            self.set_title("Blockify (blocked)")
+            self.set_icon_from_file(self.muteon_icon)
         else:
-#             self.toggleblock.set_active(False)
             self.toggleblock.set_label("Block")
+            self.set_title("Blockify")
+            self.set_icon_from_file(self.muteoff_icon)
         
         if self.b.is_sink_muted or self.b.is_fully_muted:
             self.togglemute.set_label("Unmute")
@@ -304,7 +300,12 @@ class BlockifyUI(gtk.Window):
             self.toggleplay.set_label("Play")
         else:
             self.toggleplay.set_label("Pause")
-
+        
+        if self.coverimage.get_visible():
+            self.togglecover.set_label("Hide Cover")
+        else:
+            self.togglecover.set_label("Show Cover")
+        
         # Correct state of Open/Close List toggle button.
         if self.editor:
             if not self.editor.get_visible() and self.togglelist.get_active():
@@ -378,25 +379,23 @@ class BlockifyUI(gtk.Window):
         self.resize(width, height)
         
     def enable_cover(self):
-        if not self.coverimage.flags() & gtk.VISIBLE:
+        if not self.coverimage.get_visible():
             self.coverimage.show()
     
     def disable_cover(self):
-        if self.coverimage.flags() & gtk.VISIBLE:
+        if self.coverimage.get_visible():
             self.coverimage.hide()
             self.restore_size()
         
     def on_togglecover(self, widget):
         if self.coverimage.get_visible():
-            widget.set_label("Show Cover")
             self.disable_cover()
             log.debug("Disabled cover art.")
         else:
-            widget.set_label("Hide Cover")
             self.enable_cover()
             log.debug("Enabled cover art.")
     
-    def on_checkautocover(self, widget):
+    def on_checkautohidecover(self, widget):
         if widget.get_active():
             self.autohide_cover = True
             self.togglecover.set_sensitive(False)
@@ -415,26 +414,6 @@ class BlockifyUI(gtk.Window):
         else:
             self.b.block_current()
             widget.set_label("Unblock")
-            
-#         if self.automute_toggled or self.mute_toggled:
-#             return
-#         if widget.get_active():
-#             widget.set_label("Unblock")
-#             if not self.found:
-#                 self.b.block_current()
-#             if not self.block_toggled:
-#                 self.set_icon_from_file(self.muteon_icon)
-#                 self.set_title("Blockify (blocked)")
-#                 self.block_toggled = True
-#         else:
-#             widget.set_label("Block")
-#             if self.found:
-#                 self.b.unblock_current()
-#             # Only
-#             if self.block_toggled:
-#                 self.set_icon_from_file(self.muteoff_icon)
-#                 self.set_title("Blockify")
-#                 self.block_toggled = False
 
     def on_checkautodetect(self, widget):
         if widget.get_active():
@@ -443,11 +422,10 @@ class BlockifyUI(gtk.Window):
             self.b.autodetect = False
 
     def on_togglemute(self, widget):
-        if widget.get_active():
-            self.b.toggle_mute(1)
-        else:
+        if self.b.is_sink_muted or self.b.is_fully_muted:
             self.b.toggle_mute(2)
-            
+        else:
+            self.b.toggle_mute(1)
 #         if self.block_toggled:
 #             return
 #         if widget.get_active():
