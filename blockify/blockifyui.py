@@ -5,7 +5,6 @@ import logging
 import os
 import signal
 
-from dbus.exceptions import DBusException
 import blockify
 import glib
 import gtk
@@ -14,7 +13,6 @@ import urllib
 # FIXME: unblock -> recover cover art
 # TODO: audio player (toggle, next, prev, shuffle, interactive progress bar)
 # TODO: threading for cover art dl
-# TODO: toggle button for cover autohide
 # TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
@@ -156,7 +154,7 @@ class BlockifyUI(gtk.Window):
         # Window setup.
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
-        self.set_default_size(216, 232)
+        self.set_default_size(216, 188)
 
     def create_labels(self):
         self.albumlabel = gtk.Label()
@@ -169,7 +167,7 @@ class BlockifyUI(gtk.Window):
             label.set_width_chars(27)
             
     def create_buttons(self):
-        self.toggleplay = gtk.ToggleButton("Play/Pause")
+        self.toggleplay = gtk.Button("Play/Pause")
         self.toggleplay.connect("clicked", self.on_toggleplay)
         self.prevsong = gtk.Button("Previous")
         self.prevsong.connect("clicked", self.on_prevsong)
@@ -178,25 +176,24 @@ class BlockifyUI(gtk.Window):
         
         self.toggleblock = gtk.ToggleButton("Block")
         self.toggleblock.connect("clicked", self.on_toggleblock)
-        self.checkautoblock = gtk.CheckButton("Automatic")
-        self.checkautoblock.connect("clicked", self.on_checkautoblock)
+        self.checkautoblock = gtk.CheckButton("Autodetect")
+        self.checkautoblock.connect("clicked", self.on_checkautodetect)
 
         self.togglemute = gtk.ToggleButton("Mute")
         self.togglemute.connect("clicked", self.on_togglemute)
-        self.checkautomute = gtk.CheckButton("Automatic")
-        self.checkautomute.connect("clicked", self.on_checkautomute)
+        self.checkmanualmute = gtk.CheckButton("Manual")
+        self.checkmanualmute.connect("clicked", self.on_checkmanualmute)
         
         self.togglecover = gtk.Button("Toggle Cover")
         self.togglecover.connect("clicked", self.on_togglecover)
-        self.checkautocover = gtk.CheckButton("Automatic")
+        self.checkautocover = gtk.CheckButton("Autohide")
         self.checkautocover.connect("clicked", self.on_checkautocover)
 
         self.togglelist = gtk.ToggleButton("Open List")
         self.togglelist.connect("clicked", self.on_togglelist)
         
-        for checkbox in [self.checkautoblock, self.checkautomute, self.checkautocover]:
+        for checkbox in [self.checkautoblock, self.checkautocover]:
             checkbox.set_active(True)
-            checkbox.activate()
 
     def create_layout(self):
         main = gtk.VBox()
@@ -220,7 +217,7 @@ class BlockifyUI(gtk.Window):
         
         mutebuttons = gtk.HBox(True)
         mutebuttons.add(self.togglemute)
-        mutebuttons.add(self.checkautomute)
+        mutebuttons.add(self.checkmanualmute)
         main.pack_start(mutebuttons)
         
         coverbuttons = gtk.HBox(True)
@@ -237,16 +234,11 @@ class BlockifyUI(gtk.Window):
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
-#         if self.coverimage.get_visible()
         self.update_cover()
-
-        # Correct the automute state, if necessary.
-        if not any([self.mute_toggled, self.automute_toggled, self.b.automute]):
-            self.b.automute = True
 
         # Our main GUI workers here, updating labels, buttons and the likes.
         self.update_labels()
-        self.update_togglebuttons()
+        self.update_buttons()
 
         # The glib.timeout loop will only break if we return False here.
         return True
@@ -266,8 +258,8 @@ class BlockifyUI(gtk.Window):
         if self.b.is_sink_muted or self.b.is_fully_muted:
             if self.autohide_cover:
                 self.disable_cover()
-            else:
-                self.coverimage.set_from_file(self.ad_icon)
+#             else:
+#                 self.coverimage.set_from_file(self.ad_icon)
         else:
             cover_file = self.get_cover_art()
             if self.previous_cover_file != cover_file:
@@ -280,7 +272,7 @@ class BlockifyUI(gtk.Window):
 
     def update_labels(self):
         self.statuslabel.set_text(self.get_status_text())
-        if self.b.current_song_is_ad():
+        if self.found:
             self.albumlabel.set_text("(commercial)")
         else:
             self.albumlabel.set_text(self.b.dbus.get_song_album())
@@ -289,18 +281,39 @@ class BlockifyUI(gtk.Window):
         self.artistlabel.set_text(artist)
         self.titlelabel.set_text(title)
 
-    def update_togglebuttons(self):
+    def update_buttons(self):
         # Correct the state of the Block/Unblock toggle button.
+#         if self.found:
+#             self.toggleblock.set_active(True)
+#         elif not self.found:
+#             self.toggleblock.set_active(False)
+
         if self.found:
-            self.toggleblock.set_active(True)
-        elif not self.found:
-            self.toggleblock.set_active(False)
+#             self.toggleblock.set_active(True)
+            self.toggleblock.set_label("Unblock")
+        else:
+#             self.toggleblock.set_active(False)
+            self.toggleblock.set_label("Block")
+        
+        if self.b.is_sink_muted or self.b.is_fully_muted:
+            self.togglemute.set_label("Unmute")
+        else:
+            self.togglemute.set_label("Mute")
+
+        if self.b.song_status == "Playing":
+            self.toggleplay.set_label("Play")
+        else:
+            self.toggleplay.set_label("Pause")
 
         # Correct state of Open/Close List toggle button.
         if self.editor:
             if not self.editor.get_visible() and self.togglelist.get_active():
                 self.togglelist.set_active(False)
-
+        if self.togglelist.get_active():
+            self.togglelist.set_label("Close List")
+        else:
+            self.togglelist.set_label("Open List")
+            
     def format_current_song(self):
         song = self.b.current_song
         # For whatever reason, Spotify doesn't use a normal hyphen but a
@@ -377,106 +390,119 @@ class BlockifyUI(gtk.Window):
         if self.coverimage.get_visible():
             widget.set_label("Show Cover")
             self.disable_cover()
-            log.info("Disabled cover art.")
+            log.debug("Disabled cover art.")
         else:
             widget.set_label("Hide Cover")
             self.enable_cover()
-            log.info("Enabled cover art.")
+            log.debug("Enabled cover art.")
     
     def on_checkautocover(self, widget):
         if widget.get_active():
             self.autohide_cover = True
             self.togglecover.set_sensitive(False)
+            log.debug("Enabled cover autohide.")
         else:
             self.autohide_cover = False
             self.togglecover.set_sensitive(True)
             self.enable_cover()
+            log.debug("Disabled cover autohide.")
 
     def on_toggleblock(self, widget):
         # Block the blockbutton if blockbutton-blocking togglebuttons are toggled.
-        if self.automute_toggled or self.mute_toggled:
-            return
-        if widget.get_active():
-            widget.set_label("Unblock")
-            if not self.found:
-                self.b.block_current()
-            if not self.block_toggled:
-                self.set_icon_from_file(self.muteon_icon)
-                self.set_title("Blockify (blocked)")
-                self.block_toggled = True
-        else:
+        if self.found:
+            self.b.unblock_current()
             widget.set_label("Block")
-            if self.found:
-                self.b.unblock_current()
-            # Only
-            if self.block_toggled:
-                self.set_icon_from_file(self.muteoff_icon)
-                self.set_title("Blockify")
-                self.block_toggled = False
-
-    def on_checkautomute(self, widget):
-        if widget.get_active():
-            self.set_title("Blockify")
-            self.b.automute = True
-            self.automute_toggled = False
-            if not self.mute_toggled:
-                self.toggleblock.set_label("Block")
-                self.toggleblock.set_sensitive(True)
         else:
-            self.set_title("Blockify (inactive)")
-            self.b.automute = False
-            self.automute_toggled = True
-            self.block_toggled = False
-            if not self.mute_toggled:
-                self.b.toggle_mute()
-                self.toggleblock.set_sensitive(False)
+            self.b.block_current()
+            widget.set_label("Unblock")
+            
+#         if self.automute_toggled or self.mute_toggled:
+#             return
+#         if widget.get_active():
+#             widget.set_label("Unblock")
+#             if not self.found:
+#                 self.b.block_current()
+#             if not self.block_toggled:
+#                 self.set_icon_from_file(self.muteon_icon)
+#                 self.set_title("Blockify (blocked)")
+#                 self.block_toggled = True
+#         else:
+#             widget.set_label("Block")
+#             if self.found:
+#                 self.b.unblock_current()
+#             # Only
+#             if self.block_toggled:
+#                 self.set_icon_from_file(self.muteoff_icon)
+#                 self.set_title("Blockify")
+#                 self.block_toggled = False
 
-    def on_checkautoblock(self, widget):
+    def on_checkautodetect(self, widget):
         if widget.get_active():
             self.b.autodetect = True
-            log.info("Enabled ad autodetection.")
         else:
             self.b.autodetect = False
-            log.info("Disabled ad autodetection.")
 
     def on_togglemute(self, widget):
-        if self.block_toggled:
-            return
         if widget.get_active():
-            widget.set_label("Unmute")
-            self.set_icon_from_file(self.muteon_icon)
-            self.b.automute = False
-            self.mute_toggled = True
             self.b.toggle_mute(1)
-            if not self.automute_toggled:
-                self.set_title("Blockify (muted)")
-                lbl = self.toggleblock.get_label()
-                self.toggleblock.set_label(lbl + " (disabled)")
         else:
-            widget.set_label("Mute")
-            self.set_icon_from_file(self.muteoff_icon)
-            self.mute_toggled = False
             self.b.toggle_mute(2)
-            if not self.automute_toggled:
-                self.b.automute = True
-                self.set_title("Blockify")
-                self.toggleblock.set_label("Block")
+            
+#         if self.block_toggled:
+#             return
+#         if widget.get_active():
+#             widget.set_label("Unmute")
+#             self.set_icon_from_file(self.muteon_icon)
+#             self.b.automute = False
+#             self.mute_toggled = True
+#             self.b.toggle_mute(1)
+#             if not self.automute_toggled:
+#                 self.set_title("Blockify (muted)")
+#                 lbl = self.toggleblock.get_label()
+#                 self.toggleblock.set_label(lbl + " (disabled)")
+#         else:
+#             widget.set_label("Mute")
+#             self.set_icon_from_file(self.muteoff_icon)
+#             self.mute_toggled = False
+#             self.b.toggle_mute(2)
+#             if not self.automute_toggled:
+#                 self.b.automute = True
+#                 self.set_title("Blockify")
+#                 self.toggleblock.set_label("Block")
+
+    def on_checkmanualmute(self, widget):
+        if widget.get_active():
+            self.b.automute = False
+            self.b.toggle_mute(2)
+            log.debug("Enabled manual mute mode.")
+        else:
+            self.b.automute = True
+            log.debug("Disabled manual mute mode.")
+#         if widget.get_active():
+#             self.set_title("Blockify")
+#             self.b.automute = True
+#             self.automute_toggled = False
+#             if not self.mute_toggled:
+#                 self.toggleblock.set_label("Block")
+#                 self.toggleblock.set_sensitive(True)
+#         else:
+#             self.set_title("Blockify (inactive)")
+#             self.b.automute = False
+#             self.automute_toggled = True
+#             self.block_toggled = False
+#             if not self.mute_toggled:
+#                 self.b.toggle_mute()
+#                 self.toggleblock.set_sensitive(False)
 
     def on_togglelist(self, widget):
         if widget.get_active():
-            widget.set_label("Close List")
             self.editor = Notepad(self.b.blocklist.location, self)
         else:
-            widget.set_label("Open List")
             if self.editor:
                 self.editor.destroy()
 
     def on_toggleplay(self, widget):
         # Try to connect to DBus if it failed before.
-        if self.b.song_status == "Playing":
-            widget.set_label("Play")
-        else:
-            widget.set_label("Pause")
         self.b.dbus.playpause()
 
     def on_nextsong(self, widget):
@@ -489,7 +515,7 @@ class BlockifyUI(gtk.Window):
 def main():
     "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
-    blockify.init_logger(logpath=None, loglevel=2, quiet=False)
+    blockify.init_logger(logpath=None, loglevel=3, quiet=False)
     BlockifyUI()
     gtk.main()
 
