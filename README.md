@@ -27,6 +27,12 @@ To block or unblock a song with the cli running, use `pkill -USR1 -f "python2.*b
 
 Alternatively, you can use the GUI with `blockify-ui` which spawns this window.  
 ![ScreenShot](http://a.pomf.se/vxnnwo.jpg)  
+- Play, Previous, Next: These buttons use dbus to send audio control commands to spotify.
+- Block/Unblock: Add/Remove the currently playing song to/from the blocklist.
+- Mute/Unmute: Mute/Unmute the current song. Only works if "Manual" checkbox is activated.
+- Manual: Disables automatic mute of ads and instead allows you to mute manually.
+- Show/Hide Cover: Enable/Disable display of cover art image.
+- Autohide: If this option is checked, the cover art will be automatically hidden whenever a commercial is playing.
 
 ## Changelog
 - v1.4 (coming soon): Interlude music of your choice during commercials  
