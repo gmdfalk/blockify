@@ -13,7 +13,7 @@ Keep in mind that you can edit the block list entries to broaden the matching pa
 For instance, `Bloodhound Gang – The Bad Touch` will only block that song while `Blood` will block not only all Bloodhound Gang Songs but any artist whose name starts with "Blood".  
 
 ### GUI Usage
-![ScreenShot](http://a.pomf.se/dzngqg.png)  
+![ScreenShot](http://a.pomf.se/jtazav.jpg)  
 Blockify comes with a GUI which is tailored for the native linux version of Spotify.  
 It does work with the Wine version but Play/Pause and Previous/Next will not be available.  
 
