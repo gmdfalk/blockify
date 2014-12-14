@@ -101,7 +101,7 @@ class Blockify(object):
 
 
     def __init__(self, blocklist):
-        self.check_for_blockify_process()
+#         self.check_for_blockify_process()
         self.check_for_spotify_process()
         self.connect_dbus()
         self.channels = self.get_channels()

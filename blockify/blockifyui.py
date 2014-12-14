@@ -120,6 +120,7 @@ class BlockifyUI(gtk.Window):
         self.previous_cover_file = ""
         self.cover_server = "https://i.scdn.co/image/"
         self.editor = None
+        self.statusicon_found = False
         
         # Set the GUI/Blockify update interval to 400ms. Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
@@ -130,6 +131,7 @@ class BlockifyUI(gtk.Window):
         self.init_window()
         self.init_blockify()
         self.coverimage = gtk.Image()
+        self.create_trayicon()
         self.create_labels()
         self.create_buttons()
         self.create_layout()
@@ -141,27 +143,59 @@ class BlockifyUI(gtk.Window):
         self.show_all()
 
     def init_window(self):
-        basedir = os.path.dirname(os.path.realpath(__file__))
-        self.muteoff_icon = os.path.join(basedir, "data/not_muted.png")
-        self.muteon_icon = os.path.join(basedir, "data/muted.png")
-        self.ad_icon = os.path.join(basedir, "data/muted_cover.png")
-        self.set_icon_from_file(self.muteoff_icon)
-
         # Window setup.
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
         self.set_default_size(195, 188)
-    
+        
     def init_blockify(self):
         blocklist = blockify.Blocklist(blockify.get_configdir())
         self.b = blockify.Blockify(blocklist)
         self.thumbnail_dir = os.path.join(self.b.configdir, "thumbnails")
         self.bind_signals()
         self.b.toggle_mute()
+    
+    def create_trayicon(self):
+        self.blue_icon_file = "data/icon-blue-32.png"
+        self.red_icon_file = "data/icon-red-32.png"
+        pixbuf_blue = gtk.gdk.pixbuf_new_from_file(self.blue_icon_file)  # @UndefinedVariable
+        pixbuf_red = gtk.gdk.pixbuf_new_from_file(self.red_icon_file)  # @UndefinedVariable
+        self.blue_icon_buf = pixbuf_blue.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
+        self.red_icon_buf = pixbuf_red.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
+
+        self.set_icon_from_file(self.blue_icon_file)
+        self.statusicon = gtk.StatusIcon()
+        self.statusicon.set_from_pixbuf(self.blue_icon_buf)
+        
+        self.connect("delete-event", self.delete_event)
+        self.statusicon.connect("activate", self.status_clicked )
+        self.statusicon.set_tooltip("the window is visible")
+        self.statusicon.connect("popup-menu", self.on_right_click)
+#         self.statusicon.connect('activate', self.on_left_click) 
+
+    def on_right_click(self, icon, event_button, event_time):
+        self.make_menu(event_button, event_time)
+
+    def make_menu(self, event_button, event_time):
+        menu = gtk.Menu()
+
+        # show about dialog
+        about = gtk.MenuItem("About")
+        about.show()
+        menu.append(about)
+        about.connect('activate', self.show_about_dialog)
+
+        # add quit item
+        quit = gtk.MenuItem("Quit")
+        quit.show()
+        menu.append(quit)
+        quit.connect('activate', gtk.main_quit)
+
+        menu.popup(None, None, gtk.status_icon_position_menu,
+                   event_button, event_time, self.tray)
 
     def start(self):
         "Start blockify and the main update routine."
-        
         #TODO: gtk.threads_init()
 
         # Start and loop the main update routine once every 400ms.
@@ -229,7 +263,6 @@ class BlockifyUI(gtk.Window):
         
         self.togglemute.set_sensitive(False)
         
-        
     def create_layout(self):
         main = gtk.VBox()
         
@@ -265,15 +298,16 @@ class BlockifyUI(gtk.Window):
         self.add( main)
 
     def update(self):
-        "Main GUI loop, 500ms update interval (self.update_interval)."
+        "Main GUI loop at 400ms update interval (see self.update_interval)."
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
-        self.update_cover()
 
         # Our main GUI workers here, updating labels, buttons and the likes.
+        self.update_cover()
         self.update_labels()
         self.update_buttons()
+        self.update_icons()
 
         # The glib.timeout loop will only break if we return False here.
         return True
@@ -282,8 +316,6 @@ class BlockifyUI(gtk.Window):
         if self.b.is_sink_muted or self.b.is_fully_muted:
             if self.autohide_cover and self.b.automute:
                 self.disable_cover()
-#             else:
-#                 self.coverimage.set_from_file(self.ad_icon)
         else:
             cover_file = self.get_cover_art()
             if self.previous_cover_file != cover_file:
@@ -296,9 +328,7 @@ class BlockifyUI(gtk.Window):
 
     def update_labels(self):
         self.statuslabel.set_text(self.get_status_text())
-        if self.found:
-            self.albumlabel.set_text("(blocked)")
-        else:
+        if not self.found:
             self.albumlabel.set_text(self.b.dbus.get_song_album())
 
         artist, title = self.format_current_song()
@@ -310,11 +340,9 @@ class BlockifyUI(gtk.Window):
         if self.found:
             self.toggleblock.set_label("Unblock")
             self.set_title("Blockify (blocked)")
-            self.set_icon_from_file(self.muteon_icon)
         else:
             self.toggleblock.set_label("Block")
             self.set_title("Blockify")
-            self.set_icon_from_file(self.muteoff_icon)
 
         if self.b.song_status == "Playing":
             self.toggleplay.set_label("Play")
@@ -334,6 +362,16 @@ class BlockifyUI(gtk.Window):
             self.togglelist.set_label("Close List")
         else:
             self.togglelist.set_label("Open List")
+    
+    def update_icons(self):
+        if self.found and not self.statusicon_found:
+            self.set_icon_from_file(self.red_icon_file)
+            self.statusicon.set_from_pixbuf(self.red_icon_buf)
+            self.statusicon_found = True
+        elif not self.found and self.statusicon_found:
+            self.set_icon_from_file(self.blue_icon_file)
+            self.statusicon.set_from_pixbuf(self.blue_icon_buf)            
+            self.statusicon_found = False
             
     def format_current_song(self):
         song = self.b.current_song
