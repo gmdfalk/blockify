@@ -40,7 +40,7 @@ except ImportError:
 
 pygtk.require("2.0")
 log = logging.getLogger("main")
-VERSION = "1.3"
+VERSION = "1.4"
 
 
 class Blocklist(list):
@@ -74,6 +74,7 @@ class Blocklist(list):
             log.warn("Could not remove {} from blocklist: {}".format(item, e))
 
     def find(self, song):
+        # Arbitrary minimum length of 4 to avoid ambiguous song names.
         while len(song) > 4:
             for item in self:
                 if item.startswith(song):
@@ -104,45 +105,56 @@ class Blocklist(list):
 
 class Player(object):
     "A simple gstreamer audio player to play a list of mp3 files."
-    def __init__(self, playlist):
-        self.playlist = playlist
-        self.playlist_pos = 0
-        self.playlist_max_pos = len(playlist)
-        self.pipeline = gst.Pipeline("interlude")
-        self.player = gst.element_factory_make("playbin", "player")
-        pulse = gst.element_factory_make("pulsesink", "pulse")
-        fakesink = gst.element_factory_make("fakesink", "fakesink")
-  
-        self.player.set_property("audio-sink", pulse)
-        self.player.set_property("video-sink", fakesink)
-        self.player.add(self.pipeline)
+    def __init__(self, configdir):
+        self.configdir = configdir
+        self.playlist = self.open_playlist()
+        self.index = 0
+        self.max_index = len(self.playlist)
+        self.player = gst.element_factory_make("playbin2", "player")
+        self.player.connect("about-to-finish", self.on_about_to_finish)
+        
         self.set_uri()
 
+    def open_playlist(self):
+        "Read the music to be played instead of commercials into a list"
+        playlist_file = os.path.join(self.configdir, "playlist")
+        if os.path.exists(playlist_file):
+            playlist = [line.rstrip() for line in open(playlist_file) if line.startswith("file://")]
+            log.debug("Playlist is: {0}".format( playlist))
+            
+        return playlist
+
+    def on_about_to_finish(self, player):
+        "Queue the next song"
+        self.next()
+        
+    def is_playing(self):
+        return self.player.get_state()[1] is gst.STATE_PLAYING
+
     def play(self):
-        self.pipeline.set_state(gst.STATE_PLAYING)
-        log.debug("Play: State is {0}.".format(self.pipeline.get_state()))
+        self.player.set_state(gst.STATE_PLAYING)
+        log.debug("Play: State is {0}.".format(self.player.get_state()))
 
     def pause(self):
-        self.pipeline.set_state(gst.STATE_PAUSED)
-        log.debug("Pause: State is {0}.".format(self.pipeline.get_state()))
+        self.player.set_state(gst.STATE_PAUSED)
+        log.debug("Pause: State is {0}.".format(self.player.get_state()))
     
     def next(self):
-        if self.playlist_pos >= self.playlist_max_pos:
-            self.playlist_pos = 0
+        if self.index >= self.max_index:
+            self.index = 0
         else:
-            self.playlist_pos += 1
+            self.index += 1
         self.set_uri()
     
     def prev(self):
-        if not self.playlist_pos == 0:
-            self.playlist_pos -= 1
+        if not self.index == 0:
+            self.index -= 1
         self.set_uri()
         
     def set_uri(self):
-        uri = self.playlist[self.playlist_pos]
+        uri = self.playlist[self.index]
         log.debug("Setting track to: {0}".format(uri))
         self.player.set_property("uri", uri)
-        self.play()
 
 
 class Blockify(object):
@@ -161,7 +173,8 @@ class Blockify(object):
         self.check_for_spotify_process()
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
-        self.player = self.init_player()
+        self.player = Player(self.configdir)
+        self.play_interlude_music = True if len(self.player.playlist) else False
 
         # Determine if we can use sinks or have to use alsa.
         try:
@@ -209,22 +222,20 @@ class Blockify(object):
         except Exception as e:
             log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
             sys.exit()
-    
-    def init_player(self):
-        "A (simple) audio player to play songs during commercials"
-        player = Player(self.read_interlude_playlist())
-        
-        return player
-
-    def read_interlude_playlist(self):
-        "Read the music to be played instead of commercials into a list"
-        playlist_file = os.path.join(self.configdir, "playlist")
-        if os.path.exists(playlist_file):
-            playlist = [line for line in open(playlist_file)]
-            log.debug("Playlist is: {0}".format( playlist))
             
-        return playlist
-
+    def start(self):
+        self.bind_signals()
+        self.toggle_mute()
+        while True:
+            # Initiate gtk loop to enable the window list for .get_windows().
+            while gtk.events_pending():
+                gtk.main_iteration(False)
+            found = self.update()
+            if self.play_interlude_music:
+                self.toggle_interlude_music(found)
+                
+            time.sleep(0.25)
+    
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
         if self.song_status == "Playing":
@@ -237,6 +248,13 @@ class Blockify(object):
                 # However, it might still play one last ad so we assume that
                 # is the case here.
                 return True
+    
+    def toggle_interlude_music(self, found):
+        playing = self.player.is_playing()
+        if found and not playing:
+            self.player.play()
+        elif not found and playing:
+           self.player.pause()
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
@@ -254,8 +272,7 @@ class Blockify(object):
             return False
 
         if self.autodetect:
-            if self.current_song_is_ad():
-                # Ad found, force mute.
+            if self.current_song_is_ad():  # Ad found, force mute.
                 self.toggle_mute(1)
                 return True
 
@@ -275,6 +292,7 @@ class Blockify(object):
                 return True  # Return boolean to use as self.found in GUI.
 
         self.toggle_mute()
+
         return False
 
     def get_windows(self):
@@ -494,16 +512,7 @@ def main():
  
     blocklist = Blocklist(get_configdir())
     blockify = Blockify(blocklist)
- 
-    blockify.bind_signals()
-    blockify.toggle_mute()
- 
-    while True:
-        # Initiate gtk loop to enable the window list for .get_windows().
-        while gtk.events_pending():
-            gtk.main_iteration(False)
-        blockify.update()
-        time.sleep(0.25)
+    blockify.start()
 
 
 if __name__ == "__main__":
