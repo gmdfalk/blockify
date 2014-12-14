@@ -157,8 +157,10 @@ class BlockifyUI(gtk.Window):
         self.b.toggle_mute()
     
     def create_tray(self):
-        self.blue_icon_file = "data/icon-blue-32.png"
-        self.red_icon_file = "data/icon-red-32.png"
+        basedir = os.path.dirname(os.path.realpath(__file__))
+
+        self.blue_icon_file = os.path.join(basedir, "data/icon-blue-32.png")
+        self.red_icon_file = os.path.join(basedir, "data/icon-red-32.png")
         pixbuf_blue = gtk.gdk.pixbuf_new_from_file(self.blue_icon_file)  # @UndefinedVariable
         pixbuf_red = gtk.gdk.pixbuf_new_from_file(self.red_icon_file)  # @UndefinedVariable
         self.blue_icon_buf = pixbuf_blue.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
