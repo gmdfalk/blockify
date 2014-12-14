@@ -9,7 +9,10 @@ import blockify
 import glib
 import gtk
 import urllib
+import util
+from threading import Thread
 
+# TODO: Try xlib/_net for minimized window detection.
 # FIXME: tray icon tooltip, continuous update
 # FIXME: mute button state after unblock toggling
 # TODO: audio player (toggle, next, prev, shuffle, interactive progress bar)
@@ -150,7 +153,7 @@ class BlockifyUI(gtk.Window):
         self.set_default_size(195, 188)
         
     def init_blockify(self):
-        blocklist = blockify.Blocklist(blockify.get_configdir())
+        blocklist = blockify.Blocklist(util.get_configdir())
         self.b = blockify.Blockify(blocklist)
         self.thumbnail_dir = os.path.join(self.b.configdir, "thumbnails")
         self.bind_signals()
@@ -346,6 +349,8 @@ class BlockifyUI(gtk.Window):
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
+        if self.b.play_interlude_music:
+            Thread(target=self.b.toggle_interlude_music(self.found)).start()
 
         # Our main GUI workers here, updating labels, buttons and the likes.
         self.update_cover()
@@ -564,7 +569,7 @@ class BlockifyUI(gtk.Window):
 def main():
     "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
-    blockify.init_logger(logpath=None, loglevel=2, quiet=False)
+    util.init_logger(logpath=None, loglevel=2, quiet=False)
     BlockifyUI()
     gtk.main()
 

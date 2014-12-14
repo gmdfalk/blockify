@@ -14,11 +14,11 @@ Options:
     --version         Show current version of blockifydbus.
 """
 import logging
-import os
 import re
-import sys
 
 import dbus
+
+import util
 
 
 try:
@@ -210,80 +210,50 @@ class BlockifyDBus(object):
             log.error("Could not get properties: {}".format(e))
 
 
-def init_logger(logpath=None, loglevel=1, quiet=False):
-    "Initializes the logger for system messages."
-    logger = logging.getLogger()
-
-    # Set the loglevel.
-    if loglevel > 3:
-        loglevel = 3  # Cap at 3 to avoid index errors.
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logger.setLevel(levels[loglevel])
-
-    logformat = "%(asctime)-14s %(levelname)-8s %(message)s"
-
-    formatter = logging.Formatter(logformat, "%Y-%m-%d %H:%M:%S")
-
-    if not quiet:
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
-        log.debug("Added logging console handler.")
-        log.info("Loglevel is {}.".format(levels[loglevel]))
-    if logpath:
-        try:
-            logfile = os.path.abspath(logpath)
-            file_handler = logging.FileHandler(logfile)
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-            log.debug("Added logging file handler: {}.".format(logfile))
-        except IOError:
-            log.error("Could not attach file handler.")
-
 
 def main():
     "Entry point for the CLI DBus interface."
     args = docopt(__doc__, version="0.2")
-    init_logger(args["--log"], args["-v"], args["--quiet"])
-    spotify = BlockifyDBus()
+    util.init_logger(args["--log"], args["-v"], args["--quiet"])
+    dbus = BlockifyDBus()
 
     if args["toggle"]:
-        spotify.playpause()
+        dbus.playpause()
     elif args["next"]:
-        spotify.next()
+        dbus.next()
     elif args["prev"]:
-        spotify.prev()
+        dbus.prev()
     elif args["play"]:
-        spotify.play()
+        dbus.play()
     elif args["stop"]:
-        spotify.stop()
+        dbus.stop()
 
     if args["openuri"]:
-        spotify.open_uri(args["<uri>"])
+        dbus.open_uri(args["<uri>"])
     elif args["seek"]:
-        spotify.seek(args["<secs>"])
+        dbus.seek(args["<secs>"])
     elif args["setpos"]:
-        spotify.set_pos(args["<pos>"])
+        dbus.set_pos(args["<pos>"])
 
     if args["title"]:
-        print spotify.get_song_title()
+        print dbus.get_song_title()
     elif args["artist"]:
-        print spotify.get_song_artist()
+        print dbus.get_song_artist()
     elif args["status"]:
-        print spotify.get_song_status()
+        print dbus.get_song_status()
     elif args["all"]:
-        spotify.print_info()
+        dbus.print_info()
     elif args["get"]:
-        length = spotify.get_song_length()
+        length = dbus.get_song_length()
         m, s = divmod(length, 60)
         if args["length"]:
             print "{}m{}s ({})".format(m, s, length)
         else:
-            rating = spotify.get_property("Metadata")["xesam:autoRating"]
-            artist = spotify.get_song_artist()
-            title = spotify.get_song_title()
-            album = spotify.get_song_album()
-            state = spotify.get_song_status()
+            rating = dbus.get_property("Metadata")["xesam:autoRating"]
+            artist = dbus.get_song_artist()
+            title = dbus.get_song_title()
+            album = dbus.get_song_album()
+            state = dbus.get_song_status()
             print "{} - {} ({}), {}m{}s, {} ({})".format(artist, title, album,
                                                          m, s, rating, state)
 

@@ -11,8 +11,6 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Try xlib/_net for minimized window detection.
-# TODO: Play local mp3s when ads are muted? Currently only possible with pulse sinks.
 import codecs
 import logging
 import os
@@ -20,15 +18,17 @@ import re
 import signal
 import subprocess
 import sys
+from threading import Thread
 import time
 
 import gtk
 import pygtk
 import wnck
+
 import blockifydbus
+import util
 
 import pygst
-from threading import Thread
 pygst.require('0.10')
 import gst
 
@@ -231,7 +231,7 @@ class Blockify(object):
     def start(self):
         self.bind_signals()
         self.toggle_mute()
-        gtk.threads_init()
+#         gtk.threads_init()
         while True:
             # Initiate gtk loop to enable the window list for .get_windows().
             while gtk.events_pending():
@@ -460,63 +460,23 @@ class Blockify(object):
         self._autodetect = boolean
 
 
-def init_logger(logpath=None, loglevel=1, quiet=False):
-    "Initializes the logging module."
-    logger = logging.getLogger()
-
-    # Set the loglevel.
-    if loglevel > 3:
-        loglevel = 3  # Cap at 3 to avoid index errors.
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logger.setLevel(levels[loglevel])
-
-    logformat = "%(asctime)-14s %(levelname)-8s %(name)-8s %(message)s"
-
-    formatter = logging.Formatter(logformat, "%Y-%m-%d %H:%M:%S")
-
-    if not quiet:
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
-        log.debug("Added logging console handler.")
-        log.info("Loglevel is {}.".format(levels[loglevel]))
-    if logpath:
-        try:
-            logfile = os.path.abspath(logpath)
-            file_handler = logging.FileHandler(logfile)
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-            log.debug("Added logging file handler: {}.".format(logfile))
-        except IOError:
-            log.error("Could not attach file handler.")
-           
-            
-def get_configdir():
-    "Determine if an XDG_CONFIG_DIR for blockify exists and if not, create it."
-    configdir = os.path.join(os.path.expanduser("~"), ".config/blockify")
-    
-    if not os.path.isdir(configdir):
-        log.info("Creating config directory.")
-        os.makedirs(configdir)
-    
-    thumbnaildir = os.path.join(configdir, "thumbnails")
-    if not os.path.isdir(thumbnaildir):
-        log.info("Creating thumbnail directory.")
-        os.makedirs(thumbnaildir)
-    
-    return configdir
-
 
 def main():
     "Entry point for the CLI-version of Blockify."
+    # Log level to fall back to if we get no user input
+    level = 2
+    
     try:
         args = docopt(__doc__, version=VERSION)
-        init_logger(args["--log"], args["-v"], args["--quiet"])
+        # 
+        if args["-v"] == 0:
+            args["-v"] = level
+        util.init_logger(args["--log"], args["-v"], args["--quiet"])
     except NameError:
-        init_logger(logpath=None, loglevel=2, quiet=False)
+        util.init_logger(logpath=None, loglevel=level, quiet=False)
         log.error("Please install docopt to use the CLI.")
  
-    blocklist = Blocklist(get_configdir())
+    blocklist = Blocklist(util.get_configdir())
     blockify = Blockify(blocklist)
     blockify.start()
 
