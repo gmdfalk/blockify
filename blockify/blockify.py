@@ -28,6 +28,7 @@ import wnck
 import blockifydbus
 
 import pygst
+from threading import Thread
 pygst.require('0.10')
 import gst
 
@@ -109,18 +110,21 @@ class Player(object):
         self.configdir = configdir
         self.playlist = self.open_playlist()
         self.index = 0
-        self.max_index = len(self.playlist)
+        self.max_index = len(self.playlist) - 1
         self.player = gst.element_factory_make("playbin2", "player")
         self.player.connect("about-to-finish", self.on_about_to_finish)
-        
         self.set_uri()
 
     def open_playlist(self):
         "Read the music to be played instead of commercials into a list"
+        playlist = []
         playlist_file = os.path.join(self.configdir, "playlist")
         if os.path.exists(playlist_file):
             playlist = [line.rstrip() for line in open(playlist_file) if line.startswith("file://")]
-            log.debug("Playlist is: {0}".format( playlist))
+            log.info("Interlude playlist is: {0}".format( playlist))
+        else:
+            open(playlist_file, "w").close()
+            log.info("No interlude playlist found. Created one at {0}.".format(playlist_file))
             
         return playlist
 
@@ -152,9 +156,10 @@ class Player(object):
         self.set_uri()
         
     def set_uri(self):
-        uri = self.playlist[self.index]
-        log.debug("Setting track to: {0}".format(uri))
-        self.player.set_property("uri", uri)
+        if self.max_index > 0:
+            uri = self.playlist[self.index]
+            log.info("Setting interlude to: {0}".format(uri))
+            self.player.set_property("uri", uri)
 
 
 class Blockify(object):
@@ -226,14 +231,16 @@ class Blockify(object):
     def start(self):
         self.bind_signals()
         self.toggle_mute()
+        gtk.threads_init()
         while True:
             # Initiate gtk loop to enable the window list for .get_windows().
             while gtk.events_pending():
                 gtk.main_iteration(False)
             found = self.update()
             if self.play_interlude_music:
-                self.toggle_interlude_music(found)
-                
+                Thread(target=self.toggle_interlude_music(found)).start()
+#                 self.toggle_interlude_music(found)
+
             time.sleep(0.25)
     
     def current_song_is_ad(self):
@@ -457,7 +464,6 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
     "Initializes the logging module."
     logger = logging.getLogger()
 
-    loglevel = 3
     # Set the loglevel.
     if loglevel > 3:
         loglevel = 3  # Cap at 3 to avoid index errors.
