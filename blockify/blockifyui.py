@@ -168,10 +168,19 @@ class BlockifyUI(gtk.Window):
         self.status_icon = gtk.StatusIcon()
         self.status_icon.set_from_pixbuf(self.blue_icon_buf)
         
-        self.status_icon.connect("popup-menu", self.on_right_click)
+        self.status_icon.connect("popup-menu", self.on_tray_right_click)
+        self.status_icon.connect("activate", self.on_tray_left_click)
         self.status_icon.set_tooltip("blockify v{0}".format(blockify.VERSION))
+        self.connect("delete-event", self.on_delete_event)
 
-    def on_right_click(self, icon, event_button, event_time):
+    def on_delete_event(self,window,event):
+        self.hide_on_delete()
+        return True
+    
+    def on_tray_left_click(self, status):
+        self.show_all()
+        
+    def on_tray_right_click(self, icon, event_button, event_time):
         self.create_traymenu(event_button, event_time)
 
     def create_traymenu(self, event_button, event_time):
