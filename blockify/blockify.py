@@ -27,6 +27,10 @@ import pygtk
 import wnck
 import blockifydbus
 
+import pygst
+pygst.require('0.10')
+import gst
+
 
 try:
     from docopt import docopt
@@ -98,23 +102,66 @@ class Blocklist(list):
         self.timestamp = self.get_timestamp()
 
 
+class Player(object):
+    "A simple gstreamer audio player to play a list of mp3 files."
+    def __init__(self, playlist):
+        self.playlist = playlist
+        self.playlist_pos = 0
+        self.playlist_max_pos = len(playlist)
+        self.pipeline = gst.Pipeline("interlude")
+        self.player = gst.element_factory_make("playbin", "player")
+        pulse = gst.element_factory_make("pulsesink", "pulse")
+        fakesink = gst.element_factory_make("fakesink", "fakesink")
+  
+        self.player.set_property("audio-sink", pulse)
+        self.player.set_property("video-sink", fakesink)
+        self.player.add(self.pipeline)
+        self.set_uri()
+
+    def play(self):
+        self.pipeline.set_state(gst.STATE_PLAYING)
+        log.debug("Play: State is {0}.".format(self.pipeline.get_state()))
+
+    def pause(self):
+        self.pipeline.set_state(gst.STATE_PAUSED)
+        log.debug("Pause: State is {0}.".format(self.pipeline.get_state()))
+    
+    def next(self):
+        if self.playlist_pos >= self.playlist_max_pos:
+            self.playlist_pos = 0
+        else:
+            self.playlist_pos += 1
+        self.set_uri()
+    
+    def prev(self):
+        if not self.playlist_pos == 0:
+            self.playlist_pos -= 1
+        self.set_uri()
+        
+    def set_uri(self):
+        uri = self.playlist[self.playlist_pos]
+        log.debug("Setting track to: {0}".format(uri))
+        self.player.set_property("uri", uri)
+        self.play()
+
+
 class Blockify(object):
 
-
     def __init__(self, blocklist):
-        self.check_for_blockify_process()
-        self.check_for_spotify_process()
-        self.connect_dbus()
-        self.channels = self.get_channels()
-        self.automute = True
-        self.autodetect = True
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.configdir = blocklist.configdir
+        self.automute = True
+        self.autodetect = True
         self.current_song = ""
         self.song_status = ""
         self.is_fully_muted = False
         self.is_sink_muted = False
+        self.check_for_blockify_process()
+        self.check_for_spotify_process()
+        self.dbus = self.init_dbus()
+        self.channels = self.init_channels()
+        self.player = self.init_player()
 
         # Determine if we can use sinks or have to use alsa.
         try:
@@ -127,15 +174,6 @@ class Blockify(object):
 
         log.info("Blockify initialized.")
         
-    def check_for_spotify_process(self):
-        try:
-            subprocess.check_output(["pgrep", "spotify"])
-            pidof_out = subprocess.check_output(["pidof", "spotify"])
-            self.spotify_pids = pidof_out.decode("utf-8").strip().split(" ")
-        except subprocess.CalledProcessError:
-            log.error("No spotify process found. Exiting.")
-            sys.exit()
-
     def check_for_blockify_process(self):
         try:
             pid = subprocess.check_output(["pgrep", "-f", "python.*blockify"])
@@ -145,13 +183,47 @@ class Blockify(object):
             if pid.strip() != str(os.getpid()):
                 log.error("A blockify process is already running. Exiting.")
                 sys.exit()
-
-    def connect_dbus(self):
+                
+    def check_for_spotify_process(self):
         try:
-            self.dbus = blockifydbus.BlockifyDBus()
+            subprocess.check_output(["pgrep", "spotify"])
+            pidof_out = subprocess.check_output(["pidof", "spotify"])
+            self.spotify_pids = pidof_out.decode("utf-8").strip().split(" ")
+        except subprocess.CalledProcessError:
+            log.error("No spotify process found. Exiting.")
+            sys.exit()
+
+    def init_channels(self):
+        channel_list = ["Master"]
+        amixer_output = subprocess.check_output("amixer")
+        if "'Speaker',0" in amixer_output:
+            channel_list.append("Speaker")
+        if "'Headphone',0" in amixer_output:
+            channel_list.append("Headphone")
+
+        return channel_list
+    
+    def init_dbus(self):
+        try:
+            return blockifydbus.BlockifyDBus()
         except Exception as e:
             log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
             sys.exit()
+    
+    def init_player(self):
+        "A (simple) audio player to play songs during commercials"
+        player = Player(self.read_interlude_playlist())
+        
+        return player
+
+    def read_interlude_playlist(self):
+        "Read the music to be played instead of commercials into a list"
+        playlist_file = os.path.join(self.configdir, "playlist")
+        if os.path.exists(playlist_file):
+            playlist = [line for line in open(playlist_file)]
+            log.debug("Playlist is: {0}".format( playlist))
+            
+        return playlist
 
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
@@ -238,16 +310,6 @@ class Blockify(object):
                 self.blocklist.remove(song)
             else:
                 log.error("Not found in blocklist or block pattern too short.")
-
-    def get_channels(self):
-        channel_list = ["Master"]
-        amixer_output = subprocess.check_output("amixer")
-        if "'Speaker',0" in amixer_output:
-            channel_list.append("Speaker")
-        if "'Headphone',0" in amixer_output:
-            channel_list.append("Headphone")
-
-        return channel_list
 
     def toggle_mute(self, mode=0):
         # 0 = automatic, 1 = force mute, 2 = force unmute
@@ -377,6 +439,7 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
     "Initializes the logging module."
     logger = logging.getLogger()
 
+    loglevel = 3
     # Set the loglevel.
     if loglevel > 3:
         loglevel = 3  # Cap at 3 to avoid index errors.
@@ -428,13 +491,13 @@ def main():
     except NameError:
         init_logger(logpath=None, loglevel=2, quiet=False)
         log.error("Please install docopt to use the CLI.")
-
+ 
     blocklist = Blocklist(get_configdir())
     blockify = Blockify(blocklist)
-
+ 
     blockify.bind_signals()
     blockify.toggle_mute()
-
+ 
     while True:
         # Initiate gtk loop to enable the window list for .get_windows().
         while gtk.events_pending():

@@ -1,17 +1,17 @@
 #!/usr/bin/env python2
-"""spotifydbus
+"""blockifydbus
 
 Usage:
-    spotifydbus (toggle | next | prev | stop | play) [-v...] [options]
-    spotifydbus get [title | artist | length | status | all] [-v...] [options]
-    spotifydbus (openuri <uri> | seek <secs> | setpos <pos>) [-v...] [options]
+    blockifydbus (toggle | next | prev | stop | play) [-v...] [options]
+    blockifydbus get [title | artist | length | status | all] [-v...] [options]
+    blockifydbus (openuri <uri> | seek <secs> | setpos <pos>) [-v...] [options]
 
 Options:
     -l, --log=<path>  Enables logging to the logfile/-path specified.
     -q, --quiet       Don't print anything to stdout.
     -v                Verbosity of the logging module, up to -vvv.
     -h, --help        Show this help text.
-    --version         Show current version of spotifydbus.
+    --version         Show current version of blockifydbus.
 """
 import logging
 import os
