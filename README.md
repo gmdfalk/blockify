@@ -36,7 +36,7 @@ Alternatively, you can use the GUI with `blockify-ui` which spawns this window.
 
 ## Changelog
 - v1.4 (coming soon): Interlude music of your choice during commercials  
-- v1.3 (2014-12-13): GUI-Update and Refactoring  
+- v1.3 (2014-12-14): GUI-Update (Buttons, Icons, Systray) and Refactoring  
 - v1.2 (2014-12-11): Cover-Art and config/cache folder in ~/.config/blockify  
 - v1.1 (2014-06-17): Autodetection of commercials  
 - v1.0 (2014-05-02): First moderately stable version  

@@ -10,9 +10,10 @@ import glib
 import gtk
 import urllib
 
+# FIXME: tray icon tooltip, continuous update
+# FIXME: mute button state after unblock toggling
 # TODO: audio player (toggle, next, prev, shuffle, interactive progress bar)
 # TODO: threading for cover art dl
-# TODO: Minimize to system-tray
 # TODO: Different modes: minimal, full
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
 log = logging.getLogger("gui")
@@ -131,10 +132,10 @@ class BlockifyUI(gtk.Window):
         self.init_window()
         self.init_blockify()
         self.coverimage = gtk.Image()
-        self.create_trayicon()
         self.create_labels()
         self.create_buttons()
         self.create_layout()
+        self.create_tray()
 
         # "Trap" the exit.
         self.connect("destroy", self.stop)
@@ -155,7 +156,7 @@ class BlockifyUI(gtk.Window):
         self.bind_signals()
         self.b.toggle_mute()
     
-    def create_trayicon(self):
+    def create_tray(self):
         self.blue_icon_file = "data/icon-blue-32.png"
         self.red_icon_file = "data/icon-red-32.png"
         pixbuf_blue = gtk.gdk.pixbuf_new_from_file(self.blue_icon_file)  # @UndefinedVariable
@@ -164,35 +165,63 @@ class BlockifyUI(gtk.Window):
         self.red_icon_buf = pixbuf_red.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
 
         self.set_icon_from_file(self.blue_icon_file)
-        self.statusicon = gtk.StatusIcon()
-        self.statusicon.set_from_pixbuf(self.blue_icon_buf)
+        self.status_icon = gtk.StatusIcon()
+        self.status_icon.set_from_pixbuf(self.blue_icon_buf)
         
-        self.connect("delete-event", self.delete_event)
-        self.statusicon.connect("activate", self.status_clicked )
-        self.statusicon.set_tooltip("the window is visible")
-        self.statusicon.connect("popup-menu", self.on_right_click)
-#         self.statusicon.connect('activate', self.on_left_click) 
+        self.status_icon.connect("popup-menu", self.on_right_click)
+        self.status_icon.set_tooltip("blockify v{0}".format(blockify.VERSION))
 
     def on_right_click(self, icon, event_button, event_time):
-        self.make_menu(event_button, event_time)
+        self.create_traymenu(event_button, event_time)
 
-    def make_menu(self, event_button, event_time):
+    def create_traymenu(self, event_button, event_time):
         menu = gtk.Menu()
 
-        # show about dialog
+        toggleblock = gtk.MenuItem("Toggle Block")
+        toggleblock.show()
+        menu.append(toggleblock)
+        toggleblock.connect("activate", self.on_toggleblock)
+        
+        toggleplay = gtk.MenuItem("Toggle Play")
+        toggleplay.show()
+        toggleplay.connect("activate", self.on_toggleplay)
+        menu.append(toggleplay)
+        
+        prevsong = gtk.MenuItem("Previous Song")
+        prevsong.show()
+        prevsong.connect("activate", self.on_prevsong)
+        menu.append(prevsong)
+        
+        nextsong = gtk.MenuItem("Next Song")
+        nextsong.show()
+        nextsong.connect("activate", self.on_nextsong)
+        menu.append(nextsong)
+        
         about = gtk.MenuItem("About")
         about.show()
         menu.append(about)
-        about.connect('activate', self.show_about_dialog)
+        about.connect("activate", self.show_about_dialogue)
 
-        # add quit item
-        quit = gtk.MenuItem("Quit")
-        quit.show()
-        menu.append(quit)
-        quit.connect('activate', gtk.main_quit)
+        exit = gtk.MenuItem("Exit")
+        exit.show()
+        menu.append(exit)
+        exit.connect("activate", self.on_exitbutton)
 
         menu.popup(None, None, gtk.status_icon_position_menu,
-                   event_button, event_time, self.tray)
+                   event_button, event_time, self.status_icon)
+
+    def show_about_dialogue(self, widget):
+        about = gtk.AboutDialog()
+        about.set_destroy_with_parent (True)
+        about.set_icon_name ("blockify")
+        about.set_name("blockify")
+        about.set_version(blockify.VERSION)
+        about.set_website("http://github.com/mikar/blockify")
+        about.set_copyright("(C) 2014 Max Demian")
+        about.set_comments(("Blocks Spotify commercials"))
+        about.set_authors(["Max Demian <mikar@gmx.de>", "Jesse Maes <kebertyx@gmail.com>"])
+        about.run()
+        about.destroy()
 
     def start(self):
         "Start blockify and the main update routine."
@@ -254,6 +283,9 @@ class BlockifyUI(gtk.Window):
         self.togglelist = gtk.ToggleButton("Open List")
         self.togglelist.connect("clicked", self.on_togglelist)
         
+        self.exitbutton = gtk.Button("Exit")
+        self.exitbutton.connect("clicked", self.on_exitbutton)
+        
         # Initialize buttons
         for checkbox in [self.checkautodetect]:
             checkbox.set_active(True)
@@ -292,8 +324,9 @@ class BlockifyUI(gtk.Window):
         coverbuttons.add(self.togglecover)
         coverbuttons.add(self.checkautohidecover)
         main.pack_start(coverbuttons)
-
+        
         main.add(self.togglelist)
+        main.add(self.exitbutton)
         
         self.add( main)
 
@@ -327,13 +360,15 @@ class BlockifyUI(gtk.Window):
                 self.enable_cover()
 
     def update_labels(self):
-        self.statuslabel.set_text(self.get_status_text())
+        status = self.get_status_text()
+        self.statuslabel.set_text(status)
         if not self.found:
             self.albumlabel.set_text(self.b.dbus.get_song_album())
 
         artist, title = self.format_current_song()
         self.artistlabel.set_text(artist)
         self.titlelabel.set_text(title)
+#         self.status_icon.set_tooltip("{0} - {1}\n{2}\nblockify v{3}".format(artist, title, status, blockify.VERSION))
 
     def update_buttons(self):
         # Correct the state of the Block/Unblock toggle button.
@@ -366,11 +401,11 @@ class BlockifyUI(gtk.Window):
     def update_icons(self):
         if self.found and not self.statusicon_found:
             self.set_icon_from_file(self.red_icon_file)
-            self.statusicon.set_from_pixbuf(self.red_icon_buf)
+            self.status_icon.set_from_pixbuf(self.red_icon_buf)
             self.statusicon_found = True
         elif not self.found and self.statusicon_found:
             self.set_icon_from_file(self.blue_icon_file)
-            self.statusicon.set_from_pixbuf(self.blue_icon_buf)            
+            self.status_icon.set_from_pixbuf(self.blue_icon_buf)            
             self.statusicon_found = False
             
     def format_current_song(self):
@@ -510,6 +545,9 @@ class BlockifyUI(gtk.Window):
 
     def on_prevsong(self, widget):
         self.b.dbus.prev()
+    
+    def on_exitbutton(self, widget):
+        self.stop()
 
 
 def main():

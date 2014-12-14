@@ -36,6 +36,7 @@ except ImportError:
 
 pygtk.require("2.0")
 log = logging.getLogger("main")
+VERSION = "1.3"
 
 
 class Blocklist(list):
@@ -421,7 +422,7 @@ def get_configdir():
 def main():
     "Entry point for the CLI-version of Blockify."
     try:
-        args = docopt(__doc__, version="1.2")
+        args = docopt(__doc__, version=VERSION)
         init_logger(args["--log"], args["-v"], args["--quiet"])
     except NameError:
         init_logger(logpath=None, loglevel=2, quiet=False)
