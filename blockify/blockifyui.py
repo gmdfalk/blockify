@@ -389,9 +389,9 @@ class BlockifyUI(gtk.Window):
             self.set_title("Blockify")
 
         if self.b.song_status == "Playing":
-            self.toggleplay.set_label("Play")
-        else:
             self.toggleplay.set_label("Pause")
+        else:
+            self.toggleplay.set_label("Play")
         
         if self.coverimage.get_visible():
             self.togglecover.set_label("Hide Cover")
@@ -562,7 +562,7 @@ class BlockifyUI(gtk.Window):
 def main():
     "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
-    blockify.init_logger(logpath=None, loglevel=3, quiet=False)
+    blockify.init_logger(logpath=None, loglevel=2, quiet=False)
     BlockifyUI()
     gtk.main()
 

@@ -102,7 +102,7 @@ class Blockify(object):
 
 
     def __init__(self, blocklist):
-#         self.check_for_blockify_process()
+        self.check_for_blockify_process()
         self.check_for_spotify_process()
         self.connect_dbus()
         self.channels = self.get_channels()
@@ -225,7 +225,6 @@ class Blockify(object):
         if spotify_window:
             song = " ".join(spotify_window[0].split()[2:]).decode("utf-8")
 
-#         print song
         return song
 
     def block_current(self):
@@ -403,6 +402,7 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
             log.debug("Added logging file handler: {}.".format(logfile))
         except IOError:
             log.error("Could not attach file handler.")
+           
             
 def get_configdir():
     "Determine if an XDG_CONFIG_DIR for blockify exists and if not, create it."
@@ -418,6 +418,7 @@ def get_configdir():
         os.makedirs(thumbnaildir)
     
     return configdir
+
 
 def main():
     "Entry point for the CLI-version of Blockify."
