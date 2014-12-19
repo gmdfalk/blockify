@@ -44,11 +44,13 @@ To make use of interlude music you have to configure a playlist file in `~/.conf
 
 An example playlist:
 ```
+# Lines starting with "#" will be ignored.
 file:///media/shared/media/music/2014-ed_sheeran-x/01 One.mp3
 file:///media/shared/media/music/2014-foo_fighters-sonic_highways/01. Something From Nothing.mp3
+# This is a radio station.
 http://skyserver5.skydisc.net:8000
 ```
-You'll notice that you have to use complete URIs. The upside is that you can use virtually any audio format/source, e.g. a radio station like in line 3 (as long as you have the necessary gstreamer codecs).  
+You'll notice that you have to use complete URIs. The upside is that you can use virtually any audio format/source (as long as you have the necessary gstreamer codecs).  
 This feature is currently rather dumb and will stop playing the interlude music as soon as the commercial is over aside from not being integrated with the GUI yet.  
 Updates coming soon.  
 

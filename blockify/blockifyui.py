@@ -76,9 +76,9 @@ class Notepad(gtk.Window):
     def create_keybinds(self):
         "Register Ctrl+Q/W to quit and Ctrl+S to save the blocklist."
         quit_group = gtk.AccelGroup()
-        quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,  
+        quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,
                                  gtk.ACCEL_LOCKED, self.destroy)
-        quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,  
+        quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,
                                  gtk.ACCEL_LOCKED, self.destroy)
         self.add_accel_group(quit_group)
 
@@ -117,23 +117,32 @@ class Notepad(gtk.Window):
 
 class BlockifyUI(gtk.Window):
     "PyQT4 interface for blockify."
-    def __init__(self):
+    def __init__(self, blockify):
         super(BlockifyUI, self).__init__()
 
+        # Initialize blockify.
+        self.b = blockify
+        self.b.toggle_mute()
+        self.bind_signals()
+
+        self.thumbnail_dir = os.path.join(self.b.configdir, "thumbnails")
+        self.cover_server = "https://i.scdn.co/image/"
         self.autohide_cover = False
         self.previous_cover_file = ""
-        self.cover_server = "https://i.scdn.co/image/"
+
         self.editor = None
         self.statusicon_found = False
-        
+
         # Set the GUI/Blockify update interval to 400ms. Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
         # change the line to glib.timeout_add_seconds(2, self.update) or more.
         self.update_interval = 400
 
-        self.init_window()
-        self.init_blockify()
+        # Window setup.
+        self.set_title("Blockify")
+        self.set_wmclass("blockify", "Blockify")
+        self.set_default_size(195, 188)
         self.coverimage = gtk.Image()
         self.create_labels()
         self.create_buttons()
@@ -146,19 +155,6 @@ class BlockifyUI(gtk.Window):
         self.start()
         self.show_all()
 
-    def init_window(self):
-        # Window setup.
-        self.set_title("Blockify")
-        self.set_wmclass("blockify", "Blockify")
-        self.set_default_size(195, 188)
-        
-    def init_blockify(self):
-        blocklist = blockify.Blocklist(util.get_configdir())
-        self.b = blockify.Blockify(blocklist)
-        self.thumbnail_dir = os.path.join(self.b.configdir, "thumbnails")
-        self.bind_signals()
-        self.b.toggle_mute()
-    
     def create_tray(self):
         basedir = os.path.dirname(os.path.realpath(__file__))
 
@@ -166,25 +162,25 @@ class BlockifyUI(gtk.Window):
         self.red_icon_file = os.path.join(basedir, "data/icon-red-32.png")
         pixbuf_blue = gtk.gdk.pixbuf_new_from_file(self.blue_icon_file)  # @UndefinedVariable
         pixbuf_red = gtk.gdk.pixbuf_new_from_file(self.red_icon_file)  # @UndefinedVariable
-        self.blue_icon_buf = pixbuf_blue.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
-        self.red_icon_buf = pixbuf_red.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
+        self.blue_icon_buf = pixbuf_blue.scale_simple(16, 16, gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
+        self.red_icon_buf = pixbuf_red.scale_simple(16, 16, gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
 
         self.set_icon_from_file(self.blue_icon_file)
         self.status_icon = gtk.StatusIcon()
         self.status_icon.set_from_pixbuf(self.blue_icon_buf)
-        
+
         self.status_icon.connect("popup-menu", self.on_tray_right_click)
         self.status_icon.connect("activate", self.on_tray_left_click)
         self.status_icon.set_tooltip("blockify v{0}".format(blockify.VERSION))
         self.connect("delete-event", self.on_delete_event)
 
-    def on_delete_event(self,window,event):
+    def on_delete_event(self, window, event):
         self.hide_on_delete()
         return True
-    
+
     def on_tray_left_click(self, status):
         self.show_all()
-        
+
     def on_tray_right_click(self, icon, event_button, event_time):
         self.create_traymenu(event_button, event_time)
 
@@ -195,22 +191,22 @@ class BlockifyUI(gtk.Window):
         toggleblock.show()
         menu.append(toggleblock)
         toggleblock.connect("activate", self.on_toggleblock)
-        
+
         toggleplay = gtk.MenuItem("Toggle Play")
         toggleplay.show()
         toggleplay.connect("activate", self.on_toggleplay)
         menu.append(toggleplay)
-        
+
         prevsong = gtk.MenuItem("Previous Song")
         prevsong.show()
         prevsong.connect("activate", self.on_prevsong)
         menu.append(prevsong)
-        
+
         nextsong = gtk.MenuItem("Next Song")
         nextsong.show()
         nextsong.connect("activate", self.on_nextsong)
         menu.append(nextsong)
-        
+
         about = gtk.MenuItem("About")
         about.show()
         menu.append(about)
@@ -238,8 +234,8 @@ class BlockifyUI(gtk.Window):
         about.destroy()
 
     def start(self):
-        "Start blockify and the main update routine."
-        #TODO: gtk.threads_init()
+        "Start the main update routine."
+        # TODO: gtk.threads_init()
 
         # Start and loop the main update routine once every 400ms.
         # To influence responsiveness or CPU usage, decrease/increase ms here.
@@ -253,7 +249,7 @@ class BlockifyUI(gtk.Window):
         self.b.stop()
         log.debug("Exiting GUI.")
         gtk.main_quit()
-        
+
     def bind_signals(self):
         "Binds SIGTERM, SIGINT and SIGUSR1 to custom actions."
         signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())
@@ -266,11 +262,11 @@ class BlockifyUI(gtk.Window):
         self.artistlabel = gtk.Label()
         self.titlelabel = gtk.Label()
         self.statuslabel = gtk.Label()
-        
+
         for label in [self.albumlabel, self.artistlabel, self.titlelabel]:
 #             label.set_line_wrap(True)
             label.set_width_chars(27)
-            
+
     def create_buttons(self):
         self.toggleplay = gtk.Button("Play/Pause")
         self.toggleplay.connect("clicked", self.on_toggleplay)
@@ -278,7 +274,7 @@ class BlockifyUI(gtk.Window):
         self.prevsong.connect("clicked", self.on_prevsong)
         self.nextsong = gtk.Button("Next")
         self.nextsong.connect("clicked", self.on_nextsong)
-        
+
         self.toggleblock = gtk.Button("Block")
         self.toggleblock.connect("clicked", self.on_toggleblock)
         self.checkautodetect = gtk.CheckButton("Autodetect")
@@ -288,7 +284,7 @@ class BlockifyUI(gtk.Window):
         self.togglemute.connect("clicked", self.on_togglemute)
         self.checkmanualmute = gtk.CheckButton("Manual")
         self.checkmanualmute.connect("clicked", self.on_checkmanualmute)
-        
+
         self.togglecover = gtk.Button("Toggle Cover")
         self.togglecover.connect("clicked", self.on_togglecover)
         self.checkautohidecover = gtk.CheckButton("Autohide")
@@ -296,53 +292,53 @@ class BlockifyUI(gtk.Window):
 
         self.togglelist = gtk.ToggleButton("Open List")
         self.togglelist.connect("clicked", self.on_togglelist)
-        
+
         self.exitbutton = gtk.Button("Exit")
         self.exitbutton.connect("clicked", self.on_exitbutton)
-        
+
         # Initialize buttons
         for checkbox in [self.checkautodetect]:
             checkbox.set_active(True)
-        
+
         for checkbox in [self.checkautohidecover, self.checkmanualmute]:
             checkbox.set_active(False)
-        
+
         self.togglemute.set_sensitive(False)
-        
+
     def create_layout(self):
         main = gtk.VBox()
-        
+
         main.add(self.coverimage)
         main.add(self.artistlabel)
         main.add(self.titlelabel)
         main.add(self.albumlabel)
         main.add(self.statuslabel)
         main.add(self.toggleplay)
-        
+
         controlbuttons = gtk.HBox(True)
         controlbuttons.add(self.prevsong)
         controlbuttons.add(self.nextsong)
         main.pack_start(controlbuttons)
-        
+
         blockbuttons = gtk.HBox(True)
         blockbuttons.add(self.toggleblock)
         blockbuttons.add(self.checkautodetect)
         main.pack_start(blockbuttons)
-        
+
         mutebuttons = gtk.HBox(True)
         mutebuttons.add(self.togglemute)
         mutebuttons.add(self.checkmanualmute)
         main.pack_start(mutebuttons)
-        
+
         coverbuttons = gtk.HBox(True)
         coverbuttons.add(self.togglecover)
         coverbuttons.add(self.checkautohidecover)
         main.pack_start(coverbuttons)
-        
+
         main.add(self.togglelist)
         main.add(self.exitbutton)
-        
-        self.add( main)
+
+        self.add(main)
 
     def update(self):
         "Main GUI loop at 400ms update interval (see self.update_interval)."
@@ -360,7 +356,7 @@ class BlockifyUI(gtk.Window):
 
         # The glib.timeout loop will only break if we return False here.
         return True
-    
+
     def update_cover(self):
         if self.b.is_sink_muted or self.b.is_fully_muted:
             if self.autohide_cover and self.b.automute:
@@ -369,7 +365,7 @@ class BlockifyUI(gtk.Window):
             cover_file = self.get_cover_art()
             if self.previous_cover_file != cover_file:
                 pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
-                scaled_buf = pixbuf.scale_simple(195,195,gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
+                scaled_buf = pixbuf.scale_simple(195, 195, gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
                 self.coverimage.set_from_pixbuf(scaled_buf)
                 self.previous_cover_file = cover_file
             if self.autohide_cover:
@@ -401,7 +397,7 @@ class BlockifyUI(gtk.Window):
             self.toggleplay.set_label("Pause")
         else:
             self.toggleplay.set_label("Play")
-        
+
         if self.coverimage.get_visible():
             self.togglecover.set_label("Hide Cover")
         else:
@@ -415,7 +411,7 @@ class BlockifyUI(gtk.Window):
             self.togglelist.set_label("Close List")
         else:
             self.togglelist.set_label("Open List")
-    
+
     def update_icons(self):
         if self.found and not self.statusicon_found:
             self.set_icon_from_file(self.red_icon_file)
@@ -423,9 +419,9 @@ class BlockifyUI(gtk.Window):
             self.statusicon_found = True
         elif not self.found and self.statusicon_found:
             self.set_icon_from_file(self.blue_icon_file)
-            self.status_icon.set_from_pixbuf(self.blue_icon_buf)            
+            self.status_icon.set_from_pixbuf(self.blue_icon_buf)
             self.statusicon_found = False
-            
+
     def format_current_song(self):
         song = self.b.current_song
         # For whatever reason, Spotify doesn't use a normal hyphen but a
@@ -451,11 +447,11 @@ class BlockifyUI(gtk.Window):
         # The url spotify gets its cover images from. Filename is a hash, the last part of metadata["artUrl"]
         cover_url = self.cover_server + cover_hash
         cover_file = os.path.join(self.thumbnail_dir, cover_hash + ".png")
-         
+
         if not os.path.exists(cover_file):
             log.info("Downloading cover art: {}".format(cover_file))
             urllib.urlretrieve(cover_url, cover_file)
-         
+
         return cover_file
 
     def get_status_text(self):
@@ -472,16 +468,16 @@ class BlockifyUI(gtk.Window):
     def restore_size(self):
         width, height = self.get_default_size()
         self.resize(width, height)
-        
+
     def enable_cover(self):
         if not self.coverimage.get_visible():
             self.coverimage.show()
-    
+
     def disable_cover(self):
         if self.coverimage.get_visible():
             self.coverimage.hide()
             self.restore_size()
-        
+
     def on_togglecover(self, widget):
         if self.coverimage.get_visible():
             self.disable_cover()
@@ -489,7 +485,7 @@ class BlockifyUI(gtk.Window):
         else:
             self.enable_cover()
             log.debug("Enabled cover art.")
-    
+
     def on_checkautohidecover(self, widget):
         if widget.get_active():
             self.autohide_cover = True
@@ -563,16 +559,14 @@ class BlockifyUI(gtk.Window):
 
     def on_prevsong(self, widget):
         self.b.dbus.prev()
-    
+
     def on_exitbutton(self, widget):
         self.stop()
 
 
 def main():
     "Entry point for the GUI-version of Blockify."
-    # Edit this for less or more logging. Loglevel 0 is least verbose.
-    util.init_logger(logpath=None, loglevel=3, quiet=False)
-    BlockifyUI()
+    BlockifyUI(blockify.initialize())
     gtk.main()
 
 

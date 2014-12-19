@@ -11,7 +11,6 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-import codecs
 import logging
 import os
 import re
@@ -25,12 +24,10 @@ import gtk
 import pygtk
 import wnck
 
+import audioplayer
+from blocklist import Blocklist
 import blockifydbus
 import util
-
-import pygst
-pygst.require('0.10')
-import gst
 
 
 try:
@@ -42,138 +39,6 @@ except ImportError:
 pygtk.require("2.0")
 log = logging.getLogger("main")
 VERSION = "1.4"
-
-
-class Blocklist(list):
-    "Inheriting from list type is a bad idea. Let's see what happens."
-    # Could subclass UserList.UserList here instead which inherits from
-    # collections.MutableSequence. In Python3 it's collections.UserList.
-
-    def __init__(self, configdir):
-        super(Blocklist, self).__init__()
-        self.configdir = configdir
-        self.location = os.path.join(self.configdir, "blocklist")
-        self.extend(self.load())
-        self.timestamp = self.get_timestamp()
-
-    def append(self, item):
-        "Overloading list.append to automatically save the list to a file."
-        # Only allow nonempty strings.
-        if item in self or not item or item == " ":
-            log.debug("Not adding empty or duplicate item: {}.".format(item))
-            return
-        log.info("Adding {} to {}.".format(item, self.location))
-        super(Blocklist, self).append(item)
-        self.save()
-
-    def remove(self, item):
-        log.info("Removing {} from {}.".format(item, self.location))
-        try:
-            super(Blocklist, self).remove(item)
-            self.save()
-        except ValueError as e:
-            log.warn("Could not remove {} from blocklist: {}".format(item, e))
-
-    def find(self, song):
-        # Arbitrary minimum length of 4 to avoid ambiguous song names.
-        while len(song) > 4:
-            for item in self:
-                if item.startswith(song):
-                    return item
-            song = song[:len(song) / 2]
-
-    def get_timestamp(self):
-        return os.path.getmtime(self.location)
-
-    def load(self):
-        log.info("Loading blockfile from {}.".format(self.location))
-        try:
-            with codecs.open(self.location, "r", encoding="utf-8") as f:
-                blocklist = f.read()
-        except IOError:
-            with codecs.open(self.location, "w+", encoding="utf-8") as f:
-                blocklist = f.read()
-            log.warn("No blockfile found. Created one.")
-
-        return [i for i in blocklist.split("\n") if i]
-
-    def save(self):
-        log.debug("Saving blocklist to {}.".format(self.location))
-        with codecs.open(self.location, "w", encoding="utf-8") as f:
-            f.write("\n".join(self) + "\n")
-        self.timestamp = self.get_timestamp()
-
-
-class Player(object):
-    "A simple gstreamer audio player to play a list of mp3 files."
-    def __init__(self, configdir):
-        self._index = 0
-        self.configdir = configdir
-        self.playlist = self.open_playlist()
-        self.max_index = len(self.playlist) - 1
-        self.player = gst.element_factory_make("playbin2", "player")
-        self.player.connect("about-to-finish", self.on_about_to_finish)
-        self.set_uri()
-
-    def open_playlist(self):
-        "Read the music to be played instead of commercials into a list."
-        playlist = []
-        playlist_file = os.path.join(self.configdir, "playlist")
-        if os.path.exists(playlist_file):
-            playlist = [line.rstrip() for line in open(playlist_file) if not line.startswith("#")]
-            log.debug("Interlude playlist is: {0}".format( playlist))
-        else:
-            open(playlist_file, "w").close()
-            log.info("No interlude playlist found. Created one at {0}.".format(playlist_file))
-            
-        return playlist
-
-    def on_about_to_finish(self, player):
-        "Queue the next song right before the current one ends"
-        self.next()
-        
-    def is_playing(self):
-        return self.player.get_state()[1] is gst.STATE_PLAYING
-    
-    def is_playable(self):
-        return self.player.get_state()[0] is gst.STATE_CHANGE_SUCCESS
-
-    def play(self):
-        self.player.set_state(gst.STATE_PLAYING)
-        log.debug("Play: State is {0}.".format(self.player.get_state()))
-
-    def pause(self):
-        self.player.set_state(gst.STATE_PAUSED)
-        log.debug("Pause: State is {0}.".format(self.player.get_state()))
-    
-    def next(self):
-        self.index += 1
-        self.set_uri()
-    
-    def prev(self):
-        self.index -= 1
-        self.set_uri()
-        
-    def set_uri(self):
-        # Only allow playback if the playlist is non-empty.
-        if self.max_index > 0:
-            uri = self.playlist[self.index]
-            log.debug("Setting interlude to: {0}".format(uri))
-            self.player.set_property("uri", uri)
-
-    @property
-    def index(self):
-        return self._index
-
-    @index.setter
-    def index(self, n):
-        idx = n
-        # If we reached the end of the playlist, loop back to the start.
-        # Also, don't decrement index below 0.
-        if idx > self.max_index or idx < 0:
-            idx = 0
-        log.info("Setting index to: {}.".format(n))
-        self._index = n
 
 
 class Blockify(object):
@@ -192,7 +57,7 @@ class Blockify(object):
         self.check_for_spotify_process()
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
-        self.player = Player(self.configdir)
+        self.player = audioplayer.AudioPlayer(self.configdir)
         self.play_interlude_music = True if len(self.player.playlist) else False
 
         # Determine if we can use sinks or have to use alsa.
@@ -202,10 +67,10 @@ class Blockify(object):
             self.mutemethod = self.pulsesink_mute
         except (OSError, subprocess.CalledProcessError):
             self.mutemethod = self.alsa_mute
-            
+
 
         log.info("Blockify initialized.")
-        
+
     def check_for_blockify_process(self):
         try:
             pid = subprocess.check_output(["pgrep", "-f", "python.*blockify"])
@@ -215,7 +80,7 @@ class Blockify(object):
             if pid.strip() != str(os.getpid()):
                 log.error("A blockify process is already running. Exiting.")
                 sys.exit()
-                
+
     def check_for_spotify_process(self):
         try:
             subprocess.check_output(["pgrep", "spotify"])
@@ -234,14 +99,14 @@ class Blockify(object):
             channel_list.append("Headphone")
 
         return channel_list
-    
+
     def init_dbus(self):
         try:
             return blockifydbus.BlockifyDBus()
         except Exception as e:
             log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
             sys.exit()
-            
+
     def start(self):
         self.bind_signals()
         self.toggle_mute()
@@ -256,7 +121,7 @@ class Blockify(object):
 #                 self.toggle_interlude_music(found)
 
             time.sleep(0.25)
-    
+
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
         if self.song_status == "Playing":
@@ -269,7 +134,7 @@ class Blockify(object):
                 # However, it might still play one last ad so we assume that
                 # is the case here.
                 return True
-    
+
     def toggle_interlude_music(self, found):
         playing = self.player.is_playing()
         if found and not playing:
@@ -416,7 +281,7 @@ class Blockify(object):
 
         if not len(spotify_sink_list):
             return
-        
+
         sink_infos = [pattern.findall(sink) for sink in spotify_sink_list]
         # Every third element per sublist is a key, the value is the preceding
         # two elements in the form of a tuple - {pid : (index, muted)}
@@ -474,24 +339,23 @@ class Blockify(object):
         self._autodetect = boolean
 
 
+def initialize():
+    try:
+        args = docopt(__doc__, version=VERSION)
+        util.init_logger(args["--log"], args["-v"] or 2, args["--quiet"])
+    except NameError:
+        util.init_logger(logpath=None, loglevel=2, quiet=False)
+        log.error("Please install docopt to use the CLI.")
+
+    blockify = Blockify(Blocklist(util.get_configdir()))
+
+    return blockify
+
 
 def main():
     "Entry point for the CLI-version of Blockify."
-    # Log level to fall back to if we get no user input
-    level = 2
-    
-    try:
-        args = docopt(__doc__, version=VERSION)
-        # 
-        if args["-v"] == 0:
-            args["-v"] = level
-        util.init_logger(args["--log"], args["-v"], args["--quiet"])
-    except NameError:
-        util.init_logger(logpath=None, loglevel=level, quiet=False)
-        log.error("Please install docopt to use the CLI.")
- 
-    blocklist = Blocklist(util.get_configdir())
-    blockify = Blockify(blocklist)
+
+    blockify = initialize()
     blockify.start()
 
 
