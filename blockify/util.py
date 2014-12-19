@@ -6,13 +6,14 @@ import sys
 log = logging.getLogger("util")
 
 
-def init_logger(logpath=None, loglevel=1, quiet=False):
+def init_logger(logpath=None, loglevel=2, quiet=False):
     "Initializes the logging module."
     logger = logging.getLogger()
 
-    # Set the loglevel.
+    # Cap loglevel at 3 to avoid index errors.
     if loglevel > 3:
-        loglevel = 3  # Cap at 3 to avoid index errors.
+        loglevel = 3
+    # Apply loglevel.
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logger.setLevel(levels[loglevel])
 

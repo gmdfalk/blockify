@@ -24,7 +24,6 @@ import gtk
 import pygtk
 import wnck
 
-import audioplayer
 import blockifydbus
 from blocklist import Blocklist
 import util
@@ -36,7 +35,7 @@ VERSION = "1.4"
 try:
     from docopt import docopt
 except ImportError:
-    log.error("ImportError: Please install docopt to use the blockify CLI.")
+    log.error("ImportError: Please install docopt to use the CLI.")
 
 
 class Blockify(object):
@@ -55,6 +54,8 @@ class Blockify(object):
         self.is_sink_muted = False
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
+        # We need to import audioplayer here to keep GST from overriding docopt.
+        import audioplayer
         self.player = audioplayer.AudioPlayer(self.configdir)
         self.play_interlude_music = True if len(self.player.playlist) else False
 
@@ -337,13 +338,12 @@ class Blockify(object):
         self._autodetect = boolean
 
 
-def initialize():
+def initialize(doc=__doc__):
     try:
-        args = docopt(__doc__, version=VERSION)
+        args = docopt(doc, version=VERSION)
         util.init_logger(args["--log"], args["-v"] or 2, args["--quiet"])
     except NameError:
         util.init_logger(logpath=None, loglevel=2, quiet=False)
-        log.error("Please install docopt to use the CLI.")
 
     blockify = Blockify(Blocklist(util.get_configdir()))
 
@@ -352,7 +352,6 @@ def initialize():
 
 def main():
     "Entry point for the CLI-version of Blockify."
-
     blockify = initialize()
     blockify.start()
 

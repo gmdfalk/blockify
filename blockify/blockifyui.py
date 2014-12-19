@@ -1,9 +1,23 @@
 #!/usr/bin/env python2
+"""blockify-ui
+
+Usage:
+    blockify-ui [-l <path>] [-v...] [-q] [-h]
+
+Options:
+    -l, --log=<path>  Enables logging to the logfile/-path specified.
+    -q, --quiet       Don't print anything to stdout.
+    -v                Verbosity of the logging module, up to -vvv.
+    -h, --help        Show this help text.
+    --version         Show current version of blockify.
+"""
+# TODO: Add update interval option to docopt.
+# TODO: Actually use XDG for config_dir
 # TODO: Try xlib/_net for minimized window detection.
-# FIXME: tray icon tooltip, continuous update
-# FIXME: mute button state after unblock toggling
-# TODO: audio player (toggle, next, prev, shuffle, interactive progress bar)
-# TODO: threading for cover art dl
+# FIXME: Tray icon tooltip, continuous update
+# FIXME: Mute button state after unblock toggling
+# TODO: Audio player (toggle, next, prev, shuffle, interactive progress bar)
+# TODO: Threading for cover art dl
 # TODO: Different modes: minimal, full
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
 import codecs
@@ -227,7 +241,8 @@ class BlockifyUI(gtk.Window):
         about.set_name("blockify")
         about.set_version(blockify.VERSION)
         about.set_website("http://github.com/mikar/blockify")
-        about.set_copyright("(C) 2014 Max Demian")
+        about.set_copyright("(c) 2014 Max Demian")
+        about.set_license("The MIT License (MIT)")
         about.set_comments(("Blocks Spotify commercials"))
         about.set_authors(["Max Demian <mikar@gmx.de>", "Jesse Maes <kebertyx@gmail.com>"])
         about.run()
@@ -566,7 +581,7 @@ class BlockifyUI(gtk.Window):
 
 def main():
     "Entry point for the GUI-version of Blockify."
-    BlockifyUI(blockify.initialize())
+    BlockifyUI(blockify.initialize(__doc__))
     gtk.main()
 
 
