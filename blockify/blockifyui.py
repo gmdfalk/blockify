@@ -380,6 +380,8 @@ class BlockifyUI(gtk.Window):
         self.statuslabel.set_text(status)
         if not self.found:
             self.albumlabel.set_text(self.b.dbus.get_song_album())
+        else:
+            self.albumlabel.set_text("(blocked)")
 
         artist, title = self.format_current_song()
         self.artistlabel.set_text(artist)
@@ -569,7 +571,7 @@ class BlockifyUI(gtk.Window):
 def main():
     "Entry point for the GUI-version of Blockify."
     # Edit this for less or more logging. Loglevel 0 is least verbose.
-    util.init_logger(logpath=None, loglevel=2, quiet=False)
+    util.init_logger(logpath=None, loglevel=3, quiet=False)
     BlockifyUI()
     gtk.main()
 

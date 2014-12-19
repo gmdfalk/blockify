@@ -107,21 +107,21 @@ class Blocklist(list):
 class Player(object):
     "A simple gstreamer audio player to play a list of mp3 files."
     def __init__(self, configdir):
+        self._index = 0
         self.configdir = configdir
         self.playlist = self.open_playlist()
-        self.index = 0
         self.max_index = len(self.playlist) - 1
         self.player = gst.element_factory_make("playbin2", "player")
         self.player.connect("about-to-finish", self.on_about_to_finish)
         self.set_uri()
 
     def open_playlist(self):
-        "Read the music to be played instead of commercials into a list"
+        "Read the music to be played instead of commercials into a list."
         playlist = []
         playlist_file = os.path.join(self.configdir, "playlist")
         if os.path.exists(playlist_file):
-            playlist = [line.rstrip() for line in open(playlist_file) if line.startswith("file://")]
-            log.info("Interlude playlist is: {0}".format( playlist))
+            playlist = [line.rstrip() for line in open(playlist_file) if not line.startswith("#")]
+            log.debug("Interlude playlist is: {0}".format( playlist))
         else:
             open(playlist_file, "w").close()
             log.info("No interlude playlist found. Created one at {0}.".format(playlist_file))
@@ -129,11 +129,14 @@ class Player(object):
         return playlist
 
     def on_about_to_finish(self, player):
-        "Queue the next song"
+        "Queue the next song right before the current one ends"
         self.next()
         
     def is_playing(self):
         return self.player.get_state()[1] is gst.STATE_PLAYING
+    
+    def is_playable(self):
+        return self.player.get_state()[0] is gst.STATE_CHANGE_SUCCESS
 
     def play(self):
         self.player.set_state(gst.STATE_PLAYING)
@@ -144,22 +147,33 @@ class Player(object):
         log.debug("Pause: State is {0}.".format(self.player.get_state()))
     
     def next(self):
-        if self.index >= self.max_index:
-            self.index = 0
-        else:
-            self.index += 1
+        self.index += 1
         self.set_uri()
     
     def prev(self):
-        if not self.index == 0:
-            self.index -= 1
+        self.index -= 1
         self.set_uri()
         
     def set_uri(self):
+        # Only allow playback if the playlist is non-empty.
         if self.max_index > 0:
             uri = self.playlist[self.index]
-            log.info("Setting interlude to: {0}".format(uri))
+            log.debug("Setting interlude to: {0}".format(uri))
             self.player.set_property("uri", uri)
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, n):
+        idx = n
+        # If we reached the end of the playlist, loop back to the start.
+        # Also, don't decrement index below 0.
+        if idx > self.max_index or idx < 0:
+            idx = 0
+        log.info("Setting index to: {}.".format(n))
+        self._index = n
 
 
 class Blockify(object):
