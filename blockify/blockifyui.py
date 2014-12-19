@@ -1,4 +1,11 @@
 #!/usr/bin/env python2
+# TODO: Try xlib/_net for minimized window detection.
+# FIXME: tray icon tooltip, continuous update
+# FIXME: mute button state after unblock toggling
+# TODO: audio player (toggle, next, prev, shuffle, interactive progress bar)
+# TODO: threading for cover art dl
+# TODO: Different modes: minimal, full
+# TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
 import codecs
 import datetime
 import logging
@@ -9,16 +16,9 @@ import blockify
 import glib
 import gtk
 import urllib
-import util
 from threading import Thread
 
-# TODO: Try xlib/_net for minimized window detection.
-# FIXME: tray icon tooltip, continuous update
-# FIXME: mute button state after unblock toggling
-# TODO: audio player (toggle, next, prev, shuffle, interactive progress bar)
-# TODO: threading for cover art dl
-# TODO: Different modes: minimal, full
-# TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
+
 log = logging.getLogger("gui")
 
 

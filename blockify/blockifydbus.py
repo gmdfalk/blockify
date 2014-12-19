@@ -21,13 +21,13 @@ import dbus
 import util
 
 
+log = logging.getLogger("dbus")
+
+
 try:
     from docopt import docopt
 except ImportError:
-    print "ImportError: Please install docopt to use the DBus CLI."
-
-
-log = logging.getLogger("dbus")
+    log.error("ImportError: Please install docopt to use the DBus CLI.")
 
 
 class BlockifyDBus(object):
@@ -134,7 +134,7 @@ class BlockifyDBus(object):
                 self.player.Seek(seconds)
             else:
                 log.warn("Cannot Seek.")
-    
+
     def get_art_url(self):
         "Get album cover"
         if self.is_running():

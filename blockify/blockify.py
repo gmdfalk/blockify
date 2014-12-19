@@ -25,20 +25,18 @@ import pygtk
 import wnck
 
 import audioplayer
-from blocklist import Blocklist
 import blockifydbus
+from blocklist import Blocklist
 import util
 
+log = logging.getLogger("main")
+pygtk.require("2.0")
+VERSION = "1.4"
 
 try:
     from docopt import docopt
 except ImportError:
-    print "ImportError: Please install docopt to use the blockify CLI."
-
-
-pygtk.require("2.0")
-log = logging.getLogger("main")
-VERSION = "1.4"
+    log.error("ImportError: Please install docopt to use the blockify CLI.")
 
 
 class Blockify(object):
@@ -47,14 +45,14 @@ class Blockify(object):
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.configdir = blocklist.configdir
-        self.automute = True
-        self.autodetect = True
+        self.check_for_blockify_process()
+        self.check_for_spotify_process()
+        self._autodetect = True
+        self._automute = True
         self.current_song = ""
         self.song_status = ""
         self.is_fully_muted = False
         self.is_sink_muted = False
-        self.check_for_blockify_process()
-        self.check_for_spotify_process()
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
         self.player = audioplayer.AudioPlayer(self.configdir)
@@ -326,7 +324,7 @@ class Blockify(object):
 
     @automute.setter
     def automute(self, boolean):
-        log.debug("Setting automute to: {}.".format(boolean))
+        log.debug("Automute: {}.".format(boolean))
         self._automute = boolean
 
     @property
@@ -335,7 +333,7 @@ class Blockify(object):
 
     @autodetect.setter
     def autodetect(self, boolean):
-        log.info("Setting autodetect to: {}.".format(boolean))
+        log.debug("Autodetect: {}.".format(boolean))
         self._autodetect = boolean
 
 

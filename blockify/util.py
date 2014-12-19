@@ -2,7 +2,9 @@ import logging
 import os
 import sys
 
+
 log = logging.getLogger("util")
+
 
 def init_logger(logpath=None, loglevel=1, quiet=False):
     "Initializes the logging module."
@@ -33,19 +35,19 @@ def init_logger(logpath=None, loglevel=1, quiet=False):
             log.debug("Added logging file handler: {}.".format(logfile))
         except IOError:
             log.error("Could not attach file handler.")
-           
-            
+
+
 def get_configdir():
     "Determine if an XDG_CONFIG_DIR for blockify exists and if not, create it."
     configdir = os.path.join(os.path.expanduser("~"), ".config/blockify")
-    
+
     if not os.path.isdir(configdir):
         log.info("Creating config directory.")
         os.makedirs(configdir)
-    
+
     thumbnaildir = os.path.join(configdir, "thumbnails")
     if not os.path.isdir(thumbnaildir):
         log.info("Creating thumbnail directory.")
         os.makedirs(thumbnaildir)
-    
+
     return configdir

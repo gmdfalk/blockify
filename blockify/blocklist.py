@@ -5,6 +5,7 @@ import os
 
 log = logging.getLogger("list")
 
+
 class Blocklist(list):
     "Inheriting from list type is a bad idea. Let's see what happens."
     # Could subclass UserList.UserList here instead which inherits from
@@ -49,10 +50,10 @@ class Blocklist(list):
     def load(self):
         log.info("Loading blockfile from {}.".format(self.location))
         try:
-            with codecs.open(self.location, "r", encoding = "utf-8") as f:
+            with codecs.open(self.location, "r", encoding="utf-8") as f:
                 blocklist = f.read()
         except IOError:
-            with codecs.open(self.location, "w+", encoding = "utf-8") as f:
+            with codecs.open(self.location, "w+", encoding="utf-8") as f:
                 blocklist = f.read()
             log.warn("No blockfile found. Created one.")
 
@@ -60,6 +61,6 @@ class Blocklist(list):
 
     def save(self):
         log.debug("Saving blocklist to {}.".format(self.location))
-        with codecs.open(self.location, "w", encoding = "utf-8") as f:
+        with codecs.open(self.location, "w", encoding="utf-8") as f:
             f.write("\n".join(self) + "\n")
         self.timestamp = self.get_timestamp()

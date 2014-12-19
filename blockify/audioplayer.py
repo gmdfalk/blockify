@@ -1,9 +1,8 @@
 import logging
 import os
 
-# import gst
-import pygst
-pygst.require('0.10')
+# import pygst
+# pygst.require('0.10')
 import gst
 
 
@@ -49,7 +48,7 @@ class AudioPlayer(object):
 
     def play(self):
         if not self.is_playable():
-            log.info("{} is not playable. Skipping.".format(self.playlist[self.index]))
+            log.info("Skipping: {} (not playable).".format(self.playlist[self.index]))
             self.next()
         self.player.set_state(gst.STATE_PLAYING)
         log.debug("Play: State is {0}.".format(self.player.get_state()))
@@ -84,5 +83,5 @@ class AudioPlayer(object):
         # Also, don't decrement index below 0.
         if idx > self.max_index or idx < 0:
             idx = 0
-        log.info("Setting index to: {}.".format(n))
+        log.debug("Setting index to: {}.".format(n))
         self._index = n
