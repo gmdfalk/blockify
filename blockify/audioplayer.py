@@ -18,6 +18,9 @@ class AudioPlayer(object):
         self.max_index = len(self.playlist) - 1
         self.player = gst.element_factory_make("playbin2", "player")
         self.player.connect("about-to-finish", self.on_about_to_finish)
+#         self.bus = self.player.get_bus()
+#         self.bus.add_signal_watch()
+#         self.bus.connect("message::eos", self.on_finish)
         self.set_uri()
 
     def open_playlist(self):

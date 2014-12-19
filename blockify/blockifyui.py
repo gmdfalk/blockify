@@ -31,6 +31,8 @@ import glib
 import gtk
 import urllib
 from threading import Thread
+import gst
+import gobject
 
 
 log = logging.getLogger("gui")
@@ -130,10 +132,6 @@ class Notepad(gtk.Window):
 
 
 class BlockifyUI(gtk.Window):
-    PLAY_IMAGE = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PLAY, gtk.ICON_SIZE_BUTTON)
-    PAUSE_IMAGE = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PAUSE, gtk.ICON_SIZE_BUTTON)
-    NEXT_IMAGE = gtk.image_new_from_stock(gtk.STOCK_MEDIA_NEXT, gtk.ICON_SIZE_BUTTON)
-    PREV_IMAGE = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PREVIOUS, gtk.ICON_SIZE_BUTTON)
 
     "PyQT4 interface for blockify."
     def __init__(self, blockify):
@@ -144,6 +142,12 @@ class BlockifyUI(gtk.Window):
         self.b.toggle_mute()
         self.bind_signals()
 
+        # Images used for interlude media buttons.
+        self.play_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PLAY, gtk.ICON_SIZE_BUTTON)
+        self.pause_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PAUSE, gtk.ICON_SIZE_BUTTON)
+        self.next_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_NEXT, gtk.ICON_SIZE_BUTTON)
+        self.prev_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PREVIOUS, gtk.ICON_SIZE_BUTTON)
+
         self.thumbnail_dir = os.path.join(self.b.configdir, "thumbnails")
         self.cover_server = "https://i.scdn.co/image/"
         self.autohide_cover = False
@@ -151,12 +155,6 @@ class BlockifyUI(gtk.Window):
 
         self.editor = None
         self.statusicon_found = False
-
-        # Set the GUI/Blockify update interval to 400ms. Increase this to
-        # reduce CPU usage and decrease it to improve responsiveness.
-        # If you need absolutely minimal CPU usage you could, in self.start(),
-        # change the line to glib.timeout_add_seconds(2, self.update) or more.
-        self.update_interval = 400
 
         # Window setup.
         self.set_title("Blockify")
@@ -234,7 +232,7 @@ class BlockifyUI(gtk.Window):
         exit = gtk.MenuItem("Exit")
         exit.show()
         menu.append(exit)
-        exit.connect("activate", self.on_exitbutton)
+        exit.connect("activate", self.on_exit_btn)
 
         menu.popup(None, None, gtk.status_icon_position_menu,
                    event_button, event_time, self.status_icon)
@@ -256,6 +254,12 @@ class BlockifyUI(gtk.Window):
     def start(self):
         "Start the main update routine."
         # TODO: gtk.threads_init()
+
+        # Set the GUI/Blockify update interval to 400ms. Increase this to
+        # reduce CPU usage and decrease it to improve responsiveness.
+        # If you need absolutely minimal CPU usage you could, in self.start(),
+        # change the line to glib.timeout_add_seconds(2, self.update) or more.
+        self.update_interval = 400
 
         # Start and loop the main update routine once every 400ms.
         # To influence responsiveness or CPU usage, decrease/increase ms here.
@@ -298,29 +302,38 @@ class BlockifyUI(gtk.Window):
         self.toggleblock_btn = gtk.Button("Block")
         self.toggleblock_btn.connect("clicked", self.on_toggleblock)
         self.autodetect_chk = gtk.CheckButton("Autodetect")
-        self.autodetect_chk.connect("clicked", self.on_checkautodetect)
+        self.autodetect_chk.connect("clicked", self.on_autodetect)
 
         self.togglemute_btn = gtk.ToggleButton("Mute")
         self.togglemute_btn.connect("clicked", self.on_togglemute)
         self.manualmute_chk = gtk.CheckButton("Manual")
-        self.manualmute_chk.connect("clicked", self.on_checkmanualmute)
+        self.manualmute_chk.connect("clicked", self.on_manualmute)
 
         self.togglecover_btn = gtk.Button("Toggle Cover")
         self.togglecover_btn.connect("clicked", self.on_togglecover)
         self.autohidecover_chk = gtk.CheckButton("Autohide")
-        self.autohidecover_chk.connect("clicked", self.on_checkautohidecover)
+        self.autohidecover_chk.connect("clicked", self.on_autohidecover)
 
         self.togglelist_btn = gtk.ToggleButton("Open List")
         self.togglelist_btn.connect("clicked", self.on_togglelist)
 
         self.exit_btn = gtk.Button("Exit")
-        self.exit_btn.connect("clicked", self.on_exitbutton)
+        self.exit_btn.connect("clicked", self.on_exit_btn)
 
         self.play_btn = gtk.Button("play")
-        self.pause_btn = gtk.Button("pause")
+        self.play_btn.set_image(self.play_img)
+        self.play_btn.connect("clicked", self.on_play_btn)
         self.next_btn = gtk.Button("next")
+        self.next_btn.set_image(self.next_img)
+        self.next_btn.connect("clicked", self.on_next_btn)
         self.prev_btn = gtk.Button("prev")
+        self.prev_btn.set_image(self.prev_img)
+        self.prev_btn.connect("clicked", self.on_prev_btn)
+
         self.slider = gtk.HScale()
+        self.slider.set_range(0, 100)
+        self.slider.set_increments(1, 10)
+        self.slider.connect("value-changed", self.on_slider_change)
 
         # Initialize buttons
         for checkbox in [self.autodetect_chk]:
@@ -367,7 +380,6 @@ class BlockifyUI(gtk.Window):
         main.add(self.slider)
         interludebuttons = gtk.HBox(True)
         interludebuttons.add(self.play_btn)
-        interludebuttons.add(self.pause_btn)
         interludebuttons.add(self.next_btn)
         interludebuttons.add(self.prev_btn)
         main.pack_start(interludebuttons)
@@ -456,6 +468,28 @@ class BlockifyUI(gtk.Window):
             self.status_icon.set_from_pixbuf(self.blue_icon_buf)
             self.statusicon_found = False
 
+    def update_slider(self):
+        if not self.b.player.is_playing():
+            return False  # Cancel timeout
+
+        try:
+            nanosecs, format = self.b.player.player.query_position(gst.FORMAT_TIME)
+            duration_nanosecs, format = self.b.player.player.query_duration(gst.FORMAT_TIME)
+
+            # Block seek handler so we don't seek when we set_value().
+            self.slider.handler_block_by_func(self.on_slider_change)
+
+            self.slider.set_range(0, float(duration_nanosecs) / gst.SECOND)
+            self.slider.set_value(float(nanosecs) / gst.SECOND)
+
+            self.slider.handler_unblock_by_func(self.on_slider_change)
+
+        except gst.QueryError:
+            # Pipeline must not be ready and does not know position.
+            pass
+
+        return True  # Continue calling every 30 milliseconds.
+
     def format_current_song(self):
         song = self.b.current_song
         # For whatever reason, Spotify doesn't use a normal hyphen but a
@@ -512,6 +546,25 @@ class BlockifyUI(gtk.Window):
             self.coverimage.hide()
             self.restore_size()
 
+    def on_play_btn(self, widget):
+        if not self.b.player.is_playing():
+            self.play_btn.set_image(self.pause_img)
+            self.b.player.play()
+            gobject.timeout_add(100, self.update_slider)
+        else:
+            self.play_btn.set_image(self.play_img)
+            self.b.player.pause()
+
+    def on_prev_btn(self, widget):
+        pass
+
+    def on_next_btn(self, widget):
+        pass
+
+    def on_slider_change(self, slider):
+        seek_time_secs = slider.get_value()
+        self.b.player.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_KEY_UNIT, seek_time_secs * gst.SECOND)
+
     def on_togglecover(self, widget):
         if self.coverimage.get_visible():
             self.disable_cover()
@@ -520,7 +573,7 @@ class BlockifyUI(gtk.Window):
             self.enable_cover()
             log.debug("Enabled cover art.")
 
-    def on_checkautohidecover(self, widget):
+    def on_autohidecover(self, widget):
         if widget.get_active():
             self.autohide_cover = True
             self.togglecover_btn.set_sensitive(False)
@@ -539,7 +592,7 @@ class BlockifyUI(gtk.Window):
             self.b.block_current()
             widget.set_label("Unblock")
 
-    def on_checkautodetect(self, widget):
+    def on_autodetect(self, widget):
         if widget.get_active():
             self.b.autodetect = True
         else:
@@ -553,7 +606,7 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Mute")
             self.b.toggle_mute(2)
 
-    def on_checkmanualmute(self, widget):
+    def on_manualmute(self, widget):
         if widget.get_active():
             self.b.automute = False
             self.togglemute_btn.set_sensitive(True)
@@ -594,7 +647,7 @@ class BlockifyUI(gtk.Window):
     def on_prevsong(self, widget):
         self.b.dbus.prev()
 
-    def on_exitbutton(self, widget):
+    def on_exit_btn(self, widget):
         self.stop()
 
 
