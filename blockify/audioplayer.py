@@ -2,7 +2,7 @@ import logging
 import os
 
 # import pygst
-# pygst.require('0.10')
+# pygst.require("0.10")
 import gst
 
 

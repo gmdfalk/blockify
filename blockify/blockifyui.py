@@ -104,7 +104,7 @@ class Notepad(gtk.Window):
     def destroy(self, *args):
         "Overloading destroy to untoggle the Open List button."
         super(Notepad, self).destroy()
-        self.parentw.togglelist.set_active(False)
+        self.parentw.togglelist_btn.set_active(False)
 
     def open_file(self, *args):
         textbuffer = self.textview.get_buffer()
@@ -130,6 +130,11 @@ class Notepad(gtk.Window):
 
 
 class BlockifyUI(gtk.Window):
+    PLAY_IMAGE = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PLAY, gtk.ICON_SIZE_BUTTON)
+    PAUSE_IMAGE = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PAUSE, gtk.ICON_SIZE_BUTTON)
+    NEXT_IMAGE = gtk.image_new_from_stock(gtk.STOCK_MEDIA_NEXT, gtk.ICON_SIZE_BUTTON)
+    PREV_IMAGE = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PREVIOUS, gtk.ICON_SIZE_BUTTON)
+
     "PyQT4 interface for blockify."
     def __init__(self, blockify):
         super(BlockifyUI, self).__init__()
@@ -283,42 +288,48 @@ class BlockifyUI(gtk.Window):
             label.set_width_chars(27)
 
     def create_buttons(self):
-        self.toggleplay = gtk.Button("Play/Pause")
-        self.toggleplay.connect("clicked", self.on_toggleplay)
-        self.prevsong = gtk.Button("Previous")
-        self.prevsong.connect("clicked", self.on_prevsong)
-        self.nextsong = gtk.Button("Next")
-        self.nextsong.connect("clicked", self.on_nextsong)
+        self.toggleplay_btn = gtk.Button("Play/Pause")
+        self.toggleplay_btn.connect("clicked", self.on_toggleplay)
+        self.prevsong_btn = gtk.Button("Previous")
+        self.prevsong_btn.connect("clicked", self.on_prevsong)
+        self.nextsong_btn = gtk.Button("Next")
+        self.nextsong_btn.connect("clicked", self.on_nextsong)
 
-        self.toggleblock = gtk.Button("Block")
-        self.toggleblock.connect("clicked", self.on_toggleblock)
-        self.checkautodetect = gtk.CheckButton("Autodetect")
-        self.checkautodetect.connect("clicked", self.on_checkautodetect)
+        self.toggleblock_btn = gtk.Button("Block")
+        self.toggleblock_btn.connect("clicked", self.on_toggleblock)
+        self.autodetect_chk = gtk.CheckButton("Autodetect")
+        self.autodetect_chk.connect("clicked", self.on_checkautodetect)
 
-        self.togglemute = gtk.ToggleButton("Mute")
-        self.togglemute.connect("clicked", self.on_togglemute)
-        self.checkmanualmute = gtk.CheckButton("Manual")
-        self.checkmanualmute.connect("clicked", self.on_checkmanualmute)
+        self.togglemute_btn = gtk.ToggleButton("Mute")
+        self.togglemute_btn.connect("clicked", self.on_togglemute)
+        self.manualmute_chk = gtk.CheckButton("Manual")
+        self.manualmute_chk.connect("clicked", self.on_checkmanualmute)
 
-        self.togglecover = gtk.Button("Toggle Cover")
-        self.togglecover.connect("clicked", self.on_togglecover)
-        self.checkautohidecover = gtk.CheckButton("Autohide")
-        self.checkautohidecover.connect("clicked", self.on_checkautohidecover)
+        self.togglecover_btn = gtk.Button("Toggle Cover")
+        self.togglecover_btn.connect("clicked", self.on_togglecover)
+        self.autohidecover_chk = gtk.CheckButton("Autohide")
+        self.autohidecover_chk.connect("clicked", self.on_checkautohidecover)
 
-        self.togglelist = gtk.ToggleButton("Open List")
-        self.togglelist.connect("clicked", self.on_togglelist)
+        self.togglelist_btn = gtk.ToggleButton("Open List")
+        self.togglelist_btn.connect("clicked", self.on_togglelist)
 
-        self.exitbutton = gtk.Button("Exit")
-        self.exitbutton.connect("clicked", self.on_exitbutton)
+        self.exit_btn = gtk.Button("Exit")
+        self.exit_btn.connect("clicked", self.on_exitbutton)
+
+        self.play_btn = gtk.Button("play")
+        self.pause_btn = gtk.Button("pause")
+        self.next_btn = gtk.Button("next")
+        self.prev_btn = gtk.Button("prev")
+        self.slider = gtk.HScale()
 
         # Initialize buttons
-        for checkbox in [self.checkautodetect]:
+        for checkbox in [self.autodetect_chk]:
             checkbox.set_active(True)
 
-        for checkbox in [self.checkautohidecover, self.checkmanualmute]:
+        for checkbox in [self.autohidecover_chk, self.manualmute_chk]:
             checkbox.set_active(False)
 
-        self.togglemute.set_sensitive(False)
+        self.togglemute_btn.set_sensitive(False)
 
     def create_layout(self):
         main = gtk.VBox()
@@ -328,30 +339,38 @@ class BlockifyUI(gtk.Window):
         main.add(self.titlelabel)
         main.add(self.albumlabel)
         main.add(self.statuslabel)
-        main.add(self.toggleplay)
+        main.add(self.toggleplay_btn)
 
         controlbuttons = gtk.HBox(True)
-        controlbuttons.add(self.prevsong)
-        controlbuttons.add(self.nextsong)
+        controlbuttons.add(self.prevsong_btn)
+        controlbuttons.add(self.nextsong_btn)
         main.pack_start(controlbuttons)
 
         blockbuttons = gtk.HBox(True)
-        blockbuttons.add(self.toggleblock)
-        blockbuttons.add(self.checkautodetect)
+        blockbuttons.add(self.toggleblock_btn)
+        blockbuttons.add(self.autodetect_chk)
         main.pack_start(blockbuttons)
 
         mutebuttons = gtk.HBox(True)
-        mutebuttons.add(self.togglemute)
-        mutebuttons.add(self.checkmanualmute)
+        mutebuttons.add(self.togglemute_btn)
+        mutebuttons.add(self.manualmute_chk)
         main.pack_start(mutebuttons)
 
         coverbuttons = gtk.HBox(True)
-        coverbuttons.add(self.togglecover)
-        coverbuttons.add(self.checkautohidecover)
+        coverbuttons.add(self.togglecover_btn)
+        coverbuttons.add(self.autohidecover_chk)
         main.pack_start(coverbuttons)
 
-        main.add(self.togglelist)
-        main.add(self.exitbutton)
+        main.add(self.togglelist_btn)
+        main.add(self.exit_btn)
+
+        main.add(self.slider)
+        interludebuttons = gtk.HBox(True)
+        interludebuttons.add(self.play_btn)
+        interludebuttons.add(self.pause_btn)
+        interludebuttons.add(self.next_btn)
+        interludebuttons.add(self.prev_btn)
+        main.pack_start(interludebuttons)
 
         self.add(main)
 
@@ -402,30 +421,30 @@ class BlockifyUI(gtk.Window):
     def update_buttons(self):
         # Correct the state of the Block/Unblock toggle button.
         if self.found:
-            self.toggleblock.set_label("Unblock")
+            self.toggleblock_btn.set_label("Unblock")
             self.set_title("Blockify (blocked)")
         else:
-            self.toggleblock.set_label("Block")
+            self.toggleblock_btn.set_label("Block")
             self.set_title("Blockify")
 
         if self.b.song_status == "Playing":
-            self.toggleplay.set_label("Pause")
+            self.toggleplay_btn.set_label("Pause")
         else:
-            self.toggleplay.set_label("Play")
+            self.toggleplay_btn.set_label("Play")
 
         if self.coverimage.get_visible():
-            self.togglecover.set_label("Hide Cover")
+            self.togglecover_btn.set_label("Hide Cover")
         else:
-            self.togglecover.set_label("Show Cover")
+            self.togglecover_btn.set_label("Show Cover")
 
         # Correct state of Open/Close List toggle button.
         if self.editor:
-            if not self.editor.get_visible() and self.togglelist.get_active():
-                self.togglelist.set_active(False)
-        if self.togglelist.get_active():
-            self.togglelist.set_label("Close List")
+            if not self.editor.get_visible() and self.togglelist_btn.get_active():
+                self.togglelist_btn.set_active(False)
+        if self.togglelist_btn.get_active():
+            self.togglelist_btn.set_label("Close List")
         else:
-            self.togglelist.set_label("Open List")
+            self.togglelist_btn.set_label("Open List")
 
     def update_icons(self):
         if self.found and not self.statusicon_found:
@@ -504,11 +523,11 @@ class BlockifyUI(gtk.Window):
     def on_checkautohidecover(self, widget):
         if widget.get_active():
             self.autohide_cover = True
-            self.togglecover.set_sensitive(False)
+            self.togglecover_btn.set_sensitive(False)
             log.debug("Enabled cover autohide.")
         else:
             self.autohide_cover = False
-            self.togglecover.set_sensitive(True)
+            self.togglecover_btn.set_sensitive(True)
             self.enable_cover()
             log.debug("Disabled cover autohide.")
 
@@ -537,25 +556,25 @@ class BlockifyUI(gtk.Window):
     def on_checkmanualmute(self, widget):
         if widget.get_active():
             self.b.automute = False
-            self.togglemute.set_sensitive(True)
-            self.toggleblock.set_sensitive(False)
+            self.togglemute_btn.set_sensitive(True)
+            self.toggleblock_btn.set_sensitive(False)
             self.b.toggle_mute(2)
             log.debug("Enabled manual mute mode.")
         else:
-            self.togglemute.set_sensitive(False)
-            self.toggleblock.set_sensitive(True)
+            self.togglemute_btn.set_sensitive(False)
+            self.toggleblock_btn.set_sensitive(True)
             self.b.automute = True
             log.debug("Disabled manual mute mode.")
         # Nasty togglebuttonses. Always need correcting.
         if self.b.is_sink_muted or self.b.is_fully_muted:
-            self.togglemute.set_label("Unmute")
-            if not self.togglemute.get_active():
-                self.togglemute.set_active(True)
+            self.togglemute_btn.set_label("Unmute")
+            if not self.togglemute_btn.get_active():
+                self.togglemute_btn.set_active(True)
         else:
-            self.togglemute.set_active(False)
-            if self.togglemute.get_active():
-                self.togglemute.set_active(False)
-            self.togglemute.set_label("Mute")
+            self.togglemute_btn.set_active(False)
+            if self.togglemute_btn.get_active():
+                self.togglemute_btn.set_active(False)
+            self.togglemute_btn.set_label("Mute")
 
     def on_togglelist(self, widget):
         if widget.get_active():
