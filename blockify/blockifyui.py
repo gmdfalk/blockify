@@ -489,9 +489,11 @@ class BlockifyUI(gtk.Window):
 
     def on_togglecover(self, widget):
         if self.coverimage.get_visible():
+            self.use_cover = False
             self.disable_cover()
             log.debug("Disabled cover art.")
         else:
+            self.use_cover = True
             self.enable_cover()
             log.debug("Enabled cover art.")
 
