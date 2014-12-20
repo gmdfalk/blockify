@@ -293,6 +293,8 @@ class BlockifyUI(gtk.Window):
         self.prev_btn.set_image(self.prev_img)
         self.prev_btn.connect("clicked", self.on_prev_btn)
 
+        self.interludelabel = gtk.Label()
+
         self.slider = gtk.HScale()
         self.slider.set_sensitive(False)
         self.slider.set_range(0, 100)
@@ -300,6 +302,7 @@ class BlockifyUI(gtk.Window):
         self.slider.connect("value-changed", self.on_slider_change)
 
         self.b.player.bus.connect("message::tag", self.on_interlude_tag_changed)
+        self.b.player.player.connect("audio-changed", self.on_interlude_audio_changed)
 
     def create_buttons(self):
         self.toggleplay_btn = gtk.Button("Play/Pause")
@@ -372,6 +375,7 @@ class BlockifyUI(gtk.Window):
         main.add(self.togglelist_btn)
         main.add(self.exit_btn)
 
+        main.add(self.interludelabel)
         main.add(self.slider)
         interludebuttons = gtk.HBox(True)
         interludebuttons.add(self.play_btn)
@@ -563,13 +567,23 @@ class BlockifyUI(gtk.Window):
     def on_tray_right_click(self, icon, event_button, event_time):
         self.create_traymenu(event_button, event_time)
 
+    def on_interlude_audio_changed (self, player):
+        "Audio source for interlude music has changed."
+        uri = self.b.player.get_current_uri()
+        if uri.startswith("file://"):
+            uri = os.path.basename(uri)
+        self.interludelabel.set_text(uri)
+
     def on_interlude_tag_changed (self, bus, message):
         "Read and display tag information from AudioPlayer.player.bus"
         taglist = message.parse_tag()
 
-        for key in taglist.keys():
-            if key == "artist":
-                print taglist[key]
+        if "artist" in taglist.keys():
+            try:
+                label = taglist["artist"] + " - " + taglist["title"]
+                self.interludelabel.set_text(label)
+            except KeyError as e:
+                log.debug(e)
 
     def on_play_btn(self, widget):
         if not self.b.player.is_playing():
@@ -594,9 +608,11 @@ class BlockifyUI(gtk.Window):
 
     def on_togglecover(self, widget):
         if self.coverimage.get_visible():
+            self.use_cover = False
             self.disable_cover()
             log.debug("Disabled cover art.")
         else:
+            self.use_cover = True
             self.enable_cover()
             log.debug("Enabled cover art.")
 
