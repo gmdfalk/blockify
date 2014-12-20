@@ -11,12 +11,12 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
+# TODO: Audio player (shuffle, interactive progress bar)
 # TODO: Correct play & mute button states
 # TODO: Add update interval option to docopt.
 # TODO: Actually use XDG for config_dir
 # TODO: Try xlib/_net for minimized window detection.
 # FIXME: Tray icon tooltip, continuous update
-# TODO: Audio player (toggle, next, prev, shuffle, interactive progress bar)
 # TODO: Threading for cover art dl
 # TODO: Different modes: minimal, full
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
@@ -468,6 +468,7 @@ class BlockifyUI(gtk.Window):
     def update_slider(self):
         if self.b.player.is_radio():
             self.slider.set_sensitive(False)
+            return False
         else:
             self.slider.set_sensitive(True)
 
@@ -550,23 +551,21 @@ class BlockifyUI(gtk.Window):
 
     def on_play_btn(self, widget):
         if not self.b.player.is_playing():
-#             self.play_btn.set_image(self.pause_img)
+            self.play_btn.set_image(self.pause_img)
             self.b.player.play()
             # Only use the slider if we're not listening to radio.
             gobject.timeout_add(100, self.update_slider)
         else:
-#             self.play_btn.set_image(self.play_img)
+            self.play_btn.set_image(self.play_img)
             self.b.player.pause()
 
     def on_prev_btn(self, widget):
-        self.b.player.stop()
         self.b.player.prev()
-        self.b.player.play()
+        gobject.timeout_add(100, self.update_slider)
 
     def on_next_btn(self, widget):
-        self.b.player.stop()
         self.b.player.next()
-        self.b.player.play()
+        gobject.timeout_add(100, self.update_slider)
 
     def on_slider_change(self, slider):
         seek_time_secs = slider.get_value()
@@ -652,7 +651,7 @@ class BlockifyUI(gtk.Window):
         self.b.dbus.next()
 
     def on_prevsong(self, widget):
-        self.b.dbus.prev()
+        self.b.dbus.previous()
 
     def on_exit_btn(self, widget):
         self.stop()

@@ -26,7 +26,7 @@ class AudioPlayer(object):
         playlist = []
         playlist_file = os.path.join(self.configdir, "playlist")
         if os.path.exists(playlist_file):
-            playlist = [line.strip() for line in open(playlist_file) if not line.startswith("#")]  # and self.is_valid_uri(line)]
+            playlist = [line.strip() for line in open(playlist_file) if self.is_valid_uri(line)]  # if line and not line.startswith("#")]
             log.debug("Interlude playlist is: {0}".format(playlist))
         else:
             open(playlist_file, "w").close()
@@ -35,14 +35,23 @@ class AudioPlayer(object):
         return playlist
 
     def on_about_to_finish(self, player):
-        "Queue the next song right before the current one ends"
-        self.next()
+        "Queue the queue_next song right before the current one ends"
+        self.queue_next()
+
+    def get_current_index(self):
+        if self.index > self.max_index:
+            return "(none)"
+        return self.playlist[self.index]
 
     def is_radio(self):
-        return self.playlist[self.index].startswith("http://")
+        return self.get_current_index().startswith("http://")
 
     def is_valid_uri(self, line):
-        return any([line.startswith("file://"), line.startswith("http://"), line.startswith("mms://")])
+        exclusions = [not line, line.startswith("#")]
+        inclusions = [line.startswith("file://"), line.startswith("http://"), line.startswith("mms://")]
+        derp = not any(exclusions) and any(inclusions)
+        print line, derp, exclusions, inclusions
+        return derp
 
     def is_playing(self):
         return self.player.get_state()[1] is gst.STATE_PLAYING
@@ -52,8 +61,8 @@ class AudioPlayer(object):
 
     def play(self):
         if not self.is_playable():
-            log.info("Skipping: {} (not playable).".format(self.playlist[self.index]))
-            self.next()
+            log.info("Skipping: {} (not playable).".format(self.get_current_index()))
+            self.queue_next()
         self.player.set_state(gst.STATE_PLAYING)
         log.debug("Play: State is {0}.".format(self.player.get_state()))
 
@@ -63,19 +72,30 @@ class AudioPlayer(object):
 
     def stop(self):
         self.player.set_state(gst.STATE_NULL)
+        log.debug("Stop: State is {0}.".format(self.player.get_state()))
+
+    def prev(self):
+        self.stop()
+        self.queue_previous()
+        self.play()
 
     def next(self):
+        self.stop()
+        self.queue_next()
+        self.play()
+
+    def queue_next(self):
         self.index += 1
         self.set_uri()
 
-    def prev(self):
+    def queue_previous(self):
         self.index -= 1
         self.set_uri()
 
     def set_uri(self):
         # Only allow playback if the playlist is non-empty.
         if self.max_index >= 0:
-            uri = self.playlist[self.index]
+            uri = self.get_current_index()
             log.debug("Setting interlude to: {0}".format(uri))
             self.player.set_property("uri", uri)
 
@@ -88,6 +108,7 @@ class AudioPlayer(object):
         idx = n
         # If we reached the end of the playlist, loop back to the start.
         # Also, don't decrement index below 0.
+        print self.max_index
         if idx > self.max_index or idx < 0:
             idx = 0
         log.debug("Setting index to: {}.".format(idx))
