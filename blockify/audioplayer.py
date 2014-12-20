@@ -11,14 +11,17 @@ class AudioPlayer(object):
     "A simple gstreamer audio player to play a list of mp3 files."
     def __init__(self, configdir):
         self._index = 0
+        self.autoresume = True
         self.configdir = configdir
         self.playlist = self.open_playlist()
         self.max_index = len(self.playlist) - 1
         self.player = gst.element_factory_make("playbin2", "player")
         self.player.connect("about-to-finish", self.on_about_to_finish)
-#         self.bus = self.player.get_bus()
-#         self.bus.add_signal_watch()
+        self.bus = self.player.get_bus()
+        self.bus.add_signal_watch()
+#         self.bus.connect("message::tag", self.on_tag_changed)
 #         self.bus.connect("message::eos", self.on_finish)
+
         self.set_uri()
 
     def open_playlist(self):
@@ -26,7 +29,7 @@ class AudioPlayer(object):
         playlist = []
         playlist_file = os.path.join(self.configdir, "playlist")
         if os.path.exists(playlist_file):
-            playlist = [line.strip() for line in open(playlist_file) if self.is_valid_uri(line)]  # if line and not line.startswith("#")]
+            playlist = [line.strip() for line in open(playlist_file) if self.is_valid_uri(line)]
             log.debug("Interlude playlist is: {0}".format(playlist))
         else:
             open(playlist_file, "w").close()
@@ -35,7 +38,7 @@ class AudioPlayer(object):
         return playlist
 
     def on_about_to_finish(self, player):
-        "Queue the queue_next song right before the current one ends"
+        "Song is ending. What do we do?"
         self.queue_next()
 
     def get_current_index(self):
@@ -44,14 +47,16 @@ class AudioPlayer(object):
         return self.playlist[self.index]
 
     def is_radio(self):
+        "Spot radio tracks so we can deal with them appropriately."
         return self.get_current_index().startswith("http://")
 
     def is_valid_uri(self, line):
+        "Determine if a line in the playlist file is a valid URI."
+        # Lines we exclude right away, these are not valid URIs.
         exclusions = [not line, line.startswith("#")]
+        # Lines we include as these are likely to be valid URIs.
         inclusions = [line.startswith("file://"), line.startswith("http://"), line.startswith("mms://")]
-        derp = not any(exclusions) and any(inclusions)
-        print line, derp, exclusions, inclusions
-        return derp
+        return not any(exclusions) and any(inclusions)
 
     def is_playing(self):
         return self.player.get_state()[1] is gst.STATE_PLAYING
@@ -108,7 +113,6 @@ class AudioPlayer(object):
         idx = n
         # If we reached the end of the playlist, loop back to the start.
         # Also, don't decrement index below 0.
-        print self.max_index
         if idx > self.max_index or idx < 0:
             idx = 0
         log.debug("Setting index to: {}.".format(idx))

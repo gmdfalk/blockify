@@ -11,6 +11,8 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
+# TODO: Add experimental mode suggested by spam0cal to skip the last
+#       second of each song to skip ads altogether (could not verify this).
 # TODO: Audio player (shuffle, interactive progress bar)
 # TODO: Correct play & mute button states
 # TODO: Add update interval option to docopt.
@@ -162,6 +164,7 @@ class BlockifyUI(gtk.Window):
         self.coverimage = gtk.Image()
         self.create_labels()
         self.create_buttons()
+        self.create_interlude_player()
         self.create_layout()
         self.create_tray()
 
@@ -189,16 +192,6 @@ class BlockifyUI(gtk.Window):
         self.status_icon.connect("activate", self.on_tray_left_click)
         self.status_icon.set_tooltip("blockify v{0}".format(blockify.VERSION))
         self.connect("delete-event", self.on_delete_event)
-
-    def on_delete_event(self, window, event):
-        self.hide_on_delete()
-        return True
-
-    def on_tray_left_click(self, status):
-        self.show_all()
-
-    def on_tray_right_click(self, icon, event_button, event_time):
-        self.create_traymenu(event_button, event_time)
 
     def create_traymenu(self, event_button, event_time):
         menu = gtk.Menu()
@@ -288,6 +281,25 @@ class BlockifyUI(gtk.Window):
 #             label.set_line_wrap(True)
             label.set_width_chars(27)
 
+    def create_interlude_player(self):
+        self.play_btn = gtk.Button("play")
+        self.play_btn.set_image(self.play_img)
+        self.play_btn.connect("clicked", self.on_play_btn)
+        self.next_btn = gtk.Button("next")
+        self.next_btn.set_image(self.next_img)
+        self.next_btn.connect("clicked", self.on_next_btn)
+        self.prev_btn = gtk.Button("prev")
+        self.prev_btn.set_image(self.prev_img)
+        self.prev_btn.connect("clicked", self.on_prev_btn)
+
+        self.slider = gtk.HScale()
+        self.slider.set_sensitive(False)
+        self.slider.set_range(0, 100)
+        self.slider.set_increments(1, 10)
+        self.slider.connect("value-changed", self.on_slider_change)
+
+        self.b.player.bus.connect("message::tag", self.on_interlude_tag_changed)
+
     def create_buttons(self):
         self.toggleplay_btn = gtk.Button("Play/Pause")
         self.toggleplay_btn.connect("clicked", self.on_toggleplay)
@@ -316,21 +328,6 @@ class BlockifyUI(gtk.Window):
 
         self.exit_btn = gtk.Button("Exit")
         self.exit_btn.connect("clicked", self.on_exit_btn)
-
-        self.play_btn = gtk.Button("play")
-        self.play_btn.set_image(self.play_img)
-        self.play_btn.connect("clicked", self.on_play_btn)
-        self.next_btn = gtk.Button("next")
-        self.next_btn.set_image(self.next_img)
-        self.next_btn.connect("clicked", self.on_next_btn)
-        self.prev_btn = gtk.Button("prev")
-        self.prev_btn.set_image(self.prev_img)
-        self.prev_btn.connect("clicked", self.on_prev_btn)
-
-        self.slider = gtk.HScale()
-        self.slider.set_range(0, 100)
-        self.slider.set_increments(1, 10)
-        self.slider.connect("value-changed", self.on_slider_change)
 
         # Initialize buttons
         for checkbox in [self.autodetect_chk]:
@@ -549,11 +546,28 @@ class BlockifyUI(gtk.Window):
             self.coverimage.hide()
             self.restore_size()
 
+    def on_delete_event(self, window, event):
+        self.hide_on_delete()
+        return True
+
+    def on_tray_left_click(self, status):
+        self.show_all()
+
+    def on_tray_right_click(self, icon, event_button, event_time):
+        self.create_traymenu(event_button, event_time)
+
+    def on_interlude_tag_changed (self, bus, message):
+        "Read and display tag information from AudioPlayer.player.bus"
+        taglist = message.parse_tag()
+
+        for key in taglist.keys():
+            if key == "artist":
+                print taglist[key]
+
     def on_play_btn(self, widget):
         if not self.b.player.is_playing():
             self.play_btn.set_image(self.pause_img)
             self.b.player.play()
-            # Only use the slider if we're not listening to radio.
             gobject.timeout_add(100, self.update_slider)
         else:
             self.play_btn.set_image(self.play_img)
