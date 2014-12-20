@@ -151,6 +151,7 @@ class BlockifyUI(gtk.Window):
 
         self.thumbnail_dir = os.path.join(self.b.configdir, "thumbnails")
         self.cover_server = "https://i.scdn.co/image/"
+        self.use_cover = True
         self.autohide_cover = False
         self.previous_cover_file = ""
 
@@ -389,7 +390,8 @@ class BlockifyUI(gtk.Window):
             Thread(target=self.b.toggle_interlude_music(self.found)).start()
 
         # Our main GUI workers here, updating labels, buttons and the likes.
-        self.update_cover()
+        if self.use_cover:
+            self.update_cover()
         self.update_labels()
         self.update_buttons()
         self.update_icons()
@@ -402,14 +404,19 @@ class BlockifyUI(gtk.Window):
             if self.autohide_cover and self.b.automute:
                 self.disable_cover()
         else:
-            cover_file = self.get_cover_art()
-            if self.previous_cover_file != cover_file:
-                pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
-                scaled_buf = pixbuf.scale_simple(195, 195, gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
-                self.coverimage.set_from_pixbuf(scaled_buf)
-                self.previous_cover_file = cover_file
-            if self.autohide_cover:
-                self.enable_cover()
+            try:
+                cover_file = self.get_cover_art()
+                if self.previous_cover_file != cover_file:
+                    pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
+                    scaled_buf = pixbuf.scale_simple(195, 195, gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
+                    self.coverimage.set_from_pixbuf(scaled_buf)
+                    self.previous_cover_file = cover_file
+                if self.autohide_cover:
+                    self.enable_cover()
+            except Exception:
+                self.use_cover = False
+                self.autohidecover_chk.set_active(False)
+                self.disable_cover()
 
     def update_labels(self):
         status = self.get_status_text()
