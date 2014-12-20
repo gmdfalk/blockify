@@ -1,8 +1,6 @@
 import logging
 import os
 
-# import pygst
-# pygst.require("0.10")
 import gst
 
 
@@ -40,6 +38,9 @@ class AudioPlayer(object):
         "Queue the next song right before the current one ends"
         self.next()
 
+    def is_radio(self):
+        return self.playlist[self.index].startswith("http://")
+
     def is_valid_uri(self, line):
         return any([line.startswith("file://"), line.startswith("http://"), line.startswith("mms://")])
 
@@ -60,6 +61,9 @@ class AudioPlayer(object):
         self.player.set_state(gst.STATE_PAUSED)
         log.debug("Pause: State is {0}.".format(self.player.get_state()))
 
+    def stop(self):
+        self.player.set_state(gst.STATE_NULL)
+
     def next(self):
         self.index += 1
         self.set_uri()
@@ -70,7 +74,7 @@ class AudioPlayer(object):
 
     def set_uri(self):
         # Only allow playback if the playlist is non-empty.
-        if self.max_index > 0:
+        if self.max_index >= 0:
             uri = self.playlist[self.index]
             log.debug("Setting interlude to: {0}".format(uri))
             self.player.set_property("uri", uri)
@@ -86,5 +90,5 @@ class AudioPlayer(object):
         # Also, don't decrement index below 0.
         if idx > self.max_index or idx < 0:
             idx = 0
-        log.debug("Setting index to: {}.".format(n))
-        self._index = n
+        log.debug("Setting index to: {}.".format(idx))
+        self._index = idx

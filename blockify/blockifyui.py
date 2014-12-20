@@ -11,11 +11,11 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
+# TODO: Correct play & mute button states
 # TODO: Add update interval option to docopt.
 # TODO: Actually use XDG for config_dir
 # TODO: Try xlib/_net for minimized window detection.
 # FIXME: Tray icon tooltip, continuous update
-# FIXME: Mute button state after unblock toggling
 # TODO: Audio player (toggle, next, prev, shuffle, interactive progress bar)
 # TODO: Threading for cover art dl
 # TODO: Different modes: minimal, full
@@ -25,14 +25,14 @@ import datetime
 import logging
 import os
 import signal
+from threading import Thread
+import urllib
 
 import blockify
 import glib
-import gtk
-import urllib
-from threading import Thread
-import gst
 import gobject
+import gst
+import gtk
 
 
 log = logging.getLogger("gui")
@@ -132,7 +132,6 @@ class Notepad(gtk.Window):
 
 
 class BlockifyUI(gtk.Window):
-
     "PyQT4 interface for blockify."
     def __init__(self, blockify):
         super(BlockifyUI, self).__init__()
@@ -253,8 +252,6 @@ class BlockifyUI(gtk.Window):
 
     def start(self):
         "Start the main update routine."
-        # TODO: gtk.threads_init()
-
         # Set the GUI/Blockify update interval to 400ms. Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
@@ -469,6 +466,11 @@ class BlockifyUI(gtk.Window):
             self.statusicon_found = False
 
     def update_slider(self):
+        if self.b.player.is_radio():
+            self.slider.set_sensitive(False)
+        else:
+            self.slider.set_sensitive(True)
+
         if not self.b.player.is_playing():
             return False  # Cancel timeout
 
@@ -548,18 +550,23 @@ class BlockifyUI(gtk.Window):
 
     def on_play_btn(self, widget):
         if not self.b.player.is_playing():
-            self.play_btn.set_image(self.pause_img)
+#             self.play_btn.set_image(self.pause_img)
             self.b.player.play()
+            # Only use the slider if we're not listening to radio.
             gobject.timeout_add(100, self.update_slider)
         else:
-            self.play_btn.set_image(self.play_img)
+#             self.play_btn.set_image(self.play_img)
             self.b.player.pause()
 
     def on_prev_btn(self, widget):
-        pass
+        self.b.player.stop()
+        self.b.player.prev()
+        self.b.player.play()
 
     def on_next_btn(self, widget):
-        pass
+        self.b.player.stop()
+        self.b.player.next()
+        self.b.player.play()
 
     def on_slider_change(self, slider):
         seek_time_secs = slider.get_value()

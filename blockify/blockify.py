@@ -54,7 +54,7 @@ class Blockify(object):
         self.is_sink_muted = False
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
-        # We need to import audioplayer here to keep GST from overriding docopt.
+        # We need to import audioplayer/gst here to keep GST from overriding docopt.
         import audioplayer
         self.player = audioplayer.AudioPlayer(self.configdir)
         self.play_interlude_music = True if len(self.player.playlist) else False
@@ -66,7 +66,6 @@ class Blockify(object):
             self.mutemethod = self.pulsesink_mute
         except (OSError, subprocess.CalledProcessError):
             self.mutemethod = self.alsa_mute
-
 
         log.info("Blockify initialized.")
 
@@ -109,15 +108,14 @@ class Blockify(object):
     def start(self):
         self.bind_signals()
         self.toggle_mute()
-#         gtk.threads_init()
-        while True:
+        log.info("Blockify started.")
+        while 1:
             # Initiate gtk loop to enable the window list for .get_windows().
             while gtk.events_pending():
                 gtk.main_iteration(False)
             found = self.update()
             if self.play_interlude_music:
                 Thread(target=self.toggle_interlude_music(found)).start()
-#                 self.toggle_interlude_music(found)
 
             time.sleep(0.25)
 
@@ -138,8 +136,8 @@ class Blockify(object):
         playing = self.player.is_playing()
         if found and not playing:
             self.player.play()
-        elif not found and playing:
-           self.player.pause()
+#         elif not found and playing:
+#             self.player.pause()
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
@@ -341,9 +339,9 @@ class Blockify(object):
 def initialize(doc=__doc__):
     try:
         args = docopt(doc, version=VERSION)
-        util.init_logger(args["--log"], args["-v"] or 2, args["--quiet"])
+        util.init_logger(args["--log"], args["-v"] or 3, args["--quiet"])
     except NameError:
-        util.init_logger(logpath=None, loglevel=2, quiet=False)
+        util.init_logger()
 
     blockify = Blockify(Blocklist(util.get_configdir()))
 
