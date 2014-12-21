@@ -9,10 +9,11 @@ log = logging.getLogger("player")
 
 class AudioPlayer(object):
     "A simple gstreamer audio player to play a list of mp3 files."
-    def __init__(self, configdir):
+    def __init__(self, configdir, dbus):
         self._index = 0
         self.autoresume = True
         self.configdir = configdir
+        self.dbus = dbus
         self.playlist = self.open_playlist()
         self.max_index = len(self.playlist) - 1
         self.player = gst.element_factory_make("playbin2", "player")
@@ -40,6 +41,9 @@ class AudioPlayer(object):
     def on_about_to_finish(self, player):
         "Song is ending. What do we do?"
         self.queue_next()
+        if not self.autoresume:
+            self.stop()
+            self.dbus.playpause()
 
     def get_current_uri(self):
         if self.index > self.max_index:

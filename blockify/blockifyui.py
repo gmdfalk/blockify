@@ -11,17 +11,18 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Add experimental mode suggested by spam0cal to skip the last
+# TODO: Autoswitch timeout (e.g. if we use radio).
+# TODO: Add experimental mode suggested by spam0cal to skip the last.
 #       second of each song to skip ads altogether (could not verify this).
-# TODO: Audio player (shuffle, interactive progress bar)
-# TODO: Correct play & mute button states
+# TODO: Audio player (shuffle, interactive progress bar).
+# TODO: Correct play & mute button states.
 # TODO: Add update interval option to docopt.
-# TODO: Actually use XDG for config_dir
+# TODO: Actually use XDG for config_dir.
 # TODO: Try xlib/_net for minimized window detection.
-# FIXME: Tray icon tooltip, continuous update
-# TODO: Threading for cover art dl
-# TODO: Different modes: minimal, full
-# TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y
+# FIXME: Tray icon tooltip, continuous update.
+# TODO: Threading for cover art dl.
+# TODO: Different modes: minimal, full.
+# TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y.
 import codecs
 import datetime
 import logging
@@ -280,7 +281,7 @@ class BlockifyUI(gtk.Window):
 
         for label in [self.albumlabel, self.artistlabel, self.titlelabel]:
 #             label.set_line_wrap(True)
-            label.set_width_chars(27)
+            label.set_width_chars(26)
 
     def create_interlude_player(self):
         self.play_btn = gtk.Button("play")
@@ -294,6 +295,11 @@ class BlockifyUI(gtk.Window):
         self.prev_btn.connect("clicked", self.on_prev_btn)
 
         self.interludelabel = gtk.Label()
+        self.interludelabel.set_width_chars(26)
+
+        self.autoresume_chk = gtk.CheckButton("Autoresume")
+        self.autoresume_chk.connect("clicked", self.on_autoresume)
+        self.autoresume_chk.set_active(True)
 
         self.slider = gtk.HScale()
         self.slider.set_sensitive(False)
@@ -377,10 +383,11 @@ class BlockifyUI(gtk.Window):
 
         main.add(self.interludelabel)
         main.add(self.slider)
-        interludebuttons = gtk.HBox(True)
+        interludebuttons = gtk.HBox(False)
         interludebuttons.add(self.play_btn)
         interludebuttons.add(self.next_btn)
         interludebuttons.add(self.prev_btn)
+        interludebuttons.add(self.autoresume_chk)
         main.pack_start(interludebuttons)
 
         self.add(main)
@@ -390,7 +397,7 @@ class BlockifyUI(gtk.Window):
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.found = self.b.update()
-        if self.b.play_interlude_music:
+        if self.b.use_interlude_music:
             Thread(target=self.b.toggle_interlude_music(self.found)).start()
 
         # Our main GUI workers here, updating labels, buttons and the likes.
@@ -567,6 +574,12 @@ class BlockifyUI(gtk.Window):
     def on_tray_right_click(self, icon, event_button, event_time):
         self.create_traymenu(event_button, event_time)
 
+    def on_autoresume(self, widget):
+        if widget.get_active():
+            self.b.player.autoresume = True
+        else:
+            self.b.player.autoresume = False
+
     def on_interlude_audio_changed (self, player):
         "Audio source for interlude music has changed."
         uri = self.b.player.get_current_uri()
@@ -581,7 +594,8 @@ class BlockifyUI(gtk.Window):
         if "artist" in taglist.keys():
             try:
                 label = taglist["artist"] + " - " + taglist["title"]
-                self.interludelabel.set_text(label)
+                if len(label) > 5:
+                    self.interludelabel.set_text(label)
             except KeyError as e:
                 log.debug(e)
 

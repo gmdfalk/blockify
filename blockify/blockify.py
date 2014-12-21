@@ -54,10 +54,10 @@ class Blockify(object):
         self.is_sink_muted = False
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
-        # We need to import audioplayer/gst here to keep GST from overriding docopt.
+        # We need to import audioplayer/gst here to keep GST from overriding docopt...
         import audioplayer
-        self.player = audioplayer.AudioPlayer(self.configdir)
-        self.play_interlude_music = True if len(self.player.playlist) else False
+        self.player = audioplayer.AudioPlayer(self.configdir, self.dbus)
+        self.use_interlude_music = self.player.max_index >= 0
 
         # Determine if we can use sinks or have to use alsa.
         try:
@@ -114,7 +114,7 @@ class Blockify(object):
             while gtk.events_pending():
                 gtk.main_iteration(False)
             found = self.update()
-            if self.play_interlude_music:
+            if self.use_interlude_music:
                 Thread(target=self.toggle_interlude_music(found)).start()
 
             time.sleep(0.25)
@@ -136,8 +136,14 @@ class Blockify(object):
         playing = self.player.is_playing()
         if found and not playing:
             self.player.play()
-#         elif not found and playing:
-#             self.player.pause()
+        if not found and playing:
+            if self.player.autoresume:
+                self.player.pause()
+            else:
+                if self.song_status == "Playing":
+                    self.dbus.stop()
+
+
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
