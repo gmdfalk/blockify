@@ -11,18 +11,18 @@ class AudioPlayer(object):
     "A simple gstreamer audio player to play a list of mp3 files."
     def __init__(self, configdir, dbus):
         self._index = 0
-        self.autoresume = False
+        self.autoresume = True
         self.configdir = configdir
         self.dbus = dbus
         self.playlist = self.open_playlist()
         self.max_index = len(self.playlist) - 1
         self.player = gst.element_factory_make("playbin2", "player")
         self.player.connect("about-to-finish", self.on_about_to_finish)
+        # Get and watch the bus. We use this in blockify-ui.
         self.bus = self.player.get_bus()
         self.bus.add_signal_watch()
-#         self.bus.connect("message::tag", self.on_tag_changed)
-#         self.bus.connect("message::eos", self.on_finish)
-
+        # self.bus.connect("message::tag", self.on_tag_changed)
+        # self.bus.connect("message::eos", self.on_finish)
         self.set_uri()
 
     def open_playlist(self):
@@ -44,7 +44,6 @@ class AudioPlayer(object):
         if not self.autoresume and self.dbus.get_song_status() != "Playing":
             self.pause()
             self.dbus.playpause()
-#             gobject.idle_add(self.dbus.playpause)
 
     def get_current_uri(self):
         if self.index > self.max_index:

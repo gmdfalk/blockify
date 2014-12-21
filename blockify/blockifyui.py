@@ -308,7 +308,7 @@ class BlockifyUI(gtk.Window):
 
         self.autoresume_chk = gtk.CheckButton("Autoresume")
         self.autoresume_chk.connect("clicked", self.on_autoresume)
-        self.autoresume_chk.set_active(False)
+        self.autoresume_chk.set_active(True)
 
         self.slider = gtk.HScale()
         self.slider.set_sensitive(False)
