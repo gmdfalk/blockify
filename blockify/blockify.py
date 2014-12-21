@@ -125,13 +125,13 @@ class Player(object):
         else:
             open(playlist_file, "w").close()
             log.info("No interlude playlist found. Created one at {0}.".format(playlist_file))
-            
+
         return playlist
 
     def on_about_to_finish(self, player):
         "Queue the next song"
         self.next()
-        
+
     def is_playing(self):
         return self.player.get_state()[1] is gst.STATE_PLAYING
 
@@ -142,19 +142,19 @@ class Player(object):
     def pause(self):
         self.player.set_state(gst.STATE_PAUSED)
         log.debug("Pause: State is {0}.".format(self.player.get_state()))
-    
+
     def next(self):
         if self.index >= self.max_index:
             self.index = 0
         else:
             self.index += 1
         self.set_uri()
-    
+
     def prev(self):
         if not self.index == 0:
             self.index -= 1
         self.set_uri()
-        
+
     def set_uri(self):
         if self.max_index > 0:
             uri = self.playlist[self.index]
@@ -188,10 +188,10 @@ class Blockify(object):
             self.mutemethod = self.pulsesink_mute
         except (OSError, subprocess.CalledProcessError):
             self.mutemethod = self.alsa_mute
-            
+
 
         log.info("Blockify initialized.")
-        
+
     def check_for_blockify_process(self):
         try:
             pid = subprocess.check_output(["pgrep", "-f", "python.*blockify"])
@@ -201,7 +201,7 @@ class Blockify(object):
             if pid.strip() != str(os.getpid()):
                 log.error("A blockify process is already running. Exiting.")
                 sys.exit()
-                
+
     def check_for_spotify_process(self):
         try:
             subprocess.check_output(["pgrep", "spotify"])
@@ -220,14 +220,14 @@ class Blockify(object):
             channel_list.append("Headphone")
 
         return channel_list
-    
+
     def init_dbus(self):
         try:
             return blockifydbus.BlockifyDBus()
         except Exception as e:
             log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
             sys.exit()
-            
+
     def start(self):
         self.bind_signals()
         self.toggle_mute()
@@ -241,8 +241,8 @@ class Blockify(object):
                 Thread(target=self.toggle_interlude_music(found)).start()
 #                 self.toggle_interlude_music(found)
 
-            time.sleep(0.25)
-    
+            time.sleep(0.1)
+
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
         if self.song_status == "Playing":
@@ -255,7 +255,7 @@ class Blockify(object):
                 # However, it might still play one last ad so we assume that
                 # is the case here.
                 return True
-    
+
     def toggle_interlude_music(self, found):
         playing = self.player.is_playing()
         if found and not playing:
@@ -276,6 +276,8 @@ class Blockify(object):
         # No song playing, force unmute.
         if not self.current_song:
             self.toggle_mute(2)
+            # No need for much checking when muted.
+            time.sleep(1)
             return False
 
         if self.autodetect:
@@ -298,6 +300,9 @@ class Blockify(object):
                 self.toggle_mute(1)
                 return True  # Return boolean to use as self.found in GUI.
 
+        # Wait a little bit before unmuting so as to avoid the fade-out of the
+        # advertisement.
+        time.sleep(0.7)
         self.toggle_mute()
 
         return False
@@ -402,7 +407,7 @@ class Blockify(object):
 
         if not len(spotify_sink_list):
             return
-        
+
         sink_infos = [pattern.findall(sink) for sink in spotify_sink_list]
         # Every third element per sublist is a key, the value is the preceding
         # two elements in the form of a tuple - {pid : (index, muted)}
@@ -465,17 +470,17 @@ def main():
     "Entry point for the CLI-version of Blockify."
     # Log level to fall back to if we get no user input
     level = 2
-    
+
     try:
         args = docopt(__doc__, version=VERSION)
-        # 
+        #
         if args["-v"] == 0:
             args["-v"] = level
         util.init_logger(args["--log"], args["-v"], args["--quiet"])
     except NameError:
         util.init_logger(logpath=None, loglevel=level, quiet=False)
         log.error("Please install docopt to use the CLI.")
- 
+
     blocklist = Blocklist(util.get_configdir())
     blockify = Blockify(blocklist)
     blockify.start()
