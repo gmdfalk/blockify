@@ -11,17 +11,18 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Autoswitch timeout (e.g. if we use radio).
-# TODO: Add experimental mode suggested by spam0cal to skip the last.
-#       second of each song to skip ads altogether (could not verify this).
-# TODO: Audio player (shuffle, interactive progress bar).
 # TODO: Correct play & mute button states.
+# TODO: Configuration file (also actually use XDG).
+# TODO: Interlude: shuffle, playlist browser
+# TODO: Interlude: Fix play/next/prev button icons.
+# TODO: Interlude: Autoresume max_timeout (e.g. if we use radio).
 # TODO: Add update interval option to docopt.
-# TODO: Actually use XDG for config_dir.
-# TODO: Try xlib/_net for minimized window detection.
-# FIXME: Tray icon tooltip, continuous update.
+# TODO: Try experimental mode suggested by spam0cal to skip the last
+#       second of each song to skip ads altogether (could not verify this).
+# TODO: Continuous update of tray icon tooltip.
 # TODO: Threading for cover art dl.
-# TODO: Different modes: minimal, full.
+# TODO: Different GUI-modes (minimal, full).
+# TODO: Try xlib for minimized window detection.
 # TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y.
 import codecs
 import datetime
@@ -35,7 +36,6 @@ import blockify
 import glib
 import gobject
 import gtk
-
 
 # The gst library for some reason modifies argv so we have
 # to save the args here to be able to use them with docopt.
@@ -184,6 +184,7 @@ class BlockifyUI(gtk.Window):
         self.create_interlude_player()
         self.create_layout()
         self.create_tray()
+        self.set_states()
 
         # "Trap" the exit.
         self.connect("destroy", self.stop)
@@ -308,7 +309,6 @@ class BlockifyUI(gtk.Window):
 
         self.autoresume_chk = gtk.CheckButton("Autoresume")
         self.autoresume_chk.connect("clicked", self.on_autoresume)
-        self.autoresume_chk.set_active(True)
 
         self.slider = gtk.HScale()
         self.slider.set_sensitive(False)
@@ -347,13 +347,6 @@ class BlockifyUI(gtk.Window):
 
         self.exit_btn = gtk.Button("Exit")
         self.exit_btn.connect("clicked", self.on_exit_btn)
-
-        # Initialize buttons
-        for checkbox in [self.autodetect_chk]:
-            checkbox.set_active(True)
-
-        for checkbox in [self.autohidecover_chk, self.manualmute_chk]:
-            checkbox.set_active(False)
 
         self.togglemute_btn.set_sensitive(False)
 
@@ -400,6 +393,15 @@ class BlockifyUI(gtk.Window):
         main.pack_start(interludebuttons)
 
         self.add(main)
+
+    def set_states(self):
+        # Simulate finding a commercial to keep autoresume_chk from bugging out.
+        self.b.found = True
+        for checkbox in [self.autodetect_chk, self.autoresume_chk]:
+            checkbox.set_active(True)
+
+        for checkbox in [self.autohidecover_chk, self.manualmute_chk]:
+            checkbox.set_active(False)
 
     def update(self):
         "Main GUI loop at 400ms update interval (see self.update_interval)."
@@ -588,7 +590,8 @@ class BlockifyUI(gtk.Window):
     def on_autoresume(self, widget):
         if widget.get_active():
             self.b.player.autoresume = True
-            if self.b.song_status != "Playing":
+            if not self.b.found and self.b.song_status != "Playing":
+                print "not found", self.b.found
                 self.b.dbus.playpause()
         else:
             self.b.player.autoresume = False

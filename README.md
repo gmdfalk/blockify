@@ -39,8 +39,11 @@ Alternatively, you can use the GUI with `blockify-ui` which spawns this window.
 
 ##### Interlude Music
 From version 1.4 onwards blockify can play music of your choice during commercial breaks.  
-This feature only works if you use pulseaudio (i.e. spotify needs to run in its own sink so it can be muted separately).  
-To make use of interlude music you have to configure a playlist file in `~/.config/blockify/playlist`.
+The default behaviour is for blockify to automatically play the first song in the playlist file (should you have one), when a commercial starts playing.  
+Alternatively, you can disable autoresume which will cause blockify to always finish the current interlude song before resuming spotify playback.  
+
+The interlude feature only works if you use pulseaudio (i.e. spotify needs to run in its own sink so it can be muted separately).    
+To make use of interlude music you have to configure a playlist file in `~/.config/blockify/playlist`.  
 
 An example playlist:
 ```
@@ -51,11 +54,9 @@ file:///media/shared/media/music/2014-foo_fighters-sonic_highways/01. Something 
 http://skyserver5.skydisc.net:8000
 ```
 You'll notice that you have to use complete URIs. The upside is that you can use virtually any audio format/source (as long as you have the necessary gstreamer codecs).  
-This feature is currently rather dumb and will stop playing the interlude music as soon as the commercial is over aside from not being integrated with the GUI yet.  
-Updates coming soon.  
 
 ## Changelog
-- v1.5 (ETA 2014-12-21): Mini-audio player for interlude music (media buttons, interactive progress bar, interactive playlist, ...)
+- v1.5 (2014-12-21): Mini-audio player for interlude music (media buttons, interactive progress bar, interactive playlist, ...)
 - v1.4 (2014-12-14): Interlude music of your choice during commercials  
 - v1.3 (2014-12-14): GUI-Update (Buttons, Icons, Systray) and Refactoring  
 - v1.2 (2014-12-11): Cover-Art and config/cache folder in ~/.config/blockify  

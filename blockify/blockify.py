@@ -350,7 +350,7 @@ class Blockify(object):
 def initialize(doc=__doc__, argv=ARGV):
     try:
         args = docopt(doc, version=VERSION)
-        util.init_logger(args["--log"], args["-v"] or 3, args["--quiet"])
+        util.init_logger(args["--log"], args["-v"] or 2, args["--quiet"])
     except NameError:
         util.init_logger()
 
