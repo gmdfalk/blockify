@@ -11,6 +11,8 @@ class AudioPlayer(object):
     "A simple gstreamer audio player to play a list of mp3 files."
     def __init__(self, configdir, dbus):
         self._index = 0
+        # (NYI) Automatically resume spotify playback after 600 seconds.
+        self.max_timeout = 600
         self.autoresume = True
         self.configdir = configdir
         self.dbus = dbus
@@ -63,10 +65,10 @@ class AudioPlayer(object):
         return not any(exclusions) and any(inclusions)
 
     def is_playing(self):
-        return self.player.get_state()[1] is gst.STATE_PLAYING
+        return self.player.get_state()[1] == gst.STATE_PLAYING
 
     def is_playable(self):
-        return self.player.get_state()[0] is gst.STATE_CHANGE_SUCCESS
+        return self.player.get_state()[0] == gst.STATE_CHANGE_SUCCESS
 
     def play(self):
         if not self.is_playable():

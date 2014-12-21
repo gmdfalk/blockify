@@ -11,10 +11,10 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
+# TODO: Fix commercial delay as outlined by JP-Ellis.
 # TODO: Correct play & mute button states.
 # TODO: Configuration file (also actually use XDG).
 # TODO: Interlude: shuffle, playlist browser
-# TODO: Interlude: Fix play/next/prev button icons.
 # TODO: Interlude: Autoresume max_timeout (e.g. if we use radio).
 # TODO: Add update interval option to docopt.
 # TODO: Try experimental mode suggested by spam0cal to skip the last
@@ -290,19 +290,19 @@ class BlockifyUI(gtk.Window):
         self.statuslabel = gtk.Label()
 
         for label in [self.albumlabel, self.artistlabel, self.titlelabel]:
-#             label.set_line_wrap(True)
+            # label.set_line_wrap(True)
             label.set_width_chars(26)
 
     def create_interlude_player(self):
-        self.play_btn = gtk.Button("play")
-        self.play_btn.set_image(self.play_img)
-        self.play_btn.connect("clicked", self.on_play_btn)
-        self.next_btn = gtk.Button("next")
-        self.next_btn.set_image(self.next_img)
-        self.next_btn.connect("clicked", self.on_next_btn)
-        self.prev_btn = gtk.Button("prev")
+        self.prev_btn = gtk.Button()
         self.prev_btn.set_image(self.prev_img)
         self.prev_btn.connect("clicked", self.on_prev_btn)
+        self.play_btn = gtk.Button()
+        self.play_btn.set_image(self.play_img)
+        self.play_btn.connect("clicked", self.on_play_btn)
+        self.next_btn = gtk.Button()
+        self.next_btn.set_image(self.next_img)
+        self.next_btn.connect("clicked", self.on_next_btn)
 
         self.interludelabel = gtk.Label()
         self.interludelabel.set_width_chars(26)
@@ -386,9 +386,9 @@ class BlockifyUI(gtk.Window):
         main.add(self.interludelabel)
         main.add(self.slider)
         interludebuttons = gtk.HBox(False)
+        interludebuttons.add(self.prev_btn)
         interludebuttons.add(self.play_btn)
         interludebuttons.add(self.next_btn)
-        interludebuttons.add(self.prev_btn)
         interludebuttons.add(self.autoresume_chk)
         main.pack_start(interludebuttons)
 
@@ -451,7 +451,7 @@ class BlockifyUI(gtk.Window):
         artist, title = self.format_current_song()
         self.artistlabel.set_text(artist)
         self.titlelabel.set_text(title)
-#         self.status_icon.set_tooltip("{0} - {1}\n{2}\nblockify v{3}".format(artist, title, status, blockify.VERSION))
+        # self.status_icon.set_tooltip("{0} - {1}\n{2}\nblockify v{3}".format(artist, title, status, blockify.VERSION))
 
     def update_buttons(self):
         # Correct the state of the Block/Unblock toggle button.
@@ -481,6 +481,12 @@ class BlockifyUI(gtk.Window):
         else:
             self.togglelist_btn.set_label("Open List")
 
+        if self.b.use_interlude_music:
+            if self.b.player.is_playing():
+                self.play_btn.set_image(self.pause_img)
+            else:
+                self.play_btn.set_image(self.play_img)
+
     def update_icons(self):
         if self.b.found and not self.statusicon_found:
             self.set_icon_from_file(self.red_icon_file)
@@ -499,7 +505,7 @@ class BlockifyUI(gtk.Window):
             # We could exit here but for now, we just keep the update loop running.
             # It's not very expensive anyway and saves us from weird edge cases where
             # the slider won't start updating again.
-#             return False
+            # return False
         elif is_playing and not is_sensitive:
             self.slider.set_sensitive(True)
 
@@ -621,11 +627,8 @@ class BlockifyUI(gtk.Window):
         "Interlude play button."
         if self.b.use_interlude_music:
             if not self.b.player.is_playing():
-                self.play_btn.set_image(self.pause_img)
                 self.b.player.play()
-#                 gobject.timeout_add(self.slider_update_interval, self.update_slider)
             else:
-                self.play_btn.set_image(self.play_img)
                 self.b.player.pause()
 
     def on_prev_btn(self, widget):
@@ -675,8 +678,6 @@ class BlockifyUI(gtk.Window):
         else:
             self.b.block_current()
             widget.set_label("Unblock")
-#         if self.b.use_interlude_music:
-#             gobject.timeout_add(self.slider_update_interval, self.update_slider)
 
     def on_autodetect(self, widget):
         if widget.get_active():
