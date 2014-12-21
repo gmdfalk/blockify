@@ -11,13 +11,11 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-import codecs
 import logging
 import os
 import re
 import signal
 import subprocess
-import sys
 from threading import Thread
 import time
 
@@ -26,140 +24,24 @@ import pygtk
 import wnck
 
 import blockifydbus
+from blocklist import Blocklist
 import util
 
-import pygst
-pygst.require('0.10')
-import gst
-
+log = logging.getLogger("main")
+pygtk.require("2.0")
+VERSION = "1.5"
 
 try:
     from docopt import docopt
 except ImportError:
-    print "ImportError: Please install docopt to use the blockify CLI."
+    log.error("ImportError: Please install docopt to use the CLI.")
 
-
-pygtk.require("2.0")
-log = logging.getLogger("main")
-VERSION = "1.4"
-
-
-class Blocklist(list):
-    "Inheriting from list type is a bad idea. Let's see what happens."
-    # Could subclass UserList.UserList here instead which inherits from
-    # collections.MutableSequence. In Python3 it's collections.UserList.
-
-    def __init__(self, configdir):
-        super(Blocklist, self).__init__()
-        self.configdir = configdir
-        self.location = os.path.join(self.configdir, "blocklist")
-        self.extend(self.load())
-        self.timestamp = self.get_timestamp()
-
-    def append(self, item):
-        "Overloading list.append to automatically save the list to a file."
-        # Only allow nonempty strings.
-        if item in self or not item or item == " ":
-            log.debug("Not adding empty or duplicate item: {}.".format(item))
-            return
-        log.info("Adding {} to {}.".format(item, self.location))
-        super(Blocklist, self).append(item)
-        self.save()
-
-    def remove(self, item):
-        log.info("Removing {} from {}.".format(item, self.location))
-        try:
-            super(Blocklist, self).remove(item)
-            self.save()
-        except ValueError as e:
-            log.warn("Could not remove {} from blocklist: {}".format(item, e))
-
-    def find(self, song):
-        # Arbitrary minimum length of 4 to avoid ambiguous song names.
-        while len(song) > 4:
-            for item in self:
-                if item.startswith(song):
-                    return item
-            song = song[:len(song) / 2]
-
-    def get_timestamp(self):
-        return os.path.getmtime(self.location)
-
-    def load(self):
-        log.info("Loading blockfile from {}.".format(self.location))
-        try:
-            with codecs.open(self.location, "r", encoding="utf-8") as f:
-                blocklist = f.read()
-        except IOError:
-            with codecs.open(self.location, "w+", encoding="utf-8") as f:
-                blocklist = f.read()
-            log.warn("No blockfile found. Created one.")
-
-        return [i for i in blocklist.split("\n") if i]
-
-    def save(self):
-        log.debug("Saving blocklist to {}.".format(self.location))
-        with codecs.open(self.location, "w", encoding="utf-8") as f:
-            f.write("\n".join(self) + "\n")
-        self.timestamp = self.get_timestamp()
-
-
-class Player(object):
-    "A simple gstreamer audio player to play a list of mp3 files."
-    def __init__(self, configdir):
-        self.configdir = configdir
-        self.playlist = self.open_playlist()
-        self.index = 0
-        self.max_index = len(self.playlist) - 1
-        self.player = gst.element_factory_make("playbin2", "player")
-        self.player.connect("about-to-finish", self.on_about_to_finish)
-        self.set_uri()
-
-    def open_playlist(self):
-        "Read the music to be played instead of commercials into a list"
-        playlist = []
-        playlist_file = os.path.join(self.configdir, "playlist")
-        if os.path.exists(playlist_file):
-            playlist = [line.strip() for line in open(playlist_file) if line.startswith("file://")]
-            log.info("Interlude playlist is: {0}".format(playlist))
-        else:
-            open(playlist_file, "w").close()
-            log.info("No interlude playlist found. Created one at {0}.".format(playlist_file))
-
-        return playlist
-
-    def on_about_to_finish(self, player):
-        "Queue the next song"
-        self.next()
-
-    def is_playing(self):
-        return self.player.get_state()[1] is gst.STATE_PLAYING
-
-    def play(self):
-        self.player.set_state(gst.STATE_PLAYING)
-        log.debug("Play: State is {0}.".format(self.player.get_state()))
-
-    def pause(self):
-        self.player.set_state(gst.STATE_PAUSED)
-        log.debug("Pause: State is {0}.".format(self.player.get_state()))
-
-    def next(self):
-        if self.index >= self.max_index:
-            self.index = 0
-        else:
-            self.index += 1
-        self.set_uri()
-
-    def prev(self):
-        if not self.index == 0:
-            self.index -= 1
-        self.set_uri()
-
-    def set_uri(self):
-        if self.max_index > 0:
-            uri = self.playlist[self.index]
-            log.info("Setting interlude to: {0}".format(uri))
-            self.player.set_property("uri", uri)
+# The gst library used by audioplayer for some reason modifies
+# argv so we have to save the args here to be able to use them
+# with docopt.
+import sys
+ARGV = tuple(sys.argv)
+import audioplayer
 
 
 class Blockify(object):
@@ -168,18 +50,19 @@ class Blockify(object):
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.configdir = blocklist.configdir
-        self.automute = True
-        self.autodetect = True
+        self.check_for_blockify_process()
+        self.check_for_spotify_process()
+        self._autodetect = True
+        self._automute = True
+        self.found = False
         self.current_song = ""
         self.song_status = ""
         self.is_fully_muted = False
         self.is_sink_muted = False
-        self.check_for_blockify_process()
-        self.check_for_spotify_process()
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
-        self.player = Player(self.configdir)
-        self.play_interlude_music = True if len(self.player.playlist) else False
+        self.player = audioplayer.AudioPlayer(self.configdir, self.dbus)
+        self.use_interlude_music = self.player.max_index >= 0
 
         # Determine if we can use sinks or have to use alsa.
         try:
@@ -188,7 +71,6 @@ class Blockify(object):
             self.mutemethod = self.pulsesink_mute
         except (OSError, subprocess.CalledProcessError):
             self.mutemethod = self.alsa_mute
-
 
         log.info("Blockify initialized.")
 
@@ -231,15 +113,16 @@ class Blockify(object):
     def start(self):
         self.bind_signals()
         self.toggle_mute()
-#         gtk.threads_init()
-        while True:
+        log.info("Blockify started.")
+
+        gtk.threads_init()
+        while 1:
             # Initiate gtk loop to enable the window list for .get_windows().
             while gtk.events_pending():
                 gtk.main_iteration(False)
-            found = self.update()
-            if self.play_interlude_music:
-                Thread(target=self.toggle_interlude_music(found)).start()
-#                 self.toggle_interlude_music(found)
+            self.found = self.update()
+            if self.use_interlude_music:
+                Thread(target=self.toggle_interlude_music()).start()
 
             time.sleep(0.25)
 
@@ -256,12 +139,16 @@ class Blockify(object):
                 # is the case here.
                 return True
 
-    def toggle_interlude_music(self, found):
+    def toggle_interlude_music(self):
         playing = self.player.is_playing()
-        if found and not playing:
+        if self.found and not playing:
             self.player.play()
-        elif not found and playing:
-            self.player.pause()
+        if not self.found and playing:
+            if self.player.autoresume:
+                self.player.pause()
+            else:
+                if self.song_status == "Playing":
+                    self.dbus.playpause()
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
@@ -447,7 +334,7 @@ class Blockify(object):
 
     @automute.setter
     def automute(self, boolean):
-        log.debug("Setting automute to: {}.".format(boolean))
+        log.debug("Automute: {}.".format(boolean))
         self._automute = boolean
 
     @property
@@ -456,28 +343,25 @@ class Blockify(object):
 
     @autodetect.setter
     def autodetect(self, boolean):
-        log.info("Setting autodetect to: {}.".format(boolean))
+        log.debug("Autodetect: {}.".format(boolean))
         self._autodetect = boolean
 
+
+def initialize(doc=__doc__, argv=ARGV):
+    try:
+        args = docopt(doc, version=VERSION)
+        util.init_logger(args["--log"], args["-v"] or 3, args["--quiet"])
+    except NameError:
+        util.init_logger()
+
+    blockify = Blockify(Blocklist(util.get_configdir()))
+
+    return blockify
 
 
 def main():
     "Entry point for the CLI-version of Blockify."
-    # Log level to fall back to if we get no user input
-    level = 2
-
-    try:
-        args = docopt(__doc__, version=VERSION)
-        #
-        if args["-v"] == 0:
-            args["-v"] = level
-        util.init_logger(args["--log"], args["-v"], args["--quiet"])
-    except NameError:
-        util.init_logger(logpath=None, loglevel=level, quiet=False)
-        log.error("Please install docopt to use the CLI.")
-
-    blocklist = Blocklist(util.get_configdir())
-    blockify = Blockify(blocklist)
+    blockify = initialize()
     blockify.start()
 
 
