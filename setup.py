@@ -19,7 +19,7 @@ setup(
     name=_name,
     description="Mute spotify advertisements.",
     long_description=read("README.md"),
-    version="1.4",
+    version="1.5",
     license=_license,
     url="https://github.com/mikar/{}".format(_name),
     author="Max Demian",

@@ -16,7 +16,6 @@ import os
 import re
 import signal
 import subprocess
-import sys
 from threading import Thread
 import time
 
@@ -27,16 +26,22 @@ import wnck
 import blockifydbus
 from blocklist import Blocklist
 import util
-import gobject
 
 log = logging.getLogger("main")
 pygtk.require("2.0")
-VERSION = "1.4"
+VERSION = "1.5"
 
 try:
     from docopt import docopt
 except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
+
+# The gst library used by audioplayer for some reason modifies
+# argv so we have to save the args here to be able to use them
+# with docopt.
+import sys
+ARGV = tuple(sys.argv)
+import audioplayer
 
 
 class Blockify(object):
@@ -56,8 +61,6 @@ class Blockify(object):
         self.is_sink_muted = False
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
-        # We need to import audioplayer/gst here to keep GST from overriding docopt...
-        import audioplayer
         self.player = audioplayer.AudioPlayer(self.configdir, self.dbus)
         self.use_interlude_music = self.player.max_index >= 0
 
@@ -111,6 +114,8 @@ class Blockify(object):
         self.bind_signals()
         self.toggle_mute()
         log.info("Blockify started.")
+
+        gtk.threads_init()
         while 1:
             # Initiate gtk loop to enable the window list for .get_windows().
             while gtk.events_pending():
@@ -342,7 +347,7 @@ class Blockify(object):
         self._autodetect = boolean
 
 
-def initialize(doc=__doc__):
+def initialize(doc=__doc__, argv=ARGV):
     try:
         args = docopt(doc, version=VERSION)
         util.init_logger(args["--log"], args["-v"] or 3, args["--quiet"])

@@ -2,7 +2,6 @@ import logging
 import os
 
 import gst
-import gobject
 
 
 log = logging.getLogger("player")
@@ -44,7 +43,8 @@ class AudioPlayer(object):
         self.queue_next()
         if not self.autoresume and self.dbus.get_song_status() != "Playing":
             self.pause()
-            gobject.idle_add(self.dbus.playpause)
+            self.dbus.playpause()
+#             gobject.idle_add(self.dbus.playpause)
 
     def get_current_uri(self):
         if self.index > self.max_index:

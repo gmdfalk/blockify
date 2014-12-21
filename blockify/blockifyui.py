@@ -34,8 +34,14 @@ import urllib
 import blockify
 import glib
 import gobject
-import gst
 import gtk
+
+
+# The gst library for some reason modifies argv so we have
+# to save the args here to be able to use them with docopt.
+import sys
+ARGV = tuple(sys.argv)
+import gst
 
 
 log = logging.getLogger("gui")
@@ -159,6 +165,15 @@ class BlockifyUI(gtk.Window):
         self.editor = None
         self.statusicon_found = False
 
+        # Set the GUI/Blockify update interval to 400ms. Increase this to
+        # reduce CPU usage and decrease it to improve responsiveness.
+        # If you need absolutely minimal CPU usage you could, in self.start(),
+        # change the line to glib.timeout_add_seconds(2, self.update) or more.
+        self.update_interval = 400
+
+        # (Less significant) Update interval for interlude music slider.
+        self.slider_update_interval = 100
+
         # Window setup.
         self.set_title("Blockify")
         self.set_wmclass("blockify", "Blockify")
@@ -247,12 +262,6 @@ class BlockifyUI(gtk.Window):
 
     def start(self):
         "Start the main update routine."
-        # Set the GUI/Blockify update interval to 400ms. Increase this to
-        # reduce CPU usage and decrease it to improve responsiveness.
-        # If you need absolutely minimal CPU usage you could, in self.start(),
-        # change the line to glib.timeout_add_seconds(2, self.update) or more.
-        self.update_interval = 400
-
         # Start and loop the main update routine once every 400ms.
         # To influence responsiveness or CPU usage, decrease/increase ms here.
         # glib.timeout_add_seconds(2, self.update)
@@ -399,7 +408,6 @@ class BlockifyUI(gtk.Window):
         self.b.found = self.b.update()
         if self.b.use_interlude_music:
             Thread(target=self.b.toggle_interlude_music()).start()
-            gobject.idle_add(self.update_slider)
 
         # Our main GUI workers here, updating labels, buttons and the likes.
         if self.use_cover:
@@ -482,14 +490,15 @@ class BlockifyUI(gtk.Window):
             self.statusicon_found = False
 
     def update_slider(self):
-        if not self.b.player.is_playing():
+        is_sensitive = self.slider.get_sensitive()
+        is_playing = self.b.player.is_playing()
+        if is_sensitive and (not is_playing or self.b.player.is_radio()):
             self.slider.set_sensitive(False)
-            return False  # Cancel timeout
-
-        if self.b.player.is_radio():
-            self.slider.set_sensitive(False)
-            return False
-        else:
+            # We could exit here but for now, we just keep the update loop running.
+            # It's not very expensive anyway and saves us from weird edge cases where
+            # the slider won't start updating again.
+#             return False
+        elif is_playing and not is_sensitive:
             self.slider.set_sensitive(True)
 
         try:
@@ -503,12 +512,12 @@ class BlockifyUI(gtk.Window):
             self.slider.set_value(float(nanosecs) / gst.SECOND)
 
             self.slider.handler_unblock_by_func(self.on_slider_change)
-
         except gst.QueryError:
             # Pipeline must not be ready and does not know position.
             pass
 
-        return True  # Continue calling every 30 milliseconds.
+        # Continue calling every self.slider_update_interval milliseconds.
+        return True
 
     def format_current_song(self):
         song = self.b.current_song
@@ -579,18 +588,22 @@ class BlockifyUI(gtk.Window):
     def on_autoresume(self, widget):
         if widget.get_active():
             self.b.player.autoresume = True
+            if self.b.song_status != "Playing":
+                self.b.dbus.playpause()
         else:
             self.b.player.autoresume = False
 
     def on_interlude_audio_changed (self, player):
         "Audio source for interlude music has changed."
+        log.debug("Interlude track changed to {}.".format(self.b.player.get_current_uri()))
+        gobject.timeout_add(self.slider_update_interval, self.update_slider)
         uri = self.b.player.get_current_uri()
         if uri.startswith("file://"):
             uri = os.path.basename(uri)
         self.interludelabel.set_text(uri)
 
     def on_interlude_tag_changed (self, bus, message):
-        "Read and display tag information from AudioPlayer.player.bus"
+        "Read and display tag information from AudioPlayer.player.bus."
         taglist = message.parse_tag()
 
         if "artist" in taglist.keys():
@@ -602,27 +615,33 @@ class BlockifyUI(gtk.Window):
                 log.debug(e)
 
     def on_play_btn(self, widget):
-        if not self.b.player.is_playing():
-            self.play_btn.set_image(self.pause_img)
-            self.b.player.play()
-            gobject.timeout_add(100, self.update_slider)
-        else:
-            self.play_btn.set_image(self.play_img)
-            self.b.player.pause()
+        "Interlude play button."
+        if self.b.use_interlude_music:
+            if not self.b.player.is_playing():
+                self.play_btn.set_image(self.pause_img)
+                self.b.player.play()
+#                 gobject.timeout_add(self.slider_update_interval, self.update_slider)
+            else:
+                self.play_btn.set_image(self.play_img)
+                self.b.player.pause()
 
     def on_prev_btn(self, widget):
-        self.b.player.prev()
-        gobject.timeout_add(100, self.update_slider)
+        "Interlude previous button."
+        if self.b.use_interlude_music:
+            self.b.player.prev()
 
     def on_next_btn(self, widget):
-        self.b.player.next()
-        gobject.timeout_add(100, self.update_slider)
+        "Interlude next button."
+        if self.b.use_interlude_music:
+            self.b.player.next()
 
     def on_slider_change(self, slider):
+        "When the slider was moved, update the song position accordingly."
         seek_time_secs = slider.get_value()
         self.b.player.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_KEY_UNIT, seek_time_secs * gst.SECOND)
 
     def on_togglecover(self, widget):
+        "Button that toggles cover art."
         if self.coverimage.get_visible():
             self.use_cover = False
             self.disable_cover()
@@ -633,6 +652,8 @@ class BlockifyUI(gtk.Window):
             log.debug("Enabled cover art.")
 
     def on_autohidecover(self, widget):
+        """CheckButton that determines whether to automatically hide
+        cover art when a commercial is playing"""
         if widget.get_active():
             self.autohide_cover = True
             self.togglecover_btn.set_sensitive(False)
@@ -644,12 +665,15 @@ class BlockifyUI(gtk.Window):
             log.debug("Disabled cover autohide.")
 
     def on_toggleblock(self, widget):
+        "Button to block/unblock the current song."
         if self.b.found:
             self.b.unblock_current()
             widget.set_label("Block")
         else:
             self.b.block_current()
             widget.set_label("Unblock")
+#         if self.b.use_interlude_music:
+#             gobject.timeout_add(self.slider_update_interval, self.update_slider)
 
     def on_autodetect(self, widget):
         if widget.get_active():
@@ -712,7 +736,7 @@ class BlockifyUI(gtk.Window):
 
 def main():
     "Entry point for the GUI-version of Blockify."
-    BlockifyUI(blockify.initialize(__doc__))
+    BlockifyUI(blockify.initialize(__doc__, ARGV))
     gtk.threads_init()
     gtk.main()
 
