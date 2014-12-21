@@ -379,7 +379,7 @@ class BlockifyUI(gtk.Window):
                     self.enable_cover()
             except Exception:
                 self.use_cover = False
-                self.autohidecover_chk.set_active(False)
+                self.checkautohidecover.set_active(False)
                 self.disable_cover()
 
     def update_labels(self):
