@@ -299,7 +299,7 @@ class BlockifyUI(gtk.Window):
 
         self.autoresume_chk = gtk.CheckButton("Autoresume")
         self.autoresume_chk.connect("clicked", self.on_autoresume)
-        self.autoresume_chk.set_active(True)
+        self.autoresume_chk.set_active(False)
 
         self.slider = gtk.HScale()
         self.slider.set_sensitive(False)
@@ -396,9 +396,10 @@ class BlockifyUI(gtk.Window):
         "Main GUI loop at 400ms update interval (see self.update_interval)."
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
-        self.found = self.b.update()
+        self.b.found = self.b.update()
         if self.b.use_interlude_music:
-            Thread(target=self.b.toggle_interlude_music(self.found)).start()
+            Thread(target=self.b.toggle_interlude_music()).start()
+            gobject.idle_add(self.update_slider)
 
         # Our main GUI workers here, updating labels, buttons and the likes.
         if self.use_cover:
@@ -432,7 +433,7 @@ class BlockifyUI(gtk.Window):
     def update_labels(self):
         status = self.get_status_text()
         self.statuslabel.set_text(status)
-        if not self.found:
+        if not self.b.found:
             self.albumlabel.set_text(self.b.dbus.get_song_album())
         else:
             self.albumlabel.set_text("(blocked)")
@@ -444,7 +445,7 @@ class BlockifyUI(gtk.Window):
 
     def update_buttons(self):
         # Correct the state of the Block/Unblock toggle button.
-        if self.found:
+        if self.b.found:
             self.toggleblock_btn.set_label("Unblock")
             self.set_title("Blockify (blocked)")
         else:
@@ -471,24 +472,25 @@ class BlockifyUI(gtk.Window):
             self.togglelist_btn.set_label("Open List")
 
     def update_icons(self):
-        if self.found and not self.statusicon_found:
+        if self.b.found and not self.statusicon_found:
             self.set_icon_from_file(self.red_icon_file)
             self.status_icon.set_from_pixbuf(self.red_icon_buf)
             self.statusicon_found = True
-        elif not self.found and self.statusicon_found:
+        elif not self.b.found and self.statusicon_found:
             self.set_icon_from_file(self.blue_icon_file)
             self.status_icon.set_from_pixbuf(self.blue_icon_buf)
             self.statusicon_found = False
 
     def update_slider(self):
+        if not self.b.player.is_playing():
+            self.slider.set_sensitive(False)
+            return False  # Cancel timeout
+
         if self.b.player.is_radio():
             self.slider.set_sensitive(False)
             return False
         else:
             self.slider.set_sensitive(True)
-
-        if not self.b.player.is_playing():
-            return False  # Cancel timeout
 
         try:
             nanosecs, format = self.b.player.player.query_position(gst.FORMAT_TIME)
@@ -642,7 +644,7 @@ class BlockifyUI(gtk.Window):
             log.debug("Disabled cover autohide.")
 
     def on_toggleblock(self, widget):
-        if self.found:
+        if self.b.found:
             self.b.unblock_current()
             widget.set_label("Block")
         else:
@@ -702,7 +704,7 @@ class BlockifyUI(gtk.Window):
         self.b.dbus.next()
 
     def on_prevsong(self, widget):
-        self.b.dbus.previous()
+        self.b.dbus.prev()
 
     def on_exit_btn(self, widget):
         self.stop()
@@ -711,6 +713,7 @@ class BlockifyUI(gtk.Window):
 def main():
     "Entry point for the GUI-version of Blockify."
     BlockifyUI(blockify.initialize(__doc__))
+    gtk.threads_init()
     gtk.main()
 
 

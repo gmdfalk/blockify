@@ -27,6 +27,7 @@ import wnck
 import blockifydbus
 from blocklist import Blocklist
 import util
+import gobject
 
 log = logging.getLogger("main")
 pygtk.require("2.0")
@@ -48,6 +49,7 @@ class Blockify(object):
         self.check_for_spotify_process()
         self._autodetect = True
         self._automute = True
+        self.found = False
         self.current_song = ""
         self.song_status = ""
         self.is_fully_muted = False
@@ -113,9 +115,9 @@ class Blockify(object):
             # Initiate gtk loop to enable the window list for .get_windows().
             while gtk.events_pending():
                 gtk.main_iteration(False)
-            found = self.update()
+            self.found = self.update()
             if self.use_interlude_music:
-                Thread(target=self.toggle_interlude_music(found)).start()
+                Thread(target=self.toggle_interlude_music()).start()
 
             time.sleep(0.25)
 
@@ -132,18 +134,16 @@ class Blockify(object):
                 # is the case here.
                 return True
 
-    def toggle_interlude_music(self, found):
+    def toggle_interlude_music(self):
         playing = self.player.is_playing()
-        if found and not playing:
+        if self.found and not playing:
             self.player.play()
-        if not found and playing:
+        if not self.found and playing:
             if self.player.autoresume:
                 self.player.pause()
             else:
                 if self.song_status == "Playing":
-                    self.dbus.stop()
-
-
+                    self.dbus.playpause()
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."

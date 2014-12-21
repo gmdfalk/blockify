@@ -2,6 +2,7 @@ import logging
 import os
 
 import gst
+import gobject
 
 
 log = logging.getLogger("player")
@@ -11,7 +12,7 @@ class AudioPlayer(object):
     "A simple gstreamer audio player to play a list of mp3 files."
     def __init__(self, configdir, dbus):
         self._index = 0
-        self.autoresume = True
+        self.autoresume = False
         self.configdir = configdir
         self.dbus = dbus
         self.playlist = self.open_playlist()
@@ -41,9 +42,9 @@ class AudioPlayer(object):
     def on_about_to_finish(self, player):
         "Song is ending. What do we do?"
         self.queue_next()
-        if not self.autoresume:
-            self.stop()
-            self.dbus.playpause()
+        if not self.autoresume and self.dbus.get_song_status() != "Playing":
+            self.pause()
+            gobject.idle_add(self.dbus.playpause)
 
     def get_current_uri(self):
         if self.index > self.max_index:
