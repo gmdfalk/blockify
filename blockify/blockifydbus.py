@@ -137,43 +137,55 @@ class BlockifyDBus(object):
 
     def get_art_url(self):
         "Get album cover"
+        url = ""
         if self.is_running():
             metadata = self.get_property("Metadata")
             if metadata:
-                return metadata["mpris:artUrl"].encode("utf-8")
+                url = metadata["mpris:artUrl"].encode("utf-8")
+        return url
 
     def get_song_status(self):
         "Get current PlaybackStatus (Paused/Playing...)."
+        status = ""
         if self.is_running():
-            return self.get_property("PlaybackStatus")
+            status = self.get_property("PlaybackStatus")
+        return status
 
     def get_song_length(self):
         "Gets the length of current song from metadata (in seconds)."
+        length = 0
         if self.is_running():
             metadata = self.get_property("Metadata")
             if metadata:
-                return int(metadata["mpris:length"] / 1000000)
+                length = int(metadata["mpris:length"] / 1000000)
+        return length
 
     def get_song_title(self):
         "Gets title of current song from metadata"
+        title = ""
         if self.is_running():
             metadata = self.get_property("Metadata")
             if metadata:
-                return metadata["xesam:title"].encode("utf-8")
+                title = metadata["xesam:title"].encode("utf-8")
+        return title
 
     def get_song_album(self):
         "Gets album of current song from metadata"
+        album = ""
         if self.is_running():
             metadata = self.get_property("Metadata")
             if metadata:
-                return metadata["xesam:album"].encode("utf-8")
+                album = metadata["xesam:album"].encode("utf-8")
+        return album
 
     def get_song_artist(self):
         "Gets the artist of current song from metadata"
+        artist = ""
         if self.is_running():
             metadata = self.get_property("Metadata")
             if metadata:
-                return metadata["xesam:artist"][0].encode("utf-8")
+                artist = metadata["xesam:artist"][0].encode("utf-8")
+        return artist
 
     def print_info(self):
         "Print all the DBus info we can get our hands on."

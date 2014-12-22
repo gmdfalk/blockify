@@ -16,7 +16,7 @@ import os
 import re
 import signal
 import subprocess
-from threading import Thread
+import threading
 import time
 
 import gtk
@@ -26,6 +26,8 @@ import wnck
 import blockifydbus
 from blocklist import Blocklist
 import util
+import glib
+import gobject
 
 log = logging.getLogger("main")
 pygtk.require("2.0")
@@ -115,15 +117,16 @@ class Blockify(object):
         self.toggle_mute()
         log.info("Blockify started.")
 
-        gtk.threads_init()
         while 1:
             # Initiate gtk loop to enable the window list for .get_windows().
             while gtk.events_pending():
                 gtk.main_iteration(False)
+            # Determine if a commercial is running and act accordingly.
             self.found = self.update()
+            # Thread will only get started once so we keep this here for now.
             if self.use_interlude_music:
-                Thread(target=self.toggle_interlude_music()).start()
-
+                threading.Thread(target=self.toggle_interlude_music).start()
+            
             time.sleep(0.25)
 
     def current_song_is_ad(self):
@@ -143,7 +146,7 @@ class Blockify(object):
         playing = self.player.is_playing()
         if self.found and not playing:
             self.player.play()
-        if not self.found and playing:
+        elif not self.found and playing:
             if self.player.autoresume:
                 self.player.pause()
             else:
