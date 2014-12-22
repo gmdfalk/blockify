@@ -428,7 +428,7 @@ class BlockifyUI(gtk.Window):
         else:
             try:
                 cover_file = self.get_cover_art()
-                if self.previous_cover_file != cover_file:
+                if cover_file and self.previous_cover_file != cover_file:
                     pixbuf = gtk.gdk.pixbuf_new_from_file(cover_file)  # @UndefinedVariable
                     scaled_buf = pixbuf.scale_simple(195, 195, gtk.gdk.INTERP_BILINEAR)  # @UndefinedVariable
                     self.coverimage.set_from_pixbuf(scaled_buf)
@@ -548,14 +548,17 @@ class BlockifyUI(gtk.Window):
         return artist, title
 
     def get_cover_art(self):
+        cover_file = ""
         cover_hash = os.path.basename(self.b.dbus.get_art_url())
-        # The url spotify gets its cover images from. Filename is a hash, the last part of metadata["artUrl"]
-        cover_url = self.cover_server + cover_hash
-        cover_file = os.path.join(self.thumbnail_dir, cover_hash + ".png")
 
-        if not os.path.exists(cover_file):
-            log.info("Downloading cover art: {}".format(cover_file))
-            urllib.urlretrieve(cover_url, cover_file)
+        if cover_hash:
+            # The url spotify gets its cover images from. Filename is a hash, the last part of metadata["artUrl"]
+            cover_url = self.cover_server + cover_hash
+            cover_file = os.path.join(self.thumbnail_dir, cover_hash + ".png")
+
+            if not os.path.exists(cover_file):
+                log.info("Downloading cover art: {}".format(cover_file))
+                urllib.urlretrieve(cover_url, cover_file)
 
         return cover_file
 
