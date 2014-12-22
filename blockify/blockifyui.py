@@ -11,9 +11,10 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Fix commercial delay as outlined by JP-Ellis.
-# TODO: Correct play & mute button states.
+# TODO: Allow pausing of interlude song during commercial.
 # TODO: Configuration file (also actually use XDG).
+# TODO: Correct play & mute button states.
+# TODO: Fix commercial delay as outlined by JP-Ellis.
 # TODO: Interlude: shuffle, playlist browser
 # TODO: Interlude: Autoresume max_timeout (e.g. if we use radio).
 # TODO: Add update interval option to docopt.
@@ -29,7 +30,7 @@ import datetime
 import logging
 import os
 import signal
-from threading import Thread
+import threading
 import urllib
 
 import blockify
@@ -40,6 +41,7 @@ import gtk
 # The gst library for some reason modifies argv so we have
 # to save the args here to be able to use them with docopt.
 import sys
+import time
 ARGV = tuple(sys.argv)
 import gst
 
@@ -261,28 +263,6 @@ class BlockifyUI(gtk.Window):
         about.run()
         about.destroy()
 
-    def start(self):
-        "Start the main update routine."
-        # Start and loop the main update routine once every 400ms.
-        # To influence responsiveness or CPU usage, decrease/increase ms here.
-        # glib.timeout_add_seconds(2, self.update)
-        glib.timeout_add(self.update_interval, self.update)  # @UndefinedVariable
-
-        log.info("Blockify-UI started.")
-
-    def stop(self, *args):
-        "Cleanly shut down, unmuting sound and saving the blocklist."
-        self.b.stop()
-        log.debug("Exiting GUI.")
-        gtk.main_quit()
-
-    def bind_signals(self):
-        "Binds SIGTERM, SIGINT and SIGUSR1 to custom actions."
-        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())
-        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.b.unblock_current())
-        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
-        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
-
     def create_labels(self):
         self.albumlabel = gtk.Label()
         self.artistlabel = gtk.Label()
@@ -294,6 +274,9 @@ class BlockifyUI(gtk.Window):
             label.set_width_chars(26)
 
     def create_interlude_player(self):
+        interludelabel = "Disable" if self.b.use_interlude_music else "Enable"
+        self.toggle_interlude_btn = gtk.Button(interludelabel + " Player")
+        self.toggle_interlude_btn.connect("clicked", self.on_toggleinterlude_btn)
         self.prev_btn = gtk.Button()
         self.prev_btn.set_image(self.prev_img)
         self.prev_btn.connect("clicked", self.on_prev_btn)
@@ -304,8 +287,8 @@ class BlockifyUI(gtk.Window):
         self.next_btn.set_image(self.next_img)
         self.next_btn.connect("clicked", self.on_next_btn)
 
-        self.interludelabel = gtk.Label()
-        self.interludelabel.set_width_chars(26)
+        self.interlude_label = gtk.Label()
+        self.interlude_label.set_width_chars(26)
 
         self.autoresume_chk = gtk.CheckButton("Autoresume")
         self.autoresume_chk.connect("clicked", self.on_autoresume)
@@ -382,15 +365,18 @@ class BlockifyUI(gtk.Window):
 
         main.add(self.togglelist_btn)
         main.add(self.exit_btn)
+        main.add(self.toggle_interlude_btn)
 
-        main.add(self.interludelabel)
-        main.add(self.slider)
         interludebuttons = gtk.HBox(False)
         interludebuttons.add(self.prev_btn)
         interludebuttons.add(self.play_btn)
         interludebuttons.add(self.next_btn)
         interludebuttons.add(self.autoresume_chk)
-        main.pack_start(interludebuttons)
+        self.interlude_box = gtk.VBox()
+        self.interlude_box.add(self.interlude_label)
+        self.interlude_box.add(self.slider)
+        self.interlude_box.add(interludebuttons)
+        main.add(self.interlude_box)
 
         self.add(main)
 
@@ -403,13 +389,35 @@ class BlockifyUI(gtk.Window):
         for checkbox in [self.autohidecover_chk, self.manualmute_chk]:
             checkbox.set_active(False)
 
+    def start(self):
+        "Start the main update routine."
+        # Start and loop the main update routine once every 400ms.
+        # To influence responsiveness or CPU usage, decrease/increase ms here.
+        # glib.timeout_add_seconds(2, self.update)
+        glib.timeout_add(self.update_interval, self.update)  # @UndefinedVariable
+
+        log.info("Blockify-UI started.")
+
+    def stop(self, *args):
+        "Cleanly shut down, unmuting sound and saving the blocklist."
+        self.b.stop()
+        log.debug("Exiting GUI.")
+        gtk.main_quit()
+
+    def bind_signals(self):
+        "Binds SIGTERM, SIGINT and SIGUSR1 to custom actions."
+        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())
+        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.b.unblock_current())
+        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
+        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
+
     def update(self):
         "Main GUI loop at 400ms update interval (see self.update_interval)."
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.b.found = self.b.update()
         if self.b.use_interlude_music:
-            Thread(target=self.b.toggle_interlude_music()).start()
+            threading.Thread(target=self.b.toggle_interlude_music).start()
 
         # Our main GUI workers here, updating labels, buttons and the likes.
         if self.use_cover:
@@ -509,6 +517,9 @@ class BlockifyUI(gtk.Window):
         elif is_playing and not is_sensitive:
             self.slider.set_sensitive(True)
 
+#         if not self.b.use_interlude_music:
+#             return False
+
         try:
             nanosecs, format = self.b.player.player.query_position(gst.FORMAT_TIME)
             duration_nanosecs, format = self.b.player.player.query_duration(gst.FORMAT_TIME)
@@ -600,10 +611,23 @@ class BlockifyUI(gtk.Window):
         if widget.get_active():
             self.b.player.autoresume = True
             if not self.b.found and self.b.song_status != "Playing":
-                print "not found", self.b.found
                 self.b.dbus.playpause()
         else:
             self.b.player.autoresume = False
+
+    def on_toggleinterlude_btn(self, widget):
+        if self.b.use_interlude_music:
+            self.b.use_interlude_music = False
+            self.interlude_box.hide()
+            self.b.player.pause()
+            if self.b.song_status != "Playing":
+                self.b.dbus.playpause()
+            widget.set_label("Enable player")
+        else:
+            self.b.use_interlude_music = True
+            self.interlude_box.show()
+            widget.set_label("Disable player")
+        self.restore_size()
 
     def on_interlude_audio_changed (self, player):
         "Audio source for interlude music has changed."
@@ -612,7 +636,7 @@ class BlockifyUI(gtk.Window):
         uri = self.b.player.get_current_uri()
         if uri.startswith("file://"):
             uri = os.path.basename(uri)
-        self.interludelabel.set_text(uri)
+        self.interlude_label.set_text(uri)
 
     def on_interlude_tag_changed (self, bus, message):
         "Read and display tag information from AudioPlayer.player.bus."
@@ -622,7 +646,7 @@ class BlockifyUI(gtk.Window):
             try:
                 label = taglist["artist"] + " - " + taglist["title"]
                 if len(label) > 5:
-                    self.interludelabel.set_text(label)
+                    self.interlude_label.set_text(label)
             except KeyError as e:
                 log.debug(e)
 
