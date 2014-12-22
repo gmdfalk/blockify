@@ -64,7 +64,6 @@ class Blockify(object):
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
         self.player = audioplayer.AudioPlayer(self.configdir, self.dbus)
-        self.use_interlude_music = self.player.max_index >= 0
 
         # Determine if we can use sinks or have to use alsa.
         try:
@@ -73,6 +72,9 @@ class Blockify(object):
             self.mutemethod = self.pulsesink_mute
         except (OSError, subprocess.CalledProcessError):
             self.mutemethod = self.alsa_mute
+
+        # Only use interlude music if we use pulse sinks and the interlude playlist is non-empty.
+        self.use_interlude_music = self.mutemethod == self.pulsesink_mute and self.player.max_index >= 0
 
         log.info("Blockify initialized.")
 
@@ -126,7 +128,7 @@ class Blockify(object):
             # Thread will only get started once so we keep this here for now.
             if self.use_interlude_music:
                 threading.Thread(target=self.toggle_interlude_music).start()
-            
+
             time.sleep(0.25)
 
     def current_song_is_ad(self):
@@ -281,6 +283,7 @@ class Blockify(object):
             log.error("Spotify sink not found. Is Pulse running?")
             log.error("Resorting to amixer as mute method.")
             self.mutemethod = self.pulse_mute  # Fall back to amixer mute.
+            self.use_interlude_music = False
             return
 
         # Match muted and application.process.id values.
