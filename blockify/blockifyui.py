@@ -11,7 +11,7 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Browse playlist.
+# TODO: Interlude: Add whole folders.
 # TODO: Interlude: Shuffle, autoresume max_timeout
 # TODO: Fix detection delay as outlined by JP-Ellis.
 # TODO: Try experimental mode suggested by spam0cal to skip the last
@@ -707,10 +707,10 @@ class BlockifyUI(gtk.Window):
             return
 
         dialog = gtk.FileChooserDialog("Load playlist or audio folder/file",
-                                       None,
-                                       gtk.FILE_CHOOSER_ACTION_OPEN,
-                                       (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                        gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+                                        None,
+                                        gtk.FILE_CHOOSER_ACTION_OPEN,
+                                        (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                         gtk.STOCK_OPEN, gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
 
         dialog.set_current_folder(util.CONFIG_DIR)
@@ -720,26 +720,30 @@ class BlockifyUI(gtk.Window):
         all_filter.add_pattern("*")
         dialog.add_filter(all_filter)
 
-        audio_filter = gtk.FileFilter()
-        audio_filter.set_name("Audio and video files")
+        av_filter = gtk.FileFilter()
+        av_filter.set_name("Audio and video files")
         for fmt in self.b.player.formats:
+            av_filter.add_pattern("*." + fmt)
+        dialog.add_filter(av_filter)
+
+        audio_filter = gtk.FileFilter()
+        audio_filter.set_name("Audio files")
+        for fmt in self.b.player.formats[:6]:
             audio_filter.add_pattern("*." + fmt)
         dialog.add_filter(audio_filter)
 
         playlist_filter = gtk.FileFilter()
-        playlist_filter.set_name("Playlists and directories")
+        playlist_filter.set_name("Playlists")
         playlist_filter.add_pattern("*.m3u")
         dialog.add_filter(playlist_filter)
 
         dialog.set_filter(playlist_filter)
+        dialog.set_select_multiple(True)
 
         response = dialog.run()
         if response == gtk.RESPONSE_OK:
-            filename = dialog.get_filename()
-            if filename.endswith("m3u"):
-                self.b.player.load_playlist(self.b.player.parse_playlist(filename))
-            else:
-                pass
+            file_list = dialog.get_filenames()
+            self.b.player.load_playlist(self.b.player.parse_playlist(file_list))
 
         dialog.destroy()
 

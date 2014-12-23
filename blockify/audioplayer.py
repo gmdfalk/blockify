@@ -34,39 +34,36 @@ class AudioPlayer(object):
 
     def load_playlist(self, playlist):
         "Read the music to be played instead of commercials into a list."
-        try:
-            log.info("Interlude playlist is: {0}".format(playlist))
-            self.playlist = playlist
-            self.max_index = len(self.playlist) - 1
-            self.stop()
-            self.set_uri()
-        except Exception as e:
-            log.error("Could not load playlist: {}".format(e))
+        log.info("Interlude playlist is: {0}".format(playlist))
+        self.playlist = playlist
+        self.max_index = len(self.playlist) - 1
+        self.stop()
+        self.set_uri()
 
-    def parse_playlist(self, source=None):
+    def parse_playlist(self, sourcelist=None, source=None):
         playlist = []
 
-        if source is None:
-            source = self.b.options["interlude"]["playlist"]
+        if sourcelist is None:
+            sourcelist = [self.b.options["interlude"]["playlist"]]
 
-        if source.endswith("m3u"):
-            src = open(source)
-        else:
-            src = source
-
-        for item in src:
-            item = item.strip()
-            if not self.is_valid_uri(item):
-                continue
-            # The item is not a recognizable URI so we assume it's a file.
-            if not self.uri_rx.match(item):
-                # The item is not an absolute path so we treat it as relative.
-                if not os.path.isabs(item):
-                    item = os.path.join(os.path.abspath(source), item)
-                if any([item.lower().endswith("." + f) for f in self.formats]):
-                    item = "file://" + item
-#                     item = self.path2url(item)
-            playlist.append(item)
+        try:
+            for item in sourcelist:
+                if item.lower().endswith(".m3u"):
+                    playlist += self.parse_playlist(open(item), source=item)
+                    continue
+                item = item.strip()
+                if self.is_valid_uri(item):
+                    # The item is not a recognizable URI so we assume it's a file.
+                    if not self.uri_rx.match(item):
+                        # The item is not an absolute path so we treat it as relative.
+                        if not os.path.isabs(item):
+                            item = os.path.join(os.path.dirname(os.path.abspath(source)), item)
+                        if any([item.lower().endswith("." + f) for f in self.formats]):
+                            item = "file://" + item
+                            # item = self.path2url(item)
+                    playlist.append(item)
+        except Exception as e:
+            log.error("Could not parse playlist sourcelist: {}".format(e))
 
         return playlist
 
@@ -90,13 +87,19 @@ class AudioPlayer(object):
         "Spot radio tracks so we can deal with them appropriately."
         return self.get_current_uri().startswith("http://")
 
-    def is_valid_uri(self, line):
-        "Determine if a line in the playlist file is a valid URI."
+    def is_valid_uri(self, item):
+        "Determine if a item in the playlist file is a valid URI."
         # Lines we exclude right away, these are not valid URIs.
-        exclusions = [not line, line.startswith("#")]
+        exclusions = [not item, item.startswith("#")]
         # Lines we include as these are likely to be valid URIs.
-#         inclusions = [line.startswith("file://"), line.startswith("http://"), line.startswith("mms://")]
-        return not any(exclusions)  # and any(inclusions)
+#         inclusions = [item.startswith("file://"), item.startswith("http://"), item.startswith("mms://")]
+
+        item = item.lower()
+        filechecks = [True]
+        if item.startswith("file://"):
+            filechecks = [item.endswith(fmt) for fmt in self.formats]
+
+        return not any(exclusions) and any(filechecks)  # and any(inclusions)
 
     def is_playing(self):
         return self.player.get_state()[1] == gst.STATE_PLAYING
