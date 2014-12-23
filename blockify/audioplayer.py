@@ -15,14 +15,13 @@ class AudioPlayer(object):
     def __init__(self, blockify):
         self.b = blockify
         self._index = 0
+        self.manual_control = False
         # Automatically resume spotify playback after n seconds.
         self.max_timeout = self.b.options["interlude"]["max_timeout"]
         self.autoresume = self.b.options["interlude"]["autoresume"]
         self.uri_rx = re.compile("[A-Za-z]+:\/\/")
         self.formats = ["mp3", "mp4", "flac", "wav", "wma", "ogg", "avi", "mov", "mpg", "flv", "wmv", \
                         "spx", "3gp", "b-mtp", "aac", "aiff", "raw", "midi", "ulaw", "alaw", "gsm" ]
-        self.playlist = self.load_playlist()
-        self.max_index = len(self.playlist) - 1
         self.player = gst.element_factory_make("playbin2", "player")
         self.player.connect("about-to-finish", self.on_about_to_finish)
         # Get and watch the bus. We use this in blockify-ui.
@@ -30,41 +29,49 @@ class AudioPlayer(object):
         self.bus.add_signal_watch()
         # self.bus.connect("message::tag", self.on_tag_changed)
         # self.bus.connect("message::eos", self.on_finish)
-        self.set_uri()
+        # Finally, load the playlist file.
+        self.load_playlist(self.parse_playlist())
 
-    def load_playlist(self):
+    def load_playlist(self, playlist):
         "Read the music to be played instead of commercials into a list."
-        playlist = []
-        playlist_file = self.b.options["interlude"]["playlist"]
-        print playlist_file, "derp"
-        if os.path.exists(playlist_file):
-            playlist = self.parse_playlist_file(playlist_file)
+        try:
             log.info("Interlude playlist is: {0}".format(playlist))
-        else:
-            open(playlist_file, "w").close()
-            log.info("No interlude playlist found. Created one at {0}.".format(playlist_file))
+            self.playlist = playlist
+            self.max_index = len(self.playlist) - 1
+            self.stop()
+            self.set_uri()
+        except Exception as e:
+            log.error("Could not load playlist: {}".format(e))
 
-        return playlist
-
-    def parse_playlist_file(self, playlist_file):
+    def parse_playlist(self, source=None):
         playlist = []
-        for line in open(playlist_file):
-            line = line.strip()
-            if not self.is_valid_uri(line):
+
+        if source is None:
+            source = self.b.options["interlude"]["playlist"]
+
+        if source.endswith("m3u"):
+            src = open(source)
+        else:
+            src = source
+
+        for item in src:
+            item = item.strip()
+            if not self.is_valid_uri(item):
                 continue
-            # The line is not a recognizable URI so we assume it's a file.
-            if not self.uri_rx.match(line):
-                print "not uri", line
-                # The line is not an absolute path so we treat it as relative.
-                if not os.path.isabs(line):
-                    line = os.path.join(os.path.abspath(playlist_file), line)
-                if any([line.lower().endswith("." + f) for f in self.formats]):
-                    line = self.path2url(line)
-            playlist.append(line)
+            # The item is not a recognizable URI so we assume it's a file.
+            if not self.uri_rx.match(item):
+                # The item is not an absolute path so we treat it as relative.
+                if not os.path.isabs(item):
+                    item = os.path.join(os.path.abspath(source), item)
+                if any([item.lower().endswith("." + f) for f in self.formats]):
+                    item = "file://" + item
+#                     item = self.path2url(item)
+            playlist.append(item)
 
         return playlist
 
     def path2url(self, path):
+        "Properly translate a string to a file URI (i.e. space to %20)."
         return urlparse.urljoin("file:", urllib.pathname2url(path))
 
     def on_about_to_finish(self, player):

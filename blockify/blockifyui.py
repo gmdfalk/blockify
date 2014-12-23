@@ -11,20 +11,17 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Allow pausing of interlude song during commercial.
-# TODO: Correct mute button state after block/unblocking.
+# TODO: Browse playlist.
+# TODO: Interlude: Shuffle, autoresume max_timeout
 # TODO: Fix detection delay as outlined by JP-Ellis.
-# TODO: Interlude: shuffle, playlist browser
-# TODO: Interlude: Autoresume max_timeout (e.g. if we use radio).
-# TODO: Add update interval option to docopt.
 # TODO: Try experimental mode suggested by spam0cal to skip the last
 #       second of each song to skip ads altogether (could not verify this).
 # TODO: Continuous update of tray icon tooltip.
-# TODO: Threading for cover art dl.
-# TODO: Different GUI-modes (minimal, full).
-# TODO: Try xlib for minimized window detection.
-# TODO: Use ListStore instead of TextView for Notepad?
-# TODO: Textview: Undo/Redo Ctrl+Z, Ctrl+Y.
+# TODO: Different GUI-modes (minimal, full)?
+# TODO: Try xlib for minimized window detection. Probably won't help.
+# TODO: Notepad: Use ListStore instead of TextView?
+# TODO: Notepad: Undo/Redo Ctrl+Z, Ctrl+Y.
+# TODO: Add update interval option to docopt.
 import codecs
 import datetime
 import logging
@@ -87,9 +84,8 @@ class Notepad(gtk.Window):
         self.add(vbox)
 
     def split_accelerator(self, accelerator):
-        if accelerator is not None:
-            key, mod = gtk.accelerator_parse(accelerator)
-            return key, mod
+        key, mod = gtk.accelerator_parse(accelerator)
+        return key, mod
 
     def create_keybinds(self):
         "Register Ctrl+Q/W to quit and Ctrl+S to save the blocklist."
@@ -545,15 +541,11 @@ class BlockifyUI(gtk.Window):
         is_playing = self.b.player.is_playing()
         if is_sensitive and (not is_playing or self.b.player.is_radio()):
             self.slider.set_sensitive(False)
-            # We could exit here but for now, we just keep the update loop running.
-            # It's not very expensive anyway and saves us from weird edge cases where
-            # the slider won't start updating again.
-            # return False
         elif is_playing and not is_sensitive:
             self.slider.set_sensitive(True)
 
-#         if not self.b.use_interlude_music:
-#             return False
+        if self.b.player.is_radio():
+            return False
 
         try:
             nanosecs, format = self.b.player.player.query_position(gst.FORMAT_TIME)
@@ -645,6 +637,7 @@ class BlockifyUI(gtk.Window):
     def on_autoresume(self, widget):
         if widget.get_active():
             self.b.player.autoresume = True
+            self.b.player.manual_control = False
             if not self.b.found and self.b.song_status != "Playing":
                 self.b.dbus.playpause()
         else:
@@ -689,9 +682,14 @@ class BlockifyUI(gtk.Window):
         "Interlude play button."
         if self.b.use_interlude_music:
             if not self.b.player.is_playing():
+                self.b.player.manual_control = False
                 self.b.player.play()
             else:
+                self.b.player.manual_control = True
                 self.b.player.pause()
+                if not self.b.found and (self.b.song_status != "Playing" or
+                                         not self.b.current_song):
+                    self.b.dbus.playpause()
 
     def on_prev_btn(self, widget):
         "Interlude previous button."
@@ -705,8 +703,45 @@ class BlockifyUI(gtk.Window):
 
     def on_open_btn(self, widget):
         "Interlude open playlist button."
-        if self.b.use_interlude_music:
-            print "open playlist"
+        if not self.b.use_interlude_music:
+            return
+
+        dialog = gtk.FileChooserDialog("Load playlist or audio folder/file",
+                                       None,
+                                       gtk.FILE_CHOOSER_ACTION_OPEN,
+                                       (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                        gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        dialog.set_default_response(gtk.RESPONSE_OK)
+
+        dialog.set_current_folder(util.CONFIG_DIR)
+
+        all_filter = gtk.FileFilter()
+        all_filter.set_name("All files")
+        all_filter.add_pattern("*")
+        dialog.add_filter(all_filter)
+
+        audio_filter = gtk.FileFilter()
+        audio_filter.set_name("Audio and video files")
+        for fmt in self.b.player.formats:
+            audio_filter.add_pattern("*." + fmt)
+        dialog.add_filter(audio_filter)
+
+        playlist_filter = gtk.FileFilter()
+        playlist_filter.set_name("Playlists and directories")
+        playlist_filter.add_pattern("*.m3u")
+        dialog.add_filter(playlist_filter)
+
+        dialog.set_filter(playlist_filter)
+
+        response = dialog.run()
+        if response == gtk.RESPONSE_OK:
+            filename = dialog.get_filename()
+            if filename.endswith("m3u"):
+                self.b.player.load_playlist(self.b.player.parse_playlist(filename))
+            else:
+                pass
+
+        dialog.destroy()
 
     def on_slider_change(self, slider):
         "When the slider was moved, update the song position accordingly."
@@ -745,6 +780,8 @@ class BlockifyUI(gtk.Window):
         else:
             self.b.block_current()
             widget.set_label("Unblock")
+            if self.b.use_interlude_music:
+                self.b.player.manual_control = False
 
     def on_autodetect(self, widget):
         if widget.get_active():

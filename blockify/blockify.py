@@ -149,7 +149,7 @@ class Blockify(object):
 
     def toggle_interlude_music(self):
         playing = self.player.is_playing()
-        if self.found and not playing:
+        if self.found and not playing and not self.player.manual_control:
             self.player.play()
         elif not self.found and playing:
             if self.player.autoresume:
