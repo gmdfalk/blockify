@@ -26,8 +26,6 @@ import wnck
 import blockifydbus
 from blocklist import Blocklist
 import util
-import glib
-import gobject
 
 log = logging.getLogger("main")
 pygtk.require("2.0")
@@ -51,11 +49,13 @@ class Blockify(object):
     def __init__(self, blocklist):
         self.blocklist = blocklist
         self.orglist = blocklist[:]
-        self.configdir = blocklist.configdir
         self.check_for_blockify_process()
         self.check_for_spotify_process()
-        self._autodetect = True
-        self._automute = True
+
+        self.options = util.load_options()
+
+        self._autodetect = self.options["general"]["autodetect"]
+        self._automute = self.options["general"]["automute"]
         self.found = False
         self.current_song = ""
         self.song_status = ""
@@ -63,7 +63,7 @@ class Blockify(object):
         self.is_sink_muted = False
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
-        self.player = audioplayer.AudioPlayer(self.configdir, self.dbus)
+        self.player = audioplayer.AudioPlayer(self)
 
         # Determine if we can use sinks or have to use alsa.
         try:
@@ -74,7 +74,9 @@ class Blockify(object):
             self.mutemethod = self.alsa_mute
 
         # Only use interlude music if we use pulse sinks and the interlude playlist is non-empty.
-        self.use_interlude_music = self.mutemethod == self.pulsesink_mute and self.player.max_index >= 0
+        self.use_interlude_music = self.options["interlude"]["use_interlude_music"] and \
+                                   self.mutemethod == self.pulsesink_mute and \
+                                   self.player.max_index >= 0
 
         log.info("Blockify initialized.")
 
@@ -183,7 +185,7 @@ class Blockify(object):
             current_timestamp = self.blocklist.timestamp
         if self.blocklist.timestamp != current_timestamp:
             log.info("Blockfile changed. Reloading.")
-            self.blocklist.__init__(self.configdir)
+            self.blocklist.__init__()
 
         for i in self.blocklist:
             if self.current_song.startswith(i):
@@ -358,13 +360,15 @@ class Blockify(object):
 
 
 def initialize(doc=__doc__, argv=ARGV):
+    # Set up the configuration directory & files, if necessary.
+    util.init_config_dir()
     try:
         args = docopt(doc, version=VERSION)
         util.init_logger(args["--log"], args["-v"] or 2, args["--quiet"])
     except NameError:
         util.init_logger()
 
-    blockify = Blockify(Blocklist(util.init_configdir()))
+    blockify = Blockify(Blocklist())
 
     return blockify
 

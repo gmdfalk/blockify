@@ -6,9 +6,10 @@ import codecs
 
 
 log = logging.getLogger("util")
-CONFIG_FILE = "blockify.ini"
-CONFIG_DIR = ".config/blockify"
-THUMBNAIL_DIR = "thumbnails"
+CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
+PLAYLIST_FILE = os.path.join(CONFIG_DIR, "playlist.m3u")
+THUMBNAIL_DIR = os.path.join(CONFIG_DIR, "thumbnails")
 
 
 def init_logger(logpath=None, loglevel=2, quiet=False):
@@ -43,24 +44,19 @@ def init_logger(logpath=None, loglevel=2, quiet=False):
             log.error("Could not attach file handler.")
 
 
-def init_configdir():
+def init_config_dir():
     "Determine if a config dir for blockify exists and if not, create it."
-    configdir = os.path.join(os.path.expanduser("~"), CONFIG_DIR)
-    thumbnaildir = os.path.join(configdir, THUMBNAIL_DIR)
-    configfile = os.path.join(configdir, CONFIG_FILE)
-
-    if not os.path.isdir(configdir):
+    if not os.path.isdir(CONFIG_DIR):
         log.info("Creating config directory.")
-        os.makedirs(configdir)
+        os.makedirs(CONFIG_DIR)
 
-    if not os.path.isdir(thumbnaildir):
+    if not os.path.isdir(THUMBNAIL_DIR):
         log.info("Creating thumbnail directory.")
-        os.makedirs(thumbnaildir)
+        os.makedirs(THUMBNAIL_DIR)
 
-    if not os.path.isfile(configfile):
-        save_configfile(configdir, get_default_options())
+    if not os.path.isfile(CONFIG_FILE):
+        save_options(CONFIG_DIR, get_default_options())
 
-    return configdir
 
 def get_default_options():
     options = {
@@ -70,7 +66,7 @@ def get_default_options():
         },
         "interlude": {
             "use_interlude_music": True,
-            "playlist": "",
+            "playlist": PLAYLIST_FILE,
             "autoresume": True,
             "max_timeout": 600
         },
@@ -87,10 +83,9 @@ def get_default_options():
     return options
 
 
-def load_configfile(configdir):
+def load_options():
     config = ConfigParser.ConfigParser()
-    filepath = os.path.join(configdir, CONFIG_FILE)
-    config.read(filepath)
+    config.read(CONFIG_FILE)
 
     options = {}
     try:
@@ -107,17 +102,19 @@ def load_configfile(configdir):
             "autohide_cover":config.getboolean("gui", "autohide_cover"),
             "update_interval":config.getint("gui", "update_interval"),
         }
+        if not options["interlude"]["playlist"]:
+            options["interlude"]["playlist"] = PLAYLIST_FILE
     except Exception as e:
         log.error("Could not completely read config file: {}. Using fallback options.".format(e))
         options = get_default_options()
     else:
-        log.info("Configuration file loaded from {}.".format(configdir))
+        log.info("Configuration file loaded from {}.".format(CONFIG_DIR))
 
     return options
 
 
-def save_configfile(configdir, options):
-    configfile = os.path.join(configdir, CONFIG_FILE)
+def save_options(CONFIG_DIR, options):
+    configfile = os.path.join(CONFIG_DIR, CONFIG_FILE)
     config = ConfigParser.ConfigParser()
     # Write out the sections in this order.
     sections = ["general", "interlude", "cli", "gui"]

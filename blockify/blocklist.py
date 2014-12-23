@@ -1,6 +1,7 @@
 import codecs
 import logging
 import os
+import util
 
 
 log = logging.getLogger("list")
@@ -10,11 +11,9 @@ class Blocklist(list):
     "Inheriting from list type is a bad idea. Let's see what happens."
     # Could subclass UserList.UserList here instead which inherits from
     # collections.MutableSequence. In Python3 it's collections.UserList.
-
-    def __init__(self, configdir):
+    def __init__(self):
         super(Blocklist, self).__init__()
-        self.configdir = configdir
-        self.location = os.path.join(self.configdir, "blocklist")
+        self.location = os.path.join(util.CONFIG_DIR, "blocklist")
         self.extend(self.load())
         self.timestamp = self.get_timestamp()
 

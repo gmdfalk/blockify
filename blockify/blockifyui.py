@@ -33,14 +33,12 @@ import threading
 import urllib
 
 import blockify
-import glib
-import gobject
 import gtk
+import util
 
 # The gst library for some reason modifies argv so we have
 # to save the args here to be able to use them with docopt.
 import sys
-import time
 ARGV = tuple(sys.argv)
 import gst
 
@@ -156,11 +154,12 @@ class BlockifyUI(gtk.Window):
         self.pause_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PAUSE, gtk.ICON_SIZE_BUTTON)
         self.next_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_NEXT, gtk.ICON_SIZE_BUTTON)
         self.prev_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PREVIOUS, gtk.ICON_SIZE_BUTTON)
+        self.open_img = gtk.image_new_from_stock(gtk.STOCK_OPEN, gtk.ICON_SIZE_BUTTON)
 
-        self.thumbnail_dir = os.path.join(self.b.configdir, "thumbnails")
+        self.thumbnail_dir = util.THUMBNAIL_DIR
         self.cover_server = "https://i.scdn.co/image/"
-        self.use_cover_art = True
-        self.autohide_cover = False
+        self.use_cover_art = self.b.options["gui"]["use_cover_art"]
+        self.autohide_cover = self.b.options["gui"]["autohide_cover"]
         self.previous_cover_file = ""
 
         self.editor = None
@@ -170,9 +169,9 @@ class BlockifyUI(gtk.Window):
         # reduce CPU usage and decrease it to improve responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
         # change the line to glib.timeout_add_seconds(2, self.update) or more.
-        self.update_interval = 400
+        self.update_interval = self.b.options["gui"]["update_interval"]
 
-        # (Less significant) Update interval for interlude music slider.
+        # Update interval for interlude music slider.
         self.slider_update_interval = 100
 
         # Window setup.
@@ -185,13 +184,13 @@ class BlockifyUI(gtk.Window):
         self.create_interlude_player()
         self.create_layout()
         self.create_tray()
-        self.set_states()
 
         # "Trap" the exit.
         self.connect("destroy", self.stop)
 
         self.start()
         self.show_all()
+        self.set_states()
 
     def create_tray(self):
         basedir = os.path.dirname(os.path.realpath(__file__))
@@ -285,6 +284,9 @@ class BlockifyUI(gtk.Window):
         self.next_btn = gtk.Button()
         self.next_btn.set_image(self.next_img)
         self.next_btn.connect("clicked", self.on_next_btn)
+        self.open_btn = gtk.Button()
+        self.open_btn.set_image(self.open_img)
+        self.open_btn.connect("clicked", self.on_open_btn)
 
         self.interlude_label = gtk.Label()
         self.interlude_label.set_width_chars(26)
@@ -370,6 +372,7 @@ class BlockifyUI(gtk.Window):
         interludebuttons.add(self.prev_btn)
         interludebuttons.add(self.play_btn)
         interludebuttons.add(self.next_btn)
+        interludebuttons.add(self.open_btn)
         interludebuttons.add(self.autoresume_chk)
         self.interlude_box = gtk.VBox()
         self.interlude_box.add(self.interlude_label)
@@ -382,18 +385,23 @@ class BlockifyUI(gtk.Window):
     def set_states(self):
         # Simulate finding a commercial to keep autoresume_chk from bugging out.
         self.b.found = True
-        for checkbox in [self.autodetect_chk, self.autoresume_chk]:
-            checkbox.set_active(True)
 
-        for checkbox in [self.autohidecover_chk, self.automute_chk]:
-            checkbox.set_active(False)
+        checkboxes = [self.autodetect_chk, self.automute_chk, self.autoresume_chk, self.autohidecover_chk]
+        values = [self.b.options["general"]["autodetect"], self.b.options["general"]["automute"],
+               self.b.options["interlude"]["autoresume"], self.b.options["gui"]["autohide_cover"]]
+
+        for i in range(len(checkboxes)):
+            checkboxes[i].set_active(values[i])
+
+        if not self.b.use_interlude_music:
+            self.interlude_box.hide()
 
     def start(self):
         "Start the main update routine."
         # Start and loop the main update routine once every 400ms.
         # To influence responsiveness or CPU usage, decrease/increase ms here.
         # glib.timeout_add_seconds(2, self.update)
-        glib.timeout_add(self.update_interval, self.update)  # @UndefinedVariable
+        gtk.timeout_add(self.update_interval, self.update)  # @UndefinedVariable
 
         log.info("Blockify-UI started.")
 
@@ -411,7 +419,7 @@ class BlockifyUI(gtk.Window):
         signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
 
     def update(self):
-        "Main GUI loop at 400ms update interval (see self.update_interval)."
+        "Main GUI loop at specific time interval (see self.update_interval)."
         # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
         self.b.found = self.b.update()
@@ -469,7 +477,7 @@ class BlockifyUI(gtk.Window):
             self.toggleblock_btn.set_label("Block")
             self.set_title("Blockify")
 
-        if self.b.song_status == "Playing":
+        if self.b.song_status == "Playing" and self.b.current_song:
             self.toggleplay_btn.set_label("Pause")
         else:
             self.toggleplay_btn.set_label("Play")
@@ -564,7 +572,7 @@ class BlockifyUI(gtk.Window):
         if cover_hash:
             # The url spotify gets its cover images from. Filename is a hash, the last part of metadata["artUrl"]
             cover_url = self.cover_server + cover_hash
-            cover_file = os.path.join(self.thumbnail_dir, cover_hash + ".png")
+            cover_file = os.path.join(util.THUMBNAIL_DIR, cover_hash + ".png")
 
             if not os.path.exists(cover_file):
                 log.info("Downloading cover art: {}".format(cover_file))
@@ -631,7 +639,7 @@ class BlockifyUI(gtk.Window):
     def on_interlude_audio_changed (self, player):
         "Audio source for interlude music has changed."
         log.debug("Interlude track changed to {}.".format(self.b.player.get_current_uri()))
-        gobject.timeout_add(self.slider_update_interval, self.update_slider)
+        gtk.timeout_add(self.slider_update_interval, self.update_slider)
         uri = self.b.player.get_current_uri()
         if uri.startswith("file://"):
             uri = os.path.basename(uri)
@@ -666,6 +674,11 @@ class BlockifyUI(gtk.Window):
         "Interlude next button."
         if self.b.use_interlude_music:
             self.b.player.next()
+
+    def on_open_btn(self, widget):
+        "Interlude open playlist button."
+        if self.b.use_interlude_music:
+            print "open playlist"
 
     def on_slider_change(self, slider):
         "When the slider was moved, update the song position accordingly."
