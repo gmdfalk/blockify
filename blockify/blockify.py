@@ -327,6 +327,10 @@ class Blockify(object):
 
     def stop(self):
         log.info("Exiting safely. Bye.")
+        # Stop the interlude player.
+        if self.use_interlude_music:
+            self.use_interlude_music = False
+            self.player.stop()
         # Save the list only if it changed during runtime.
         if self.blocklist != self.orglist:
             self.blocklist.save()
@@ -360,7 +364,7 @@ def initialize(doc=__doc__, argv=ARGV):
     except NameError:
         util.init_logger()
 
-    blockify = Blockify(Blocklist(util.get_configdir()))
+    blockify = Blockify(Blocklist(util.init_configdir()))
 
     return blockify
 
