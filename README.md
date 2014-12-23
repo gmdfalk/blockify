@@ -8,7 +8,7 @@ Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packag
 ##### Manually
 Before installing blockify, please make sure you have the appropriate dependencies installed. Package names are for ArchLinux and will probably differ slightly between distributions. 
 - Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus
-- Optional (but recommended): pulseaudio python2-docopt  
+- Optional (but highly recommended): pulseaudio python2-docopt  
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
 
 Actual installation procedure is as follows:  
@@ -43,19 +43,28 @@ The default behaviour is for blockify to automatically play the first song in th
 Alternatively, you can disable autoresume which will cause blockify to always finish the current interlude song before resuming spotify playback.  
 
 The interlude feature only works if you use pulseaudio (i.e. spotify needs to run in its own sink so it can be muted separately).    
-To make use of interlude music you have to configure a playlist file in `~/.config/blockify/playlist`.  
+To make use of interlude music you have to configure a playlist file in `~/.config/blockify/playlist.m3u`.  
+The playlist system is (mostly) M3U-compliant.  
 
 An example playlist:
 ```
 # Lines starting with "#" will be ignored.
-file:///media/shared/media/music/2014-ed_sheeran-x/01 One.mp3
-file:///media/shared/media/music/2014-foo_fighters-sonic_highways/01. Something From Nothing.mp3
-# This is a radio station.
+# Absolute path to a file.
+/media/music/foo/bar.mp3
+# Relative path to a file (as seen from playlist location).
+foo/bar.flac
+# This is a radio station. Note that radio streams don't usually end so you'll have to switch
+# back to spotify manually or specify the max_timeout in the config file.
 http://skyserver5.skydisc.net:8000
+# It's also possible to give full URIs:
+file:///media/music/foo/bar.mp4
+http://www.example.com/foo/bar.aiff
+mms://www.example.com/foo/bar.avi
 ```
-You'll notice that you have to use complete URIs. The upside is that you can use virtually any audio format/source (as long as you have the necessary gstreamer codecs).  
+You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v1.6 (ETA 2014-12-23): Configuration file, playlist improvements, bug fixes
 - v1.5 (2014-12-21): Mini-audio player for interlude music (media buttons, interactive progress bar, interactive playlist, ...)
 - v1.4 (2014-12-14): Interlude music of your choice during commercials  
 - v1.3 (2014-12-14): GUI-Update (Buttons, Icons, Systray) and Refactoring  
