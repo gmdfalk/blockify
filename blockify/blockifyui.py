@@ -12,9 +12,8 @@ Options:
     --version         Show current version of blockify.
 """
 # TODO: Allow pausing of interlude song during commercial.
-# TODO: Configuration file (also actually use XDG).
 # TODO: Correct play & mute button states.
-# TODO: Fix commercial delay as outlined by JP-Ellis.
+# TODO: Fix detection delay as outlined by JP-Ellis.
 # TODO: Interlude: shuffle, playlist browser
 # TODO: Interlude: Autoresume max_timeout (e.g. if we use radio).
 # TODO: Add update interval option to docopt.
@@ -160,7 +159,7 @@ class BlockifyUI(gtk.Window):
 
         self.thumbnail_dir = os.path.join(self.b.configdir, "thumbnails")
         self.cover_server = "https://i.scdn.co/image/"
-        self.use_cover = True
+        self.use_cover_art = True
         self.autohide_cover = False
         self.previous_cover_file = ""
 
@@ -317,8 +316,8 @@ class BlockifyUI(gtk.Window):
 
         self.togglemute_btn = gtk.ToggleButton("Mute")
         self.togglemute_btn.connect("clicked", self.on_togglemute)
-        self.manualmute_chk = gtk.CheckButton("Manual")
-        self.manualmute_chk.connect("clicked", self.on_manualmute)
+        self.automute_chk = gtk.CheckButton("Automute")
+        self.automute_chk.connect("clicked", self.on_automute)
 
         self.togglecover_btn = gtk.Button("Toggle Cover")
         self.togglecover_btn.connect("clicked", self.on_togglecover)
@@ -355,7 +354,7 @@ class BlockifyUI(gtk.Window):
 
         mutebuttons = gtk.HBox(True)
         mutebuttons.add(self.togglemute_btn)
-        mutebuttons.add(self.manualmute_chk)
+        mutebuttons.add(self.automute_chk)
         main.pack_start(mutebuttons)
 
         coverbuttons = gtk.HBox(True)
@@ -386,7 +385,7 @@ class BlockifyUI(gtk.Window):
         for checkbox in [self.autodetect_chk, self.autoresume_chk]:
             checkbox.set_active(True)
 
-        for checkbox in [self.autohidecover_chk, self.manualmute_chk]:
+        for checkbox in [self.autohidecover_chk, self.automute_chk]:
             checkbox.set_active(False)
 
     def start(self):
@@ -420,7 +419,7 @@ class BlockifyUI(gtk.Window):
             threading.Thread(target=self.b.toggle_interlude_music).start()
 
         # Our main GUI workers here, updating labels, buttons and the likes.
-        if self.use_cover:
+        if self.use_cover_art:
             self.update_cover()
         self.update_labels()
         self.update_buttons()
@@ -444,7 +443,7 @@ class BlockifyUI(gtk.Window):
                 if self.autohide_cover:
                     self.enable_cover()
             except Exception:
-                self.use_cover = False
+                self.use_cover_art = False
                 self.autohidecover_chk.set_active(False)
                 self.disable_cover()
 
@@ -676,11 +675,11 @@ class BlockifyUI(gtk.Window):
     def on_togglecover(self, widget):
         "Button that toggles cover art."
         if self.coverimage.get_visible():
-            self.use_cover = False
+            self.use_cover_art = False
             self.disable_cover()
             log.debug("Disabled cover art.")
         else:
-            self.use_cover = True
+            self.use_cover_art = True
             self.enable_cover()
             log.debug("Enabled cover art.")
 
@@ -720,18 +719,18 @@ class BlockifyUI(gtk.Window):
             widget.set_label("Mute")
             self.b.toggle_mute(2)
 
-    def on_manualmute(self, widget):
+    def on_automute(self, widget):
         if widget.get_active():
+            self.togglemute_btn.set_sensitive(False)
+            self.toggleblock_btn.set_sensitive(True)
+            self.b.automute = True
+            log.debug("Enabled automute.")
+        else:
             self.b.automute = False
             self.togglemute_btn.set_sensitive(True)
             self.toggleblock_btn.set_sensitive(False)
             self.b.toggle_mute(2)
-            log.debug("Enabled manual mute mode.")
-        else:
-            self.togglemute_btn.set_sensitive(False)
-            self.toggleblock_btn.set_sensitive(True)
-            self.b.automute = True
-            log.debug("Disabled manual mute mode.")
+            log.debug("Disabled automute.")
         # Nasty togglebuttonses. Always need correcting.
         if self.b.is_sink_muted or self.b.is_fully_muted:
             self.togglemute_btn.set_label("Unmute")
