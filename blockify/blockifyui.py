@@ -48,12 +48,11 @@ log = logging.getLogger("gui")
 
 class Notepad(gtk.Window):
     "A tiny text editor to modify the blocklist."
-    def __init__(self, location, parentw):
+    def __init__(self):
 
         super(Notepad, self).__init__()
 
-        self.location = location
-        self.parentw = parentw  # Used to untoggle the open/close list button.
+        self.location = util.BLOCKLIST_FILE
 
         self.set_title("Blocklist")
         self.set_wmclass("blocklist", "Blockify")
@@ -76,10 +75,10 @@ class Notepad(gtk.Window):
         swadj = self.sw.get_vadjustment()
         swadj.value = 500
         swadj.set_value(960)
-
-        tvadi = self.textview.get_vadjustment()
-        tvadi.value = 500
-        tvadi.set_value(960)
+#
+#         tvadi = self.textview.get_vadjustment()
+#         tvadi.value = 500
+#         tvadi.set_value(960)
 
     def create_layout(self):
         vbox = gtk.VBox()
@@ -97,24 +96,68 @@ class Notepad(gtk.Window):
 
         return vbox
 
+    def split_accelerator(self, accelerator):
+        if accelerator is not None:
+            key, mod = gtk.accelerator_parse(accelerator)
+            return key, mod
+
     def create_keybinds(self):
         "Register Ctrl+Q/W to quit and Ctrl+S to save the blocklist."
+        q_key, q_mod = self.split_accelerator("<Control>q")
+        w_key, w_mod = self.split_accelerator("<Control>w")
+        s_key, s_mod = self.split_accelerator("<Control>s")
+
+        z_key, z_mod = self.split_accelerator("<Control>z")
+        y_key, y_mod = self.split_accelerator("<Control>y")
+        d_key, d_mod = self.split_accelerator("<Control>d")
+        a_key, a_mod = self.split_accelerator("<Control>a")
+        c_key, c_mod = self.split_accelerator("<Control>x")
+        x_key, x_mod = self.split_accelerator("<Control>x")
+        v_key, v_mod = self.split_accelerator("<Control>v")
+
         quit_group = gtk.AccelGroup()
-        quit_group.connect_group(ord("q"), gtk.gdk.CONTROL_MASK,
-                                 gtk.ACCEL_LOCKED, self.destroy)
-        quit_group.connect_group(ord("w"), gtk.gdk.CONTROL_MASK,
-                                 gtk.ACCEL_LOCKED, self.destroy)
+        quit_group.connect_group(q_key, q_mod, gtk.ACCEL_LOCKED, self.destroy)
+        quit_group.connect_group(w_key, w_mod, gtk.ACCEL_LOCKED, self.destroy)
         self.add_accel_group(quit_group)
 
         save_group = gtk.AccelGroup()
-        save_group.connect_group(ord("s"), gtk.gdk.CONTROL_MASK,
-                                 gtk.ACCEL_LOCKED, self.save)
+        save_group.connect_group(s_key, s_mod, gtk.ACCEL_LOCKED, self.save)
         self.add_accel_group(save_group)
+
+        edit_group = gtk.AccelGroup()
+        edit_group.connect_group(z_key, z_mod, gtk.ACCEL_LOCKED, self.undo)
+        edit_group.connect_group(y_key, y_mod, gtk.ACCEL_LOCKED, self.redo)
+        edit_group.connect_group(d_key, d_mod, gtk.ACCEL_LOCKED, self.delete_line)
+        edit_group.connect_group(a_key, a_mod, gtk.ACCEL_LOCKED, self.select_all)
+        edit_group.connect_group(c_key, c_mod, gtk.ACCEL_LOCKED, self.copy)
+        edit_group.connect_group(x_key, x_mod, gtk.ACCEL_LOCKED, self.cut)
+        edit_group.connect_group(v_key, v_mod, gtk.ACCEL_LOCKED, self.paste)
+        self.add_accel_group(edit_group)
+
+    def undo(self, *args):
+        pass
+
+    def redo(self, *args):
+        pass
+
+    def delete_line(self, *args):
+        pass
+
+    def select_all(self, *args):
+        pass
+
+    def copy(self, *args):
+        pass
+
+    def cut(self, *args):
+        pass
+
+    def paste(self, *args):
+        pass
 
     def destroy(self, *args):
         "Overloading destroy to untoggle the Open List button."
         super(Notepad, self).destroy()
-        self.parentw.togglelist_btn.set_active(False)
 
     def open_file(self, *args):
         textbuffer = self.textview.get_buffer()
@@ -758,7 +801,7 @@ class BlockifyUI(gtk.Window):
     def on_togglelist(self, widget):
         if widget.get_active():
             widget.set_label("Close List")
-            self.editor = Notepad(self.b.blocklist.location, self)
+            self.editor = Notepad()
         else:
             if self.editor:
                 widget.set_label("Open List")

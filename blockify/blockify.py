@@ -29,7 +29,7 @@ import util
 
 log = logging.getLogger("main")
 pygtk.require("2.0")
-VERSION = "1.5"
+VERSION = "1.6"
 
 try:
     from docopt import docopt
@@ -160,7 +160,6 @@ class Blockify(object):
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
-
         self.current_song = self.get_current_song()
         self.song_status = self.dbus.get_song_status()
 
@@ -363,6 +362,7 @@ class Blockify(object):
 def initialize(doc=__doc__, argv=ARGV):
     # Set up the configuration directory & files, if necessary.
     util.init_config_dir()
+
     try:
         args = docopt(doc, version=VERSION)
         util.init_logger(args["--log"], args["-v"] or 2, args["--quiet"])

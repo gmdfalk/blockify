@@ -8,6 +8,7 @@ import codecs
 log = logging.getLogger("util")
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
+BLOCKLIST_FILE = os.path.join(CONFIG_DIR, "blocklist.txt")
 PLAYLIST_FILE = os.path.join(CONFIG_DIR, "playlist.m3u")
 THUMBNAIL_DIR = os.path.join(CONFIG_DIR, "thumbnails")
 
@@ -43,6 +44,13 @@ def init_logger(logpath=None, loglevel=2, quiet=False):
         except IOError:
             log.error("Could not attach file handler.")
 
+def rename_file(fname):
+    if not os.path.isfile(fname):
+        try:
+            os.rename(fname[:-4], fname)
+        except OSError:
+            pass
+
 
 def init_config_dir():
     "Determine if a config dir for blockify exists and if not, create it."
@@ -53,6 +61,10 @@ def init_config_dir():
     if not os.path.isdir(THUMBNAIL_DIR):
         log.info("Creating thumbnail directory.")
         os.makedirs(THUMBNAIL_DIR)
+
+    # During transition to blockify v1.6 rename the playlist and blocklist files.
+    rename_file(PLAYLIST_FILE)
+    rename_file(BLOCKLIST_FILE)
 
     if not os.path.isfile(CONFIG_FILE):
         save_options(CONFIG_DIR, get_default_options())

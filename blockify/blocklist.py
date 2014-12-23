@@ -13,7 +13,7 @@ class Blocklist(list):
     # collections.MutableSequence. In Python3 it's collections.UserList.
     def __init__(self):
         super(Blocklist, self).__init__()
-        self.location = os.path.join(util.CONFIG_DIR, "blocklist")
+        self.location = util.BLOCKLIST_FILE
         self.extend(self.load())
         self.timestamp = self.get_timestamp()
 
