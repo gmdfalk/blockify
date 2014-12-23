@@ -34,12 +34,10 @@ class AudioPlayer(object):
 
     def load_playlist(self):
         "Read the music to be played instead of commercials into a list."
-        # TODO...
         playlist = []
-        print self.b.options
         playlist_file = self.b.options["interlude"]["playlist"]
         if os.path.exists(playlist_file):
-            self.parse_playlist_file(playlist_file)
+            playlist = self.parse_playlist_file(playlist_file)
             log.info("Interlude playlist is: {0}".format(playlist))
         else:
             open(playlist_file, "w").close()
@@ -50,16 +48,20 @@ class AudioPlayer(object):
     def parse_playlist_file(self, playlist_file):
         playlist = []
         for line in open(playlist_file):
+            line = line.strip()
             if not self.is_valid_uri(line):
                 continue
             # The line is not a recognizable URI so we assume it's a file.
             if not self.uri_rx.match(line):
+                print "not uri", line
                 # The line is not an absolute path so we treat it as relative.
                 if not os.path.isabs(line):
                     line = os.path.join(os.path.abspath(playlist_file), line)
                 if any([line.lower().endswith("." + f) for f in self.formats]):
                     line = self.path2url(line)
             playlist.append(line)
+
+        return playlist
 
     def path2url(self, path):
         return urlparse.urljoin("file:", urllib.pathname2url(path))

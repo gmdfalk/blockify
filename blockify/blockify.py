@@ -56,6 +56,7 @@ class Blockify(object):
 
         self._autodetect = self.options["general"]["autodetect"]
         self._automute = self.options["general"]["automute"]
+        self.update_interval = self.options["cli"]["update_interval"]
         self.found = False
         self.current_song = ""
         self.song_status = ""
@@ -131,7 +132,7 @@ class Blockify(object):
             if self.use_interlude_music:
                 threading.Thread(target=self.toggle_interlude_music).start()
 
-            time.sleep(0.25)
+            time.sleep(self.update_interval)
 
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""

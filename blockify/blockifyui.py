@@ -12,7 +12,7 @@ Options:
     --version         Show current version of blockify.
 """
 # TODO: Allow pausing of interlude song during commercial.
-# TODO: Correct play & mute button states.
+# TODO: Correct mute button state after block/unblocking.
 # TODO: Fix detection delay as outlined by JP-Ellis.
 # TODO: Interlude: shuffle, playlist browser
 # TODO: Interlude: Autoresume max_timeout (e.g. if we use radio).
