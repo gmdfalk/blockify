@@ -48,9 +48,6 @@ class AudioPlayer(object):
 
         try:
             for item in sourcelist:
-                if item.lower().endswith(".m3u"):
-                    playlist += self.parse_playlist(open(item), source=item)
-                    continue
                 item = item.strip()
                 if self.is_valid_uri(item):
                     # The item is not a recognizable URI so we assume it's a file.
@@ -61,9 +58,18 @@ class AudioPlayer(object):
                         if any([item.lower().endswith("." + f) for f in self.formats]):
                             item = "file://" + item
                             # item = self.path2url(item)
-                    playlist.append(item)
+                        # Skip non-existing files.
+#                         if item.startswith("file://") and not os.path.isfile(item[7:]):
+#                             continue
+                    if item.lower().endswith(".m3u"):
+                        playlist += self.parse_playlist(open(item), source=item)
+                    else:
+                        playlist.append(item)
+        except RuntimeError as e:
+            # Maximum Recursion Depth exceeded, most likely.
+            log.error("Faulty playlist source: {}".format(e))
         except Exception as e:
-            log.error("Could not parse playlist sourcelist: {}".format(e))
+            log.error("Could not parse playlist source: {}".format(e))
 
         return playlist
 
@@ -89,17 +95,22 @@ class AudioPlayer(object):
 
     def is_valid_uri(self, item):
         "Determine if a item in the playlist file is a valid URI."
-        # Lines we exclude right away, these are not valid URIs.
-        exclusions = [not item, item.startswith("#")]
+        # Lines we exclude right away, these are either:
+        # * comments
+        # * invalid (empty)
+        # * or incompatible (e.g. mms will cause a freeze).
+        exclusions = [not item, item.startswith("#"), item.startswith("mms://")]
+
+        item = item.lower()
         # Lines we include as these are likely to be valid URIs.
 #         inclusions = [item.startswith("file://"), item.startswith("http://"), item.startswith("mms://")]
 
-        item = item.lower()
-        filechecks = [True]
+        # If item is a file uri, make sure it has a valid (audio/video) format.
+        valid_format = [True]
         if item.startswith("file://"):
-            filechecks = [item.endswith(fmt) for fmt in self.formats]
+            valid_format = [item.endswith("." + fmt) for fmt in self.formats + ["m3u"]]
 
-        return not any(exclusions) and any(filechecks)  # and any(inclusions)
+        return not any(exclusions) and any(valid_format)
 
     def is_playing(self):
         return self.player.get_state()[1] == gst.STATE_PLAYING
