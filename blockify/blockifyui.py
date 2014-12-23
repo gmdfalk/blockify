@@ -23,7 +23,8 @@ Options:
 # TODO: Threading for cover art dl.
 # TODO: Different GUI-modes (minimal, full).
 # TODO: Try xlib for minimized window detection.
-# TODO: Textview: Delete line Ctrl+D, Undo/Redo Ctrl+Z, Ctrl+Y.
+# TODO: Use ListStore instead of TextView for Notepad?
+# TODO: Textview: Undo/Redo Ctrl+Z, Ctrl+Y.
 import codecs
 import datetime
 import logging
@@ -56,29 +57,18 @@ class Notepad(gtk.Window):
 
         self.set_title("Blocklist")
         self.set_wmclass("blocklist", "Blockify")
-        self.set_default_size(460, 500)
+        self.set_default_size(300, 400)
         self.set_position(gtk.WIN_POS_CENTER)
 
         self.textview = gtk.TextView()
         self.statusbar = gtk.Statusbar()
-        self.statusbar.push(0, "Ctrl+S to save, Ctrl+Q/W to close.")
+        self.statusbar.push(0, "Ctrl+S (save), Ctrl+Q (close), Ctrl+D (del-line)")
 
         self.create_keybinds()
-        vbox = self.create_layout()
-
-        self.add(vbox)
+        self.create_layout()
 
         self.open_file()
         self.show_all()
-
-        # FIXME: Unholy mess. Why do i have to set value redundantly here?
-        swadj = self.sw.get_vadjustment()
-        swadj.value = 500
-        swadj.set_value(960)
-#
-#         tvadi = self.textview.get_vadjustment()
-#         tvadi.value = 500
-#         tvadi.set_value(960)
 
     def create_layout(self):
         vbox = gtk.VBox()
@@ -94,7 +84,7 @@ class Notepad(gtk.Window):
         textbox.pack_start(self.sw)
         statusbox.pack_start(self.statusbar, True, False, 0)
 
-        return vbox
+        self.add(vbox)
 
     def split_accelerator(self, accelerator):
         if accelerator is not None:
@@ -106,14 +96,8 @@ class Notepad(gtk.Window):
         q_key, q_mod = self.split_accelerator("<Control>q")
         w_key, w_mod = self.split_accelerator("<Control>w")
         s_key, s_mod = self.split_accelerator("<Control>s")
-
-        z_key, z_mod = self.split_accelerator("<Control>z")
-        y_key, y_mod = self.split_accelerator("<Control>y")
         d_key, d_mod = self.split_accelerator("<Control>d")
         a_key, a_mod = self.split_accelerator("<Control>a")
-        c_key, c_mod = self.split_accelerator("<Control>x")
-        x_key, x_mod = self.split_accelerator("<Control>x")
-        v_key, v_mod = self.split_accelerator("<Control>v")
 
         quit_group = gtk.AccelGroup()
         quit_group.connect_group(q_key, q_mod, gtk.ACCEL_LOCKED, self.destroy)
@@ -125,35 +109,36 @@ class Notepad(gtk.Window):
         self.add_accel_group(save_group)
 
         edit_group = gtk.AccelGroup()
-        edit_group.connect_group(z_key, z_mod, gtk.ACCEL_LOCKED, self.undo)
-        edit_group.connect_group(y_key, y_mod, gtk.ACCEL_LOCKED, self.redo)
         edit_group.connect_group(d_key, d_mod, gtk.ACCEL_LOCKED, self.delete_line)
         edit_group.connect_group(a_key, a_mod, gtk.ACCEL_LOCKED, self.select_all)
-        edit_group.connect_group(c_key, c_mod, gtk.ACCEL_LOCKED, self.copy)
-        edit_group.connect_group(x_key, x_mod, gtk.ACCEL_LOCKED, self.cut)
-        edit_group.connect_group(v_key, v_mod, gtk.ACCEL_LOCKED, self.paste)
         self.add_accel_group(edit_group)
 
     def undo(self, *args):
+        "Ctrl+Z, undo the last text change."
         pass
 
     def redo(self, *args):
+        "Ctrl+Y, redo the last text change."
         pass
 
     def delete_line(self, *args):
-        pass
+        "Ctrl+D, delete the current line."
+        textbuffer = self.textview.get_buffer()
+        mark_at_cursor = textbuffer.get_insert()
+        iter_at_cursor = textbuffer.get_iter_at_mark(mark_at_cursor)
+
+        line_number = iter_at_cursor.get_line()
+        line_start = textbuffer.get_iter_at_line_offset(line_number, 0)
+        bytes_in_line = line_start.get_bytes_in_line()
+        end_offset = bytes_in_line - 1 if bytes_in_line > 0 else bytes_in_line
+        line_end = textbuffer.get_iter_at_line_index(line_number, end_offset)
+        textbuffer.delete(line_start, line_end)
 
     def select_all(self, *args):
-        pass
-
-    def copy(self, *args):
-        pass
-
-    def cut(self, *args):
-        pass
-
-    def paste(self, *args):
-        pass
+        "Ctrl+A, select all text in the buffer."
+        textbuffer = self.textview.get_buffer()
+        first, last = textbuffer.get_bounds()
+        textbuffer.select_range(first, last)
 
     def destroy(self, *args):
         "Overloading destroy to untoggle the Open List button."

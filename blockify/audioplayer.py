@@ -15,7 +15,7 @@ class AudioPlayer(object):
     def __init__(self, blockify):
         self.b = blockify
         self._index = 0
-        # (NYI) Automatically resume spotify playback after 600 seconds.
+        # Automatically resume spotify playback after n seconds.
         self.max_timeout = self.b.options["interlude"]["max_timeout"]
         self.autoresume = self.b.options["interlude"]["autoresume"]
         self.uri_rx = re.compile("[A-Za-z]+:\/\/")
@@ -36,6 +36,7 @@ class AudioPlayer(object):
         "Read the music to be played instead of commercials into a list."
         playlist = []
         playlist_file = self.b.options["interlude"]["playlist"]
+        print playlist_file, "derp"
         if os.path.exists(playlist_file):
             playlist = self.parse_playlist_file(playlist_file)
             log.info("Interlude playlist is: {0}".format(playlist))

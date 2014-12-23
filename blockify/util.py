@@ -3,6 +3,7 @@ import os
 import sys
 import ConfigParser
 import codecs
+from itertools import chain
 
 
 log = logging.getLogger("util")
@@ -117,8 +118,9 @@ def load_options():
         if not options["interlude"]["playlist"]:
             options["interlude"]["playlist"] = PLAYLIST_FILE
     except Exception as e:
-        log.error("Could not completely read config file: {}. Using fallback options.".format(e))
-        options = get_default_options()
+        log.error("Could not completely read config file: {}. Merging with default options.".format(e))
+        defoptions = get_default_options()
+        options = dict(chain(defoptions.items(), options.items))
     else:
         log.info("Configuration file loaded from {}.".format(CONFIG_DIR))
 
