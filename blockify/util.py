@@ -1,9 +1,8 @@
+import ConfigParser
+import codecs
 import logging
 import os
 import sys
-import ConfigParser
-import codecs
-from itertools import chain
 
 
 log = logging.getLogger("util")
@@ -81,7 +80,7 @@ def get_default_options():
             "use_interlude_music": True,
             "playlist": PLAYLIST_FILE,
             "autoresume": True,
-            "max_timeout": 600
+            "radio_timeout": 600
         },
         "cli": {
             "update_interval": 0.25
@@ -107,7 +106,7 @@ def load_options():
         options["interlude"] = {
             "use_interlude_music":config.getboolean("interlude", "use_interlude_music"),
             "autoresume":config.getboolean("interlude", "autoresume"),
-            "max_timeout":config.getint("interlude", "max_timeout"),
+            "radio_timeout":config.getint("interlude", "radio_timeout"),
             "playlist":config.get("interlude", "playlist")
         }
         options["gui"] = {
@@ -120,7 +119,7 @@ def load_options():
     except Exception as e:
         log.error("Could not completely read config file: {}. Merging with default options.".format(e))
         defoptions = get_default_options()
-        options = dict(chain(defoptions.items(), options.items))
+        options = dict(defoptions.items() + options.items())
     else:
         log.info("Configuration file loaded from {}.".format(CONFIG_DIR))
 

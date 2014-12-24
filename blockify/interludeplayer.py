@@ -1,10 +1,11 @@
 import logging
 import os
+import re
+import urllib
+import urlparse
 
 import gst
-import re
-import urlparse
-import urllib
+import gtk
 
 
 log = logging.getLogger("player")
@@ -18,7 +19,7 @@ class InterludePlayer(object):
         self._index = 0
         self.manual_control = False
         # Automatically resume spotify playback after n seconds.
-        self.max_timeout = self.b.options["interlude"]["max_timeout"]
+        self.radio_timeout = self.b.options["interlude"]["radio_timeout"]
         self.autoresume = self.b.options["interlude"]["autoresume"]
         self.uri_rx = re.compile("[A-Za-z]+:\/\/")
         self.formats = ["mp3", "mp4", "flac", "wav", "wma", "ogg", "avi", "mov", "mpg", "flv", "wmv", \
@@ -121,6 +122,29 @@ class InterludePlayer(object):
             valid_format = [item.endswith("." + fmt) for fmt in self.formats + ["m3u"]]
 
         return not any(exclusions) and any(valid_format)
+
+    def resume_spotify_playback(self):
+        if not self.b.found:
+            if not self.b.song_status == "Playing":
+                self.b.dbus.playpause()
+            self.pause()
+            return False
+
+        return True
+
+    def toggle_interlude_music(self):
+        playing = self.is_playing()
+        if self.b.found and not playing and not self.manual_control:
+            self.play()
+            if self.is_radio() and self.radio_timeout:
+                log.info("Radio is playing. Switching back to spotify in: {}s.".format(self.radio_timeout))
+                gtk.timeout_add(self.radio_timeout * 1000, self.resume_spotify_playback)
+        elif not self.b.found and playing:
+            if self.autoresume:
+                self.pause()
+            else:
+                if self.b.song_status == "Playing":
+                    self.b.dbus.playpause()
 
     def is_playing(self):
         return self.player.get_state()[1] == gst.STATE_PLAYING

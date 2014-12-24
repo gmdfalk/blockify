@@ -15,8 +15,8 @@ import logging
 import os
 import re
 import signal
-import sys
 import subprocess
+import sys
 import threading
 import time
 
@@ -27,6 +27,7 @@ import wnck
 import blockifydbus
 import blocklist
 import util
+
 
 log = logging.getLogger("main")
 pygtk.require("2.0")
@@ -131,7 +132,7 @@ class Blockify(object):
             self.found = self.update()
             # Thread will only get started once so we keep this here for now.
             if self.use_interlude_music:
-                threading.Thread(target=self.toggle_interlude_music).start()
+                threading.Thread(target=self.player.toggle_interlude_music).start()
 
             time.sleep(self.update_interval)
 
@@ -148,17 +149,6 @@ class Blockify(object):
                 # is the case here.
                 log.debug("TypeError during ad detection: {}".format(e))
                 return True
-
-    def toggle_interlude_music(self):
-        playing = self.player.is_playing()
-        if self.found and not playing and not self.player.manual_control:
-            self.player.play()
-        elif not self.found and playing:
-            if self.player.autoresume:
-                self.player.pause()
-            else:
-                if self.song_status == "Playing":
-                    self.dbus.playpause()
 
     def update(self):
         "Main loop. Checks for blocklist match and mutes accordingly."

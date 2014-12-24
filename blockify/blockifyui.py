@@ -11,7 +11,7 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Interlude: Shuffle, autoresume max_timeout
+# TODO: Interlude: Shuffle.
 # TODO: Fix detection delay as outlined by JP-Ellis.
 # TODO: Try experimental mode suggested by spam0cal to skip the last
 #       second of each song to skip ads altogether (could not verify this).
@@ -19,7 +19,7 @@ Options:
 # TODO: Different GUI-modes (minimal, full)?
 # TODO: Try xlib for minimized window detection. Probably won't help.
 # TODO: Notepad: Use ListStore instead of TextView?
-# TODO: Notepad: Undo/Redo Ctrl+Z, Ctrl+Y.
+# TODO: Notepad: Undo/Redo Ctrl+Z, Ctrl+Y, Fix Ctrl+D to completely delete line.
 # TODO: Add update interval option to docopt.
 import codecs
 import datetime
@@ -31,6 +31,7 @@ import urllib
 
 import blockify
 import gtk
+
 import util
 
 
@@ -441,7 +442,7 @@ class BlockifyUI(gtk.Window):
         # (True/False) depending on whether a song to be blocked was found.
         self.b.found = self.b.update()
         if self.b.use_interlude_music:
-            threading.Thread(target=self.b.toggle_interlude_music).start()
+            threading.Thread(target=self.b.player.toggle_interlude_music).start()
 
         # Our main GUI workers here, updating labels, buttons and the likes.
         self.update_cover()
