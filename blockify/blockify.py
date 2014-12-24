@@ -121,20 +121,20 @@ class Blockify(object):
     def start(self):
         self.bind_signals()
         self.toggle_mute()
-        log.info("Blockify started.")
 
         gtk.threads_init()
-        while 1:
-            # Initiate gtk loop to enable the window list for .get_windows().
-            while gtk.events_pending():
-                gtk.main_iteration(False)
-            # Determine if a commercial is running and act accordingly.
-            self.found = self.update()
-            # Thread will only get started once so we keep this here for now.
-            if self.use_interlude_music:
-                threading.Thread(target=self.player.toggle_interlude_music).start()
+        gtk.timeout_add(self.update_interval, self.update)
+        log.info("Blockify started.")
+        gtk.main()
 
-            time.sleep(self.update_interval)
+    def update(self):
+        # Determine if a commercial is running and act accordingly.
+        self.found = self.detect_ad()
+        # Thread will only get started once so we keep this here for now.
+        if self.use_interlude_music:
+            threading.Thread(target=self.player.toggle_interlude_music).start()
+
+        return True
 
     def current_song_is_ad(self):
         """Compares the wnck song info to dbus song info."""
@@ -150,7 +150,7 @@ class Blockify(object):
                 log.debug("TypeError during ad detection: {}".format(e))
                 return True
 
-    def update(self):
+    def detect_ad(self):
         "Main loop. Checks for blocklist match and mutes accordingly."
         self.current_song = self.get_current_song()
         self.song_status = self.dbus.get_song_status()

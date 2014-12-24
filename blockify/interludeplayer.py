@@ -6,6 +6,7 @@ import urlparse
 
 import gst
 import gtk
+import random
 
 
 log = logging.getLogger("player")
@@ -18,6 +19,7 @@ class InterludePlayer(object):
         self.b = blockify
         self._index = 0
         self.manual_control = False
+        self.temp_autoresume = False
         # Automatically resume spotify playback after n seconds.
         self.radio_timeout = self.b.options["interlude"]["radio_timeout"]
         self.autoresume = self.b.options["interlude"]["autoresume"]
@@ -128,6 +130,11 @@ class InterludePlayer(object):
             if not self.b.song_status == "Playing":
                 self.b.dbus.playpause()
             self.pause()
+            log.info("Switched from radio back to Spotify.")
+            return False
+        else:
+            log.info("Tried to switch from radio to Spotify but commercial still playing. Will resume when commercial ends.")
+            self.temp_autoresume = True
             return False
 
         return True
@@ -137,11 +144,12 @@ class InterludePlayer(object):
         if self.b.found and not playing and not self.manual_control:
             self.play()
             if self.is_radio() and self.radio_timeout:
-                log.info("Radio is playing. Switching back to spotify in: {}s.".format(self.radio_timeout))
+                log.info("Radio is playing. Switching back to spotify in {}s (or when the ad has finished).".format(self.radio_timeout))
                 gtk.timeout_add(self.radio_timeout * 1000, self.resume_spotify_playback)
         elif not self.b.found and playing:
-            if self.autoresume:
+            if self.autoresume or self.temp_autoresume:
                 self.pause()
+                self.temp_autoresume = False
             else:
                 if self.b.song_status == "Playing":
                     self.b.dbus.playpause()
@@ -153,8 +161,8 @@ class InterludePlayer(object):
         return self.player.get_state()[0] == gst.STATE_CHANGE_SUCCESS
 
     def play(self):
+        uri = self.get_current_uri()
         if not self.is_playable():
-            uri = self.get_current_uri()
             log.warn("Skipping unplayable item: {}.".format(uri))
             self.queue_next()
             # Remove the troublemaker from the playlist.
@@ -166,6 +174,7 @@ class InterludePlayer(object):
             except ValueError:
                 pass
         self.player.set_state(gst.STATE_PLAYING)
+        log.info("Playing interlude: {}".format(self.get_current_uri()))
         log.debug("Play: State is {0}.".format(self.player.get_state()))
 
     def pause(self):
@@ -185,6 +194,17 @@ class InterludePlayer(object):
         self.stop()
         self.queue_next()
         self.play()
+
+    def shuffle(self):
+        # uri = self.get_current_uri()
+        random.shuffle(self.playlist)
+        log.info("Shuffled playlist.")
+        # Adjust index to make sure self.get_current_uri() returns the current song.
+        # However, right now, that's not necessary as that method is only used when
+        # the song changes.
+        # If there are duplicate entries of uri in the playlist, this next line
+        # isn't all that, too, so for now, let's just leave it out.
+        # self.index = self.playlist.index(uri)
 
     def queue_next(self):
         self.index += 1

@@ -11,16 +11,15 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Interlude: Shuffle.
 # TODO: Fix detection delay as outlined by JP-Ellis.
 # TODO: Try experimental mode suggested by spam0cal to skip the last
 #       second of each song to skip ads altogether (could not verify this).
-# TODO: Continuous update of tray icon tooltip.
+# TODO: Continuous detect_ad of tray icon tooltip.
 # TODO: Different GUI-modes (minimal, full)?
 # TODO: Try xlib for minimized window detection. Probably won't help.
 # TODO: Notepad: Use ListStore instead of TextView?
 # TODO: Notepad: Undo/Redo Ctrl+Z, Ctrl+Y, Fix Ctrl+D to completely delete line.
-# TODO: Add update interval option to docopt.
+# TODO: Add detect_ad interval option to docopt.
 import codecs
 import datetime
 import logging
@@ -165,8 +164,6 @@ class BlockifyUI(gtk.Window):
 
         # Initialize blockify.
         self.b = blockify
-        self.b.toggle_mute()
-        self.bind_signals()
 
         # Images used for interlude media buttons.
         self.play_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PLAY, gtk.ICON_SIZE_BUTTON)
@@ -174,6 +171,7 @@ class BlockifyUI(gtk.Window):
         self.next_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_NEXT, gtk.ICON_SIZE_BUTTON)
         self.prev_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PREVIOUS, gtk.ICON_SIZE_BUTTON)
         self.open_img = gtk.image_new_from_stock(gtk.STOCK_OPEN, gtk.ICON_SIZE_BUTTON)
+        self.shuffle_img = gtk.image_new_from_stock(gtk.STOCK_REFRESH, gtk.ICON_SIZE_BUTTON)
 
         self.thumbnail_dir = util.THUMBNAIL_DIR
         self.cover_server = "https://i.scdn.co/image/"
@@ -184,7 +182,7 @@ class BlockifyUI(gtk.Window):
         self.editor = None
         self.statusicon_found = False
 
-        # Set the GUI/Blockify update interval to 400ms. Increase this to
+        # Set the GUI/Blockify detect_ad interval to 400ms. Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
         # change the line to glib.timeout_add_seconds(2, self.update) or more.
@@ -267,20 +265,6 @@ class BlockifyUI(gtk.Window):
         menu.popup(None, None, gtk.status_icon_position_menu,
                    event_button, event_time, self.status_icon)
 
-    def show_about_dialogue(self, widget):
-        about = gtk.AboutDialog()
-        about.set_destroy_with_parent (True)
-        about.set_icon_name ("blockify")
-        about.set_name("blockify")
-        about.set_version(blockify.VERSION)
-        about.set_website("http://github.com/mikar/blockify")
-        about.set_copyright("(c) 2014 Max Demian")
-        about.set_license("The MIT License (MIT)")
-        about.set_comments(("Blocks Spotify commercials"))
-        about.set_authors(["Max Demian <mikar@gmx.de>", "Jesse Maes <kebertyx@gmail.com>"])
-        about.run()
-        about.destroy()
-
     def create_labels(self):
         self.albumlabel = gtk.Label()
         self.artistlabel = gtk.Label()
@@ -306,7 +290,12 @@ class BlockifyUI(gtk.Window):
         self.next_btn.connect("clicked", self.on_next_btn)
         self.open_btn = gtk.Button()
         self.open_btn.set_image(self.open_img)
+        self.open_btn.set_tooltip_text("Load playlist")
         self.open_btn.connect("clicked", self.on_open_btn)
+        self.shuffle_btn = gtk.Button()
+        self.shuffle_btn.set_image(self.shuffle_img)
+        self.shuffle_btn.set_tooltip_text("Shuffle")
+        self.shuffle_btn.connect("clicked", self.on_shuffle_btn)
 
         self.interlude_label = gtk.Label()
         self.interlude_label.set_width_chars(26)
@@ -393,6 +382,7 @@ class BlockifyUI(gtk.Window):
         interludebuttons.add(self.play_btn)
         interludebuttons.add(self.next_btn)
         interludebuttons.add(self.open_btn)
+        interludebuttons.add(self.shuffle_btn)
         interludebuttons.add(self.autoresume_chk)
         self.interlude_box = gtk.VBox()
         self.interlude_box.add(self.interlude_label)
@@ -417,11 +407,16 @@ class BlockifyUI(gtk.Window):
             self.interlude_box.hide()
 
     def start(self):
-        "Start the main update routine."
-        # Start and loop the main update routine once every 400ms.
+        "Start the main detect_ad routine."
+        self.b.toggle_mute()
+        self.bind_signals()
+
+        gtk.threads_init()
+        # Start and loop the main detect_ad routine once every X ms.
         # To influence responsiveness or CPU usage, decrease/increase ms here.
-        # glib.timeout_add_seconds(2, self.update)
         gtk.timeout_add(self.update_interval, self.update)
+        log.info("Blockify-UI started.")
+        gtk.main()
 
     def stop(self, *args):
         "Cleanly shut down, unmuting sound and saving the blocklist."
@@ -436,11 +431,25 @@ class BlockifyUI(gtk.Window):
         signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
         signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
 
+    def show_about_dialogue(self, widget):
+        about = gtk.AboutDialog()
+        about.set_destroy_with_parent (True)
+        about.set_icon_name ("blockify")
+        about.set_name("blockify")
+        about.set_version(blockify.VERSION)
+        about.set_website("http://github.com/mikar/blockify")
+        about.set_copyright("(c) 2014 Max Demian")
+        about.set_license("The MIT License (MIT)")
+        about.set_comments(("Blocks Spotify commercials"))
+        about.set_authors(["Max Demian <mikar@gmx.de>", "Jesse Maes <kebertyx@gmail.com>"])
+        about.run()
+        about.destroy()
+
     def update(self):
         "Main GUI loop at specific time interval (see self.update_interval)."
-        # Call the main update function of blockify and assign return value
+        # Call the main detect_ad function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
-        self.b.found = self.b.update()
+        self.b.found = self.b.detect_ad()
         if self.b.use_interlude_music:
             threading.Thread(target=self.b.player.toggle_interlude_music).start()
 
@@ -697,6 +706,11 @@ class BlockifyUI(gtk.Window):
         if self.b.use_interlude_music:
             self.b.player.next()
 
+    def on_shuffle_btn(self, widget):
+        "Interlude open playlist button."
+        if self.b.use_interlude_music:
+            self.b.player.shuffle()
+
     def on_open_btn(self, widget):
         "Interlude open playlist button."
         if not self.b.use_interlude_music:
@@ -744,7 +758,7 @@ class BlockifyUI(gtk.Window):
         dialog.destroy()
 
     def on_slider_change(self, slider):
-        "When the slider was moved, update the song position accordingly."
+        "When the slider was moved, detect_ad the song position accordingly."
         seek_time_secs = slider.get_value()
         self.b.player.player.seek_simple(self.b.player.gst.FORMAT_TIME,
                                          self.b.player.gst.SEEK_FLAG_FLUSH |
@@ -848,8 +862,6 @@ class BlockifyUI(gtk.Window):
 def main():
     "Entry point for the GUI-version of Blockify."
     BlockifyUI(blockify.initialize(__doc__))
-    gtk.threads_init()
-    gtk.main()
 
 
 if __name__ == "__main__":

@@ -80,10 +80,10 @@ def get_default_options():
             "use_interlude_music": True,
             "playlist": PLAYLIST_FILE,
             "autoresume": True,
-            "radio_timeout": 600
+            "radio_timeout": 180
         },
         "cli": {
-            "update_interval": 0.25
+            "update_interval": 250
         },
         "gui": {
             "update_interval": 400,
@@ -102,7 +102,7 @@ def load_options():
     options = {}
     try:
         options["general"] = { k:config.getboolean("general", k) for k, _ in config.items("general") }
-        options["cli"] = { k:config.getfloat("cli", k) for k, _ in config.items("cli") }
+        options["cli"] = { k:config.getint("cli", k) for k, _ in config.items("cli") }
         options["interlude"] = {
             "use_interlude_music":config.getboolean("interlude", "use_interlude_music"),
             "autoresume":config.getboolean("interlude", "autoresume"),
@@ -121,7 +121,7 @@ def load_options():
         defoptions = get_default_options()
         options = dict(defoptions.items() + options.items())
     else:
-        log.info("Configuration file loaded from {}.".format(CONFIG_DIR))
+        log.info("Configuration file loaded from {}.".format(CONFIG_FILE))
 
     return options
 
