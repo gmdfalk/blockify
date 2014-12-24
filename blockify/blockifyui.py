@@ -12,20 +12,20 @@ Options:
     --version         Show current version of blockify.
 """
 # TODO: Fix detection delay as outlined by JP-Ellis.
+# TODO: Unit tests.
 # TODO: Try experimental mode suggested by spam0cal to skip the last
 #       second of each song to skip ads altogether (could not verify this).
-# TODO: Continuous detect_ad of tray icon tooltip.
+# TODO: Continuous update of tray icon tooltip.
 # TODO: Different GUI-modes (minimal, full)?
 # TODO: Try xlib for minimized window detection. Probably won't help.
 # TODO: Notepad: Use ListStore instead of TextView?
 # TODO: Notepad: Undo/Redo Ctrl+Z, Ctrl+Y, Fix Ctrl+D to completely delete line.
-# TODO: Add detect_ad interval option to docopt.
+# TODO: Add update_interval option to docopt.
 import codecs
 import datetime
 import logging
 import os
 import signal
-import threading
 import urllib
 
 import blockify
@@ -182,7 +182,7 @@ class BlockifyUI(gtk.Window):
         self.editor = None
         self.statusicon_found = False
 
-        # Set the GUI/Blockify detect_ad interval to 400ms. Increase this to
+        # Set the GUI/Blockify update_interval (in ms). Increase this to
         # reduce CPU usage and decrease it to improve responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
         # change the line to glib.timeout_add_seconds(2, self.update) or more.
@@ -407,13 +407,13 @@ class BlockifyUI(gtk.Window):
             self.interlude_box.hide()
 
     def start(self):
-        "Start the main detect_ad routine."
+        "Start the main update routine."
         self.b.toggle_mute()
         self.bind_signals()
 
         gtk.threads_init()
-        # Start and loop the main detect_ad routine once every X ms.
-        # To influence responsiveness or CPU usage, decrease/increase ms here.
+        # Start and loop the main update routine once every X ms.
+        # To influence responsiveness or CPU usage, decrease/increase self.update_interval.
         gtk.timeout_add(self.update_interval, self.update)
         log.info("Blockify-UI started.")
         gtk.main()
@@ -447,11 +447,13 @@ class BlockifyUI(gtk.Window):
 
     def update(self):
         "Main GUI loop at specific time interval (see self.update_interval)."
-        # Call the main detect_ad function of blockify and assign return value
+        # Call the main update function of blockify and assign return value
         # (True/False) depending on whether a song to be blocked was found.
-        self.b.found = self.b.detect_ad()
+        self.b.found = self.b.find_ad()
+
+        # Adjust playback of interlude music.
         if self.b.use_interlude_music:
-            threading.Thread(target=self.b.player.toggle_interlude_music).start()
+            self.b.player.toggle_interlude_music()
 
         # Our main GUI workers here, updating labels, buttons and the likes.
         self.update_cover()
@@ -459,7 +461,8 @@ class BlockifyUI(gtk.Window):
         self.update_buttons()
         self.update_icons()
 
-        # The glib.timeout loop will only break if we return False here.
+        # Keep the gtk.timeout loop going indefinately as we
+        # don't ever want to break this loop.
         return True
 
     def update_cover(self):
@@ -758,7 +761,7 @@ class BlockifyUI(gtk.Window):
         dialog.destroy()
 
     def on_slider_change(self, slider):
-        "When the slider was moved, detect_ad the song position accordingly."
+        "When the slider was moved, update the song position accordingly."
         seek_time_secs = slider.get_value()
         self.b.player.player.seek_simple(self.b.player.gst.FORMAT_TIME,
                                          self.b.player.gst.SEEK_FLAG_FLUSH |

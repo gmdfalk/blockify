@@ -35,6 +35,8 @@ If any of these criteria are true ad detection _will not work_:
 * DBus is disabled
 * Spotify is minimized to the system tray (task bar is fine)
 * Notifications are disabled in Spotify
+Additionally, blockify makes use of pulseaudio sinks, allowing processes to be muted individually.  
+If you do not have/want pulseaudio, blockify will mute the system sound during commercials instead of just Spotify. The interlude music feature will not work as a consequence.
 
 #### Detection
 Blockify will automatically detect and block ads for you so besides starting it, there's not a lot to do.  
@@ -61,10 +63,14 @@ Alternatively, you can use the GUI with `blockify-ui` which spawns this window.
 - Browse: Allows you to open m3u-playlists and/or audio files on the fly. You can select multiple items and combine playlists with audio files. The player will automatically load those and discard the previous playlist.  
 - Autoresume: If enabled, the interlude player will switch back to Spotify as soon as the commercials end. If disabled, the current interlude song will be finished before switching back to Spotify.  
 
+##### Configuration
+Please see the provided [example_blockify.ini](https://github.com/mikar/blockify/blob/master/blockify/data/example_blockify.ini) on what settings are available and their purpose.  
+If you're upgrading from v1.6, please note that configuration syntax has changed slightly in v1.7 and you'll _need_ to adjust your configuration file accordingly.  
+
 ##### Interlude Music
 From version 1.4 onwards blockify can play music of your choice during commercial breaks.  
 The default behaviour is for blockify to automatically play the first song in the playlist file (should you have one), when a commercial starts playing.  
-Alternatively, you can disable autoresume which will cause blockify to always finish the current interlude song before resuming spotify playback.  
+Alternatively, you can set the autoresume option to False which will cause blockify to always finish the current interlude song before resuming spotify playback.   
 
 The interlude feature only works if you use pulseaudio (i.e. spotify needs to run in its own sink so it can be muted separately).    
 To make use of interlude music you have to configure a playlist file in `~/.config/blockify/playlist.m3u`.  
@@ -85,12 +91,13 @@ baz.m3u
 file:///media/music/foo/bar.mp4
 http://www.example.com/foo/bar.wav
 # A radio station. Note that radio streams don't usually end so you'll have to switch
-# back to spotify manually or specify the max_timeout in the config file (NYI).
+# back to spotify manually, enable autoresume or specify the radio_timeout in the config file.
 http://skyserver5.skydisc.net:8000
 ```
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v1.7 (2014-12-24): Timeout for radio stations, segfault bug fix, logging improvements, threading improvements, refactorings.
 - v1.6 (2014-12-23): Configuration file, playlist and notepad improvements, bug fixes.
 - v1.5 (2014-12-21): Mini-audio player for interlude music (media buttons, interactive progress bar, interactive playlist, ...)
 - v1.4 (2014-12-14): Interlude music of your choice during commercials  

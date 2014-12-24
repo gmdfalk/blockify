@@ -144,7 +144,8 @@ class InterludePlayer(object):
         if self.b.found and not playing and not self.manual_control:
             self.play()
             if self.is_radio() and self.radio_timeout:
-                log.info("Radio is playing. Switching back to spotify in {}s (or when the ad has finished).".format(self.radio_timeout))
+                log.info("Radio is playing. Switching back to spotify in"
+                         "{}s (or when the ad has finished).".format(self.radio_timeout))
                 gtk.timeout_add(self.radio_timeout * 1000, self.resume_spotify_playback)
         elif not self.b.found and playing:
             if self.autoresume or self.temp_autoresume:

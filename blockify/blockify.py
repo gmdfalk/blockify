@@ -17,8 +17,6 @@ import re
 import signal
 import subprocess
 import sys
-import threading
-import time
 
 import gtk
 import pygtk
@@ -128,11 +126,13 @@ class Blockify(object):
         gtk.main()
 
     def update(self):
+        "Main update routine, looped every self.update_interval milliseconds."
         # Determine if a commercial is running and act accordingly.
-        self.found = self.detect_ad()
-        # Thread will only get started once so we keep this here for now.
+        self.found = self.find_ad()
+
+        # Adjust playback of interlude music.
         if self.use_interlude_music:
-            threading.Thread(target=self.player.toggle_interlude_music).start()
+            self.player.toggle_interlude_music()
 
         return True
 
@@ -150,8 +150,8 @@ class Blockify(object):
                 log.debug("TypeError during ad detection: {}".format(e))
                 return True
 
-    def detect_ad(self):
-        "Main loop. Checks for blocklist match and mutes accordingly."
+    def find_ad(self):
+        "Main loop. Checks for ads and mutes accordingly."
         self.current_song = self.get_current_song()
         self.song_status = self.dbus.get_song_status()
 
