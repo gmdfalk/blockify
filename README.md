@@ -57,6 +57,9 @@ Alternatively, you can use the GUI with `blockify-ui` which spawns this window.
 - Open/Close List: Opens a small popup text editor with the blocklist opened where you can edit and save it. Keybinds: Control-S (save), Control-W/Q (close), Control-D (delete current line).
 - Exit: Stop blockify cleanly, i.e. unmute sinks, update blocklist and generally clean up.
 - Enable/disable Player: Shows and enables resp. hides and disables the mini audio player (interlude player) below the button which will play music instead of commercials.
+- Prev, Play/Pause, Next (bottom): Media buttons to control the interlude player.
+- Browse: Allows you to open m3u-playlists and/or audio files on the fly. You can select multiple items and combine playlists with audio files. The player will automatically load those and discard the previous playlist.  
+- Autoresume: If enabled, the interlude player will switch back to Spotify as soon as the commercials ends. If disabled, the current interlude song will be finished before switching back to Spotify.  
 
 ##### Interlude Music
 From version 1.4 onwards blockify can play music of your choice during commercial breaks.  
