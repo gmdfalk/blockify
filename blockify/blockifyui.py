@@ -11,7 +11,6 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Interlude: Add whole folders.
 # TODO: Interlude: Shuffle, autoresume max_timeout
 # TODO: Fix detection delay as outlined by JP-Ellis.
 # TODO: Try experimental mode suggested by spam0cal to skip the last

@@ -122,6 +122,7 @@ class Blockify(object):
         self.toggle_mute()
         log.info("Blockify started.")
 
+        gtk.threads_init()
         while 1:
             # Initiate gtk loop to enable the window list for .get_windows().
             while gtk.events_pending():
