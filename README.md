@@ -2,23 +2,38 @@
 Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.  
 
 ## Installation
-##### AUR
-Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/blockify/).  
-
-##### Manually
+##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed. Package names are for ArchLinux and will probably differ slightly between distributions. 
 - Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus
 - Optional (but highly recommended): pulseaudio python2-docopt  
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
 
-Actual installation procedure is as follows:  
+##### Automatic (AUR)
+Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). You can choose between a stable version ([blockify](https://aur.archlinux.org/packages/blockify/)) or the hopefully stable development version ([blockify-git](https://aur.archlinux.org/packages/blockify-git/)). I try to publish new changes to the stable version quickly so most of the time there is little difference between these two packages.
+Example installation routine:  
+``` bash
+mkdir blockify
+cd blockify
+wget https://aur.archlinux.org/packages/bl/blockify/PKGBUILD
+makepkg
+sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
+```
+
+##### Direct (pip/setup.py)
+If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.
 ``` bash
 git clone https://github.com/mikar/blockify
 cd blockify
-sudo pip2 install . OR sudo python2 setup.py install
+sudo pip2 install . (OR sudo python2 setup.py install)
 ```
 
 ## Usage
+#### Requirements
+It is important to know that blockify relies on dbus (and, for some features, on pulseaudio).
+If you minimize Spotify to the system tray, Spotify stops broadcasting to dbus and ad detection _will no longer work_.
+The same thing happens if you _disable notifications in Spotify_.  
+
+#### Detection
 Blockify will automatically detect and block ads for you so besides starting it, there's not a lot to do.  
 However, it also comes with the option to complement or replace that autoblock functionality with a blocklist (saved as ~/.config/blockify/blocklist).  
 
@@ -74,4 +89,5 @@ You can use relative and absolute paths as well as basically any audio source/fo
 - v0.9 (2014-04-29): Pulseaudio (sink) support  
 
 ## Known Issues
-- If Spotify is minimized to the system tray, ad detection will not work. 
+- If Spotify is minimized to the system tray, ad detection will not work.  
+- If Notifications are disabled, ad detection will not work.
