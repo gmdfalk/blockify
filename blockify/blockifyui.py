@@ -34,12 +34,6 @@ import blockify
 import gtk
 import util
 
-# The gst library for some reason modifies argv so we have
-# to save the args here to be able to use them with docopt.
-import sys
-ARGV = tuple(sys.argv)
-import gst
-
 
 log = logging.getLogger("gui")
 
@@ -145,7 +139,8 @@ class Notepad(gtk.Window):
         try:
             with codecs.open(self.location, "r", encoding="utf-8") as f:
                 textbuffer.set_text(f.read())
-        except IOError:
+        except IOError as e:
+            log.error("Notepad: Could not read blocklist. Creating new one. Msg: {}".format(e))
             with codecs.open(self.location, "w", encoding="utf-8"):
                 textbuffer.set_text("")
         self.set_title(self.location)
@@ -212,9 +207,10 @@ class BlockifyUI(gtk.Window):
         # "Trap" the exit.
         self.connect("destroy", self.stop)
 
-        self.start()
         self.show_all()
         self.set_states()
+        log.info("Blockify-UI initialized.")
+        self.start()
 
     def create_tray(self):
         basedir = os.path.dirname(os.path.realpath(__file__))
@@ -425,9 +421,7 @@ class BlockifyUI(gtk.Window):
         # Start and loop the main update routine once every 400ms.
         # To influence responsiveness or CPU usage, decrease/increase ms here.
         # glib.timeout_add_seconds(2, self.update)
-        gtk.timeout_add(self.update_interval, self.update)  # @UndefinedVariable
-
-        log.info("Blockify-UI started.")
+        gtk.timeout_add(self.update_interval, self.update)
 
     def stop(self, *args):
         "Cleanly shut down, unmuting sound and saving the blocklist."
@@ -451,8 +445,7 @@ class BlockifyUI(gtk.Window):
             threading.Thread(target=self.b.toggle_interlude_music).start()
 
         # Our main GUI workers here, updating labels, buttons and the likes.
-        if self.use_cover_art:
-            self.update_cover()
+        self.update_cover()
         self.update_labels()
         self.update_buttons()
         self.update_icons()
@@ -461,6 +454,8 @@ class BlockifyUI(gtk.Window):
         return True
 
     def update_cover(self):
+        if not self.use_cover_art:
+            return
         if self.b.is_sink_muted or self.b.is_fully_muted:
             if self.autohide_cover and self.b.automute:
                 self.disable_cover()
@@ -474,7 +469,8 @@ class BlockifyUI(gtk.Window):
                     self.previous_cover_file = cover_file
                 if self.autohide_cover:
                     self.enable_cover()
-            except Exception:
+            except Exception as e:
+                log.error("Failed to load cover art: {}. Disabling.".format(e))
                 self.use_cover_art = False
                 self.autohidecover_chk.set_active(False)
                 self.disable_cover()
@@ -539,28 +535,28 @@ class BlockifyUI(gtk.Window):
     def update_slider(self):
         is_sensitive = self.slider.get_sensitive()
         is_playing = self.b.player.is_playing()
-        if is_sensitive and (not is_playing or self.b.player.is_radio()):
-            self.slider.set_sensitive(False)
-        elif is_playing and not is_sensitive:
+        if is_playing and not is_sensitive:
             self.slider.set_sensitive(True)
+        elif not is_playing and is_sensitive:
+            self.slider.set_sensitive(False)
 
         if self.b.player.is_radio():
+            self.slider.set_sensitive(False)
             return False
 
         try:
-            nanosecs, format = self.b.player.player.query_position(gst.FORMAT_TIME)
-            duration_nanosecs, format = self.b.player.player.query_duration(gst.FORMAT_TIME)
+            nanosecs, format = self.b.player.player.query_position(self.b.player.gst.FORMAT_TIME)
+            duration_nanosecs, format = self.b.player.player.query_duration(self.b.player.gst.FORMAT_TIME)
 
             # Block seek handler so we don't seek when we set_value().
             self.slider.handler_block_by_func(self.on_slider_change)
 
-            self.slider.set_range(0, float(duration_nanosecs) / gst.SECOND)
-            self.slider.set_value(float(nanosecs) / gst.SECOND)
+            self.slider.set_range(0, float(duration_nanosecs) / self.b.player.gst.SECOND)
+            self.slider.set_value(float(nanosecs) / self.b.player.gst.SECOND)
 
             self.slider.handler_unblock_by_func(self.on_slider_change)
-        except gst.QueryError:
-            # Pipeline must not be ready and does not know position.
-            pass
+        except Exception as e:
+            log.error("Exception while updating slider: {}".format(e))
 
         # Continue calling every self.slider_update_interval milliseconds.
         return True
@@ -580,8 +576,8 @@ class BlockifyUI(gtk.Window):
             title = self.b.dbus.get_song_title()
 
         # Sometimes song.split returns None, catch it here.
-        if artist is None or title is None:
-            artist, title = song, "No song playing?"
+        if not artist or not title:
+            artist, title = "No song playing?", song
 
         return artist, title
 
@@ -595,7 +591,7 @@ class BlockifyUI(gtk.Window):
             cover_file = os.path.join(util.THUMBNAIL_DIR, cover_hash + ".png")
 
             if not os.path.exists(cover_file):
-                log.info("Downloading cover art: {}".format(cover_file))
+                log.info("Downloading cover art for {0} ({1}).".format(self.b.current_song, cover_hash))
                 urllib.urlretrieve(cover_url, cover_file)
 
         return cover_file
@@ -676,7 +672,7 @@ class BlockifyUI(gtk.Window):
                 if len(label) > 5:
                     self.interlude_label.set_text(label)
             except KeyError as e:
-                log.debug(e)
+                log.debug("Exception when trying to set interlude label: {}.".format(e))
 
     def on_play_btn(self, widget):
         "Interlude play button."
@@ -750,7 +746,10 @@ class BlockifyUI(gtk.Window):
     def on_slider_change(self, slider):
         "When the slider was moved, update the song position accordingly."
         seek_time_secs = slider.get_value()
-        self.b.player.player.seek_simple(gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_KEY_UNIT, seek_time_secs * gst.SECOND)
+        self.b.player.player.seek_simple(self.b.player.gst.FORMAT_TIME,
+                                         self.b.player.gst.SEEK_FLAG_FLUSH |
+                                         self.b.player.gst.SEEK_FLAG_KEY_UNIT,
+                                         seek_time_secs * self.b.player.gst.SECOND)
 
     def on_togglecover(self, widget):
         "Button that toggles cover art."
@@ -848,7 +847,7 @@ class BlockifyUI(gtk.Window):
 
 def main():
     "Entry point for the GUI-version of Blockify."
-    BlockifyUI(blockify.initialize(__doc__, ARGV))
+    BlockifyUI(blockify.initialize(__doc__))
     gtk.threads_init()
     gtk.main()
 

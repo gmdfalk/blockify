@@ -14,7 +14,7 @@ PLAYLIST_FILE = os.path.join(CONFIG_DIR, "playlist.m3u")
 THUMBNAIL_DIR = os.path.join(CONFIG_DIR, "thumbnails")
 
 
-def init_logger(logpath=None, loglevel=2, quiet=False):
+def init_logger(logpath=None, loglevel=0, quiet=False):
     "Initializes the logging module."
     logger = logging.getLogger()
 
@@ -34,7 +34,7 @@ def init_logger(logpath=None, loglevel=2, quiet=False):
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
         log.debug("Added logging console handler.")
-        log.info("Loglevel is {}.".format(levels[loglevel]))
+        log.info("Loglevel is {} (10=DEBUG, 20=INFO, 30=WARN).".format(levels[loglevel]))
     if logpath:
         try:
             logfile = os.path.abspath(logpath)

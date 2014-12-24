@@ -73,18 +73,20 @@ The playlist system is (mostly) M3U-compliant.
 An example playlist:
 ```
 # Lines starting with "#" will be ignored.
-# Absolute path to a file.
+# Absolute path to a file:
 /media/music/foo/bar.mp3
-# Relative path to a file (as seen from playlist location).
+# Relative path to a file (as seen from playlist location):
 foo/bar.flac
-# Relative path to another playlist.
+# Relative path to another playlist. Just make sure the other playlist doesn't link back or else you'll get a very long playlist:
 baz.m3u
-# This is a radio station. Note that radio streams don't usually end so you'll have to switch
-# back to spotify manually or specify the max_timeout in the config file (NYI).
-http://skyserver5.skydisc.net:8000
+# A whole directory:
+/media/music/foo
 # It's also possible to give full URIs:
 file:///media/music/foo/bar.mp4
 http://www.example.com/foo/bar.wav
+# A radio station. Note that radio streams don't usually end so you'll have to switch
+# back to spotify manually or specify the max_timeout in the config file (NYI).
+http://skyserver5.skydisc.net:8000
 ```
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
@@ -97,6 +99,13 @@ You can use relative and absolute paths as well as basically any audio source/fo
 - v1.1 (2014-06-17): Autodetection of commercials  
 - v1.0 (2014-05-02): First moderately stable version  
 - v0.9 (2014-04-29): Pulseaudio (sink) support  
+
+## Troubleshooting
+If you experience errors or unexpected behaviour, please start blockify/blockify-ui with the -vvv parameter to enable debug logging and see if you get any helpful information this way.  
+You're welcome to open an issue on this site and ask for help but when you do, please provide the following information:  
+- A debug log, acquired by starting blockify via `blockify -vvv`.
+- The blockify version: `blockify --version`.
+- If you suspect pulseaudio as culprit, the list of sinks: `pacmd list-sink-inputs`.
 
 ## Known Issues
 - If Spotify is minimized to the system tray, ad detection will not work.  

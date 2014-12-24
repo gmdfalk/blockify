@@ -10,9 +10,10 @@ import urllib
 log = logging.getLogger("player")
 
 
-class AudioPlayer(object):
-    "A simple gstreamer audio player to play a list of mp3 files."
+class InterludePlayer(object):
+    "A simple gstreamer audio player to play interlude music."
     def __init__(self, blockify):
+        self.gst = gst
         self.b = blockify
         self._index = 0
         self.manual_control = False
@@ -30,15 +31,18 @@ class AudioPlayer(object):
         # self.bus.connect("message::tag", self.on_tag_changed)
         # self.bus.connect("message::eos", self.on_finish)
         # Finally, load the playlist file.
+        log.info("InterludePlayer initialized.")
         self.load_playlist(self.parse_playlist())
 
     def load_playlist(self, playlist):
         "Read the music to be played instead of commercials into a list."
-        log.info("Interlude playlist is: {0}".format(playlist))
+        log.debug("Loading playlist.")
         self.playlist = playlist
         self.max_index = len(self.playlist) - 1
         self.stop()
         self.set_uri()
+        log.info("Playlist loaded (Length: {}).".format(len(playlist)))
+        log.info("Playlist: {0}".format(playlist))
 
     def parse_playlist(self, sourcelist=None, source=None):
         playlist = []
@@ -54,15 +58,20 @@ class AudioPlayer(object):
                     if not self.uri_rx.match(item):
                         # The item is not an absolute path so we treat it as relative.
                         if not os.path.isabs(item):
+                            if os.path.isdir(source):
+                                item = os.path.join(source, item)
                             item = os.path.join(os.path.dirname(os.path.abspath(source)), item)
+
+                        # Add file protocol prefix to those audio files that are missing it.
                         if any([item.lower().endswith("." + f) for f in self.formats]):
                             item = "file://" + item
-                            # item = self.path2url(item)
                         # Skip non-existing files.
-#                         if item.startswith("file://") and not os.path.isfile(item[7:]):
-#                             continue
+                        if item.startswith("file://") and not os.path.isfile(item[7:]):
+                            continue
                     if item.lower().endswith(".m3u"):
                         playlist += self.parse_playlist(open(item), source=item)
+                    elif os.path.isdir(item):
+                        playlist += self.parse_playlist(os.listdir(item), source=item)
                     else:
                         playlist.append(item)
         except RuntimeError as e:
@@ -80,6 +89,7 @@ class AudioPlayer(object):
     def on_about_to_finish(self, player):
         "Song is ending. What do we do?"
         self.queue_next()
+        log.debug("Interlude song finished. Queued: {}.".format(self.get_current_uri()))
         if not self.autoresume and self.b.dbus.get_song_status() != "Playing":
             self.pause()
             self.b.dbus.playpause()
@@ -120,8 +130,17 @@ class AudioPlayer(object):
 
     def play(self):
         if not self.is_playable():
-            log.info("Skipping: {} (not playable).".format(self.get_current_uri()))
+            uri = self.get_current_uri()
+            log.warn("Skipping unplayable item: {}.".format(uri))
             self.queue_next()
+            # Remove the troublemaker from the playlist.
+            try:
+                self.playlist.remove(uri)
+                self.max_index = len(self.playlist) - 1
+                self.index -= 1
+                log.info("Removed unplayable item from playlist: {}.".format(uri))
+            except ValueError:
+                pass
         self.player.set_state(gst.STATE_PLAYING)
         log.debug("Play: State is {0}.".format(self.player.get_state()))
 

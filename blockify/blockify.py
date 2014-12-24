@@ -15,6 +15,7 @@ import logging
 import os
 import re
 import signal
+import sys
 import subprocess
 import threading
 import time
@@ -24,7 +25,7 @@ import pygtk
 import wnck
 
 import blockifydbus
-from blocklist import Blocklist
+import blocklist
 import util
 
 log = logging.getLogger("main")
@@ -35,13 +36,6 @@ try:
     from docopt import docopt
 except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
-
-# The gst library used by audioplayer for some reason modifies
-# argv so we have to save the args here to be able to use them
-# with docopt.
-import sys
-ARGV = tuple(sys.argv)
-import audioplayer
 
 
 class Blockify(object):
@@ -64,14 +58,20 @@ class Blockify(object):
         self.is_sink_muted = False
         self.dbus = self.init_dbus()
         self.channels = self.init_channels()
-        self.player = audioplayer.AudioPlayer(self)
+        # The gst library used by interludeplayer for some reason modifies
+        # argv, overwriting some of docopts functionality in the process,
+        # so we import gst here, where docopts cannot be broken anymore.
+        import interludeplayer
+        self.player = interludeplayer.InterludePlayer(self)
 
         # Determine if we can use sinks or have to use alsa.
         try:
             devnull = open(os.devnull)
             subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
             self.mutemethod = self.pulsesink_mute
+            log.debug("Mute method is pulse sink.")
         except (OSError, subprocess.CalledProcessError):
+            log.info("No pulse sinks found, falling back to system mute via alsa.")
             self.mutemethod = self.alsa_mute
 
         # Only use interlude music if we use pulse sinks and the interlude playlist is non-empty.
@@ -85,6 +85,7 @@ class Blockify(object):
         try:
             pid = subprocess.check_output(["pgrep", "-f", "python.*blockify"])
         except subprocess.CalledProcessError:
+            # No blockify process found. Great, this is what we want.
             pass
         else:
             if pid.strip() != str(os.getpid()):
@@ -93,7 +94,6 @@ class Blockify(object):
 
     def check_for_spotify_process(self):
         try:
-            subprocess.check_output(["pgrep", "spotify"])
             pidof_out = subprocess.check_output(["pidof", "spotify"])
             self.spotify_pids = pidof_out.decode("utf-8").strip().split(" ")
         except subprocess.CalledProcessError:
@@ -140,11 +140,12 @@ class Blockify(object):
             try:
                 return self.current_song != self.dbus.get_song_artist() + \
                 u" \u2013 " + self.dbus.get_song_title()
-            except TypeError:
+            except TypeError as e:
                 # Spotify has technically stopped playing and has stopped
                 # sending dbus metadata so we get NoneType-errors.
                 # However, it might still play one last ad so we assume that
                 # is the case here.
+                log.debug("TypeError during ad detection: {}".format(e))
                 return True
 
     def toggle_interlude_music(self):
@@ -180,7 +181,8 @@ class Blockify(object):
         # Check if the blockfile has changed.
         try:
             current_timestamp = self.blocklist.get_timestamp()
-        except OSError:
+        except OSError as e:
+            log.debug("Failed reading blocklist timestamp: {}. Recovering.".format(e))
             self.blocklist.__init__()
             current_timestamp = self.blocklist.timestamp
         if self.blocklist.timestamp != current_timestamp:
@@ -282,8 +284,7 @@ class Blockify(object):
         try:
             pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
         except subprocess.CalledProcessError:
-            log.error("Spotify sink not found. Is Pulse running?")
-            log.error("Resorting to amixer as mute method.")
+            log.error("Spotify sink not found. Is Pulse running? Resorting to pulse amixer as mute method.")
             self.mutemethod = self.pulse_mute  # Fall back to amixer mute.
             self.use_interlude_music = False
             return
@@ -307,7 +308,8 @@ class Blockify(object):
             pid = [k for k in idxd.keys() if k in self.spotify_pids][0]
             index, muted = idxd[pid]
             self.is_sink_muted = True if muted == "yes" else False
-        except IndexError:
+        except IndexError as e:
+            log.debug("Could not match spotify pid to sink pid: {}".format(e))
             return
 
         if muted == "yes" and (mode == 2 or not self.current_song):
@@ -359,7 +361,7 @@ class Blockify(object):
         self._autodetect = boolean
 
 
-def initialize(doc=__doc__, argv=ARGV):
+def initialize(doc=__doc__):
     # Set up the configuration directory & files, if necessary.
     util.init_config_dir()
 
@@ -369,7 +371,7 @@ def initialize(doc=__doc__, argv=ARGV):
     except NameError:
         util.init_logger()
 
-    blockify = Blockify(Blocklist())
+    blockify = Blockify(blocklist.Blocklist())
 
     return blockify
 

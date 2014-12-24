@@ -67,8 +67,8 @@ class BlockifyDBus(object):
         if self.is_running():
             try:
                 return self.properties.Get(self.player_path, key)
-            except dbus.exceptions.DBusException:
-                log.error("Failed to get DBus property. Disabling dbus-mode.")
+            except dbus.exceptions.DBusException as e:
+                log.error("Failed to get DBus property. Disabling dbus-mode. Msg: {}".format(e))
                 self.spotify_path = None
 
     def set_property(self, key, value):

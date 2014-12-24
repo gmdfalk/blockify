@@ -8,13 +8,14 @@ log = logging.getLogger("list")
 
 
 class Blocklist(list):
-    "Inheriting from list type is a bad idea. Let's see what happens."
+    "A python list extended to store (manually) blocked songs/ads persisently."
     # Could subclass UserList.UserList here instead which inherits from
     # collections.MutableSequence. In Python3 it's collections.UserList.
     def __init__(self):
         super(Blocklist, self).__init__()
         self.location = util.BLOCKLIST_FILE
         self.extend(self.load())
+        log.info("Blocklist loaded from {}.".format(self.location))
         self.timestamp = self.get_timestamp()
 
     def append(self, item):
@@ -47,7 +48,6 @@ class Blocklist(list):
         return os.path.getmtime(self.location)
 
     def load(self):
-        log.info("Loading blockfile from {}.".format(self.location))
         try:
             with codecs.open(self.location, "r", encoding="utf-8") as f:
                 blocklist = f.read()
