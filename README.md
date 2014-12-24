@@ -47,13 +47,15 @@ To block or unblock a song with the cli running, use `pkill -USR1 -f "python2.*b
 
 ##### GUI
 Alternatively, you can use the GUI with `blockify-ui` which spawns this window.  
-![ScreenShot](http://a.pomf.se/vxnnwo.jpg)  
+![ScreenShot](http://a.pomf.se/bimbza.jpg)
 - Play, Previous, Next: These buttons use dbus to send audio control commands to spotify.
 - Block/Unblock: Add/Remove the currently playing song to/from the blocklist.
 - Mute/Unmute: Mute/Unmute the current song. Only works if "Manual" checkbox is activated.
 - Manual: Disables automatic mute of ads and instead allows you to mute manually.
 - Show/Hide Cover: Enable/Disable display of cover art image.
 - Autohide: If this option is checked, the cover art will be automatically hidden whenever a commercial is playing.
+- Exit: Stop blockify cleanly, i.e. unmute sinks, update blocklist and generally clean up.
+- Enable/disable Player: Shows and enables resp. hides and disables the mini audio player (interlude player) below the button which will play music instead of commercials.
 
 ##### Interlude Music
 From version 1.4 onwards blockify can play music of your choice during commercial breaks.  
@@ -71,13 +73,14 @@ An example playlist:
 /media/music/foo/bar.mp3
 # Relative path to a file (as seen from playlist location).
 foo/bar.flac
+# Relative path to another playlist.
+baz.m3u
 # This is a radio station. Note that radio streams don't usually end so you'll have to switch
-# back to spotify manually or specify the max_timeout in the config file.
+# back to spotify manually or specify the max_timeout in the config file (NYI).
 http://skyserver5.skydisc.net:8000
 # It's also possible to give full URIs:
 file:///media/music/foo/bar.mp4
-http://www.example.com/foo/bar.aiff
-mms://www.example.com/foo/bar.avi
+http://www.example.com/foo/bar.wav
 ```
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
