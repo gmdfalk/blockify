@@ -9,7 +9,7 @@ Before installing blockify, please make sure you have the appropriate dependenci
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
 
 ##### Automatic (AUR)
-Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). You can choose between a stable version ([blockify](https://aur.archlinux.org/packages/blockify/)) or the hopefully stable development version ([blockify-git](https://aur.archlinux.org/packages/blockify-git/)). I try to publish new changes to the stable version quickly so most of the time there is little difference between these two packages.
+Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). You can choose between a stable version ([blockify](https://aur.archlinux.org/packages/blockify/)) or the hopefully stable development version ([blockify-git](https://aur.archlinux.org/packages/blockify-git/)). I try to publish new changes from the latter to the former version quickly so most of the time there is little difference between these two packages other than the source.  
 Example installation routine:  
 ``` bash
 mkdir blockify
@@ -20,7 +20,8 @@ sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
 ```
 
 ##### Direct (pip/setup.py)
-If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.
+If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
+Example installation routine:  
 ``` bash
 git clone https://github.com/mikar/blockify
 cd blockify
@@ -29,9 +30,11 @@ sudo pip2 install . (OR sudo python2 setup.py install)
 
 ## Usage
 #### Requirements
-It is important to know that blockify relies on dbus (and, for some features, on pulseaudio).
-If you minimize Spotify to the system tray, Spotify stops broadcasting to dbus and ad detection _will no longer work_.
-The same thing happens if you _disable notifications in Spotify_.  
+It is important to know that blockify relies on dbus (and, for some features, on pulseaudio) for ad detection.  
+If any of these criteria are true ad detection _will not work_:  
+* DBus is disabled
+* Spotify is minimized to the system tray (task bar is fine)
+* Notifications are disabled in Spotify
 
 #### Detection
 Blockify will automatically detect and block ads for you so besides starting it, there's not a lot to do.  
