@@ -64,7 +64,7 @@ mms://www.example.com/foo/bar.avi
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
-- v1.6 (ETA 2014-12-23): Configuration file, playlist improvements, bug fixes
+- v1.6 (2014-12-23): Configuration file, playlist and notepad improvements, bug fixes.
 - v1.5 (2014-12-21): Mini-audio player for interlude music (media buttons, interactive progress bar, interactive playlist, ...)
 - v1.4 (2014-12-14): Interlude music of your choice during commercials  
 - v1.3 (2014-12-14): GUI-Update (Buttons, Icons, Systray) and Refactoring  
