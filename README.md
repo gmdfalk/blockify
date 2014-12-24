@@ -54,6 +54,7 @@ Alternatively, you can use the GUI with `blockify-ui` which spawns this window.
 - Manual: Disables automatic mute of ads and instead allows you to mute manually.
 - Show/Hide Cover: Enable/Disable display of cover art image.
 - Autohide: If this option is checked, the cover art will be automatically hidden whenever a commercial is playing.
+- Open/Close List: Opens a small popup text editor with the blocklist opened where you can edit and save it. Keybinds: Control-S (save), Control-W/Q (close), Control-D (delete current line).
 - Exit: Stop blockify cleanly, i.e. unmute sinks, update blocklist and generally clean up.
 - Enable/disable Player: Shows and enables resp. hides and disables the mini audio player (interlude player) below the button which will play music instead of commercials.
 
