@@ -76,19 +76,20 @@ def get_default_options():
             "autodetect": True,
             "automute": True
         },
+        "cli": {
+            "update_interval": 200,
+            "unmute_delay": 700,
+        },
+        "gui": {
+            "update_interval": 350,
+            "use_cover_art": True,
+            "autohide_cover": False
+        },
         "interlude": {
             "use_interlude_music": True,
             "playlist": PLAYLIST_FILE,
             "autoresume": True,
             "radio_timeout": 180
-        },
-        "cli": {
-            "update_interval": 250
-        },
-        "gui": {
-            "update_interval": 400,
-            "use_cover_art": True,
-            "autohide_cover": False
         }
     }
 
@@ -101,23 +102,30 @@ def load_options():
 
     options = {}
     try:
-        options["general"] = { k:config.getboolean("general", k) for k, _ in config.items("general") }
-        options["cli"] = { k:config.getint("cli", k) for k, _ in config.items("cli") }
-        options["interlude"] = {
-            "use_interlude_music":config.getboolean("interlude", "use_interlude_music"),
-            "autoresume":config.getboolean("interlude", "autoresume"),
-            "radio_timeout":config.getint("interlude", "radio_timeout"),
-            "playlist":config.get("interlude", "playlist")
+        options["general"] = {
+            "autodetect":config.getboolean("general", "autodetect"),
+            "automute":config.getboolean("general", "automute"),
+            "unmute_delay":config.getint("cli", "unmute_delay")
+        }
+        options["cli"] = {
+            "update_interval":config.getint("cli", "update_interval")
         }
         options["gui"] = {
             "use_cover_art":config.getboolean("gui", "use_cover_art"),
             "autohide_cover":config.getboolean("gui", "autohide_cover"),
             "update_interval":config.getint("gui", "update_interval"),
         }
+        options["interlude"] = {
+            "use_interlude_music":config.getboolean("interlude", "use_interlude_music"),
+            "autoresume":config.getboolean("interlude", "autoresume"),
+            "radio_timeout":config.getint("interlude", "radio_timeout"),
+            "playlist":config.get("interlude", "playlist")
+        }
         if not options["interlude"]["playlist"]:
             options["interlude"]["playlist"] = PLAYLIST_FILE
     except Exception as e:
         log.error("Could not completely read config file: {}. Merging with default options.".format(e))
+        # Merge with default options to make sure we have everything we need.
         defoptions = get_default_options()
         options = dict(defoptions.items() + options.items())
     else:
@@ -130,7 +138,7 @@ def save_options(CONFIG_DIR, options):
     configfile = os.path.join(CONFIG_DIR, CONFIG_FILE)
     config = ConfigParser.ConfigParser()
     # Write out the sections in this order.
-    sections = ["general", "interlude", "cli", "gui"]
+    sections = ["general", "cli", "gui", "interlude"]
     for section in sections:
         config.add_section(section)
         for k, v in options[section].items():

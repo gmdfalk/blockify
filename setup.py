@@ -19,13 +19,13 @@ setup(
     name=_name,
     description="Mute spotify advertisements.",
     long_description=read("README.md"),
-    version="1.6",
+    version="1.7",
     license=_license,
     url="https://github.com/mikar/{}".format(_name),
     author="Max Demian",
     author_email="mikar@gmx.de",
     packages=[_name, _name + "/data"],
-    package_data={_name + "/data": ["*.png", "example_blocklist.txt", "example_blockify.ini"]},
+    package_data={_name + "/data": ["icon-*", "example_*"]},
     install_package_data=True,
     entry_points={
                   "console_scripts": [

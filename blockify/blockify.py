@@ -29,7 +29,7 @@ import util
 
 log = logging.getLogger("main")
 pygtk.require("2.0")
-VERSION = "1.6"
+VERSION = "1.7"
 
 try:
     from docopt import docopt
@@ -50,6 +50,8 @@ class Blockify(object):
         self._autodetect = self.options["general"]["autodetect"]
         self._automute = self.options["general"]["automute"]
         self.update_interval = self.options["cli"]["update_interval"]
+        self.unmute_delay = self.options["cli"]["unmute_delay"]
+        self.use_gui = False
         self.found = False
         self.current_song = ""
         self.song_status = ""
@@ -183,10 +185,22 @@ class Blockify(object):
         for i in self.blocklist:
             if self.current_song.startswith(i):
                 self.toggle_mute(1)
-                return True  # Return boolean to use as self.found in GUI.
+                return True
 
-        self.toggle_mute()
+        # Unmute with a certain delay to avoid the last second
+        # of commercial you sometimes hear because it's unmuted too early.
+        # Do that only for the CLI though because the GUI feels unresponsive
+        # with that delay, imo.
+        if not self.use_gui:
+            gtk.timeout_add(self.unmute_delay, self.unmute_with_delay)
+        else:
+            self.toggle_mute()
 
+        return False
+
+    def unmute_with_delay(self):
+        if not self.found:
+            self.toggle_mute()
         return False
 
     def get_windows(self):
@@ -203,8 +217,8 @@ class Blockify(object):
 
     def get_current_song(self):
         "Checks if a Spotify window exists and returns the current songname."
-        spotify_window = self.get_windows()
         song = ""
+        spotify_window = self.get_windows()
 
         if spotify_window:
             song = " ".join(spotify_window[0].split()[2:]).decode("utf-8")
@@ -358,7 +372,7 @@ def initialize(doc=__doc__):
 
     try:
         args = docopt(doc, version=VERSION)
-        util.init_logger(args["--log"], args["-v"] or 2, args["--quiet"])
+        util.init_logger(args["--log"], args["-v"], args["--quiet"])
     except NameError:
         util.init_logger()
 

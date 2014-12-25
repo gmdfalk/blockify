@@ -11,7 +11,7 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Fix detection delay as outlined by JP-Ellis.
+# TODO: Fix detection delay for GUI?
 # TODO: Unit tests.
 # TODO: Try experimental mode suggested by spam0cal to skip the last
 #       second of each song to skip ads altogether (could not verify this).
@@ -164,6 +164,7 @@ class BlockifyUI(gtk.Window):
 
         # Initialize blockify.
         self.b = blockify
+        self.b.use_gui = True
 
         # Images used for interlude media buttons.
         self.play_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PLAY, gtk.ICON_SIZE_BUTTON)
@@ -205,8 +206,8 @@ class BlockifyUI(gtk.Window):
         # "Trap" the exit.
         self.connect("destroy", self.stop)
 
-        self.show_all()
         self.set_states()
+        self.show_all()
         log.info("Blockify-UI initialized.")
         self.start()
 
@@ -402,8 +403,9 @@ class BlockifyUI(gtk.Window):
 
         for i in range(len(checkboxes)):
             checkboxes[i].set_active(values[i])
-
+        print "blu"
         if not self.b.use_interlude_music:
+            print "bleh"
             self.interlude_box.hide()
 
     def start(self):
