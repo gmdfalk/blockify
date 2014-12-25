@@ -88,7 +88,7 @@ def get_default_options():
         "interlude": {
             "use_interlude_music": True,
             "playlist": PLAYLIST_FILE,
-            "autoresume": True,
+            "autoresume": False,
             "radio_timeout": 180
         }
     }
