@@ -206,8 +206,8 @@ class BlockifyUI(gtk.Window):
         # "Trap" the exit.
         self.connect("destroy", self.stop)
 
-        self.set_states()
         self.show_all()
+        self.set_states()
         log.info("Blockify-UI initialized.")
         self.start()
 
@@ -394,8 +394,6 @@ class BlockifyUI(gtk.Window):
         self.add(main)
 
     def set_states(self):
-        # Simulate finding a commercial to keep autoresume_chk from bugging out.
-        self.b.found = True
 
         checkboxes = [self.autodetect_chk, self.automute_chk, self.autoresume_chk, self.autohidecover_chk]
         values = [self.b.options["general"]["autodetect"], self.b.options["general"]["automute"],
@@ -403,10 +401,11 @@ class BlockifyUI(gtk.Window):
 
         for i in range(len(checkboxes)):
             checkboxes[i].set_active(values[i])
-        print "blu"
+
+        # Pretend that a song is playing to keep disable_interlude_box() from pausing playback.
+        self.b.song_status = "Playing"
         if not self.b.use_interlude_music:
-            print "bleh"
-            self.interlude_box.hide()
+            self.disable_interlude_box()
 
     def start(self):
         "Start the main update routine."
@@ -653,19 +652,26 @@ class BlockifyUI(gtk.Window):
         else:
             self.b.player.autoresume = False
 
+    def disable_interlude_box(self):
+        self.b.use_interlude_music = False
+        self.interlude_box.hide()
+        self.b.player.pause()
+        if self.b.song_status != "Playing":
+            self.b.dbus.playpause()
+        self.toggle_interlude_btn.set_label("Enable player")
+        self.restore_size()
+
+    def enable_interlude_box(self):
+        self.b.use_interlude_music = True
+        self.interlude_box.show()
+        self.toggle_interlude_btn.set_label("Disable player")
+        self.restore_size()
+
     def on_toggleinterlude_btn(self, widget):
         if self.b.use_interlude_music:
-            self.b.use_interlude_music = False
-            self.interlude_box.hide()
-            self.b.player.pause()
-            if self.b.song_status != "Playing":
-                self.b.dbus.playpause()
-            widget.set_label("Enable player")
+            self.disable_interlude_box()
         else:
-            self.b.use_interlude_music = True
-            self.interlude_box.show()
-            widget.set_label("Disable player")
-        self.restore_size()
+            self.enable_interlude_box()
 
     def on_interlude_audio_changed (self, player):
         "Audio source for interlude music has changed."

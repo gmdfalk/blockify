@@ -78,7 +78,7 @@ def get_default_options():
         },
         "cli": {
             "update_interval": 200,
-            "unmute_delay": 700,
+            "unmute_delay": 700
         },
         "gui": {
             "update_interval": 350,
@@ -104,11 +104,11 @@ def load_options():
     try:
         options["general"] = {
             "autodetect":config.getboolean("general", "autodetect"),
-            "automute":config.getboolean("general", "automute"),
-            "unmute_delay":config.getint("cli", "unmute_delay")
+            "automute":config.getboolean("general", "automute")
         }
         options["cli"] = {
-            "update_interval":config.getint("cli", "update_interval")
+            "update_interval":config.getint("cli", "update_interval"),
+            "unmute_delay":config.getint("cli", "unmute_delay")
         }
         options["gui"] = {
             "use_cover_art":config.getboolean("gui", "use_cover_art"),
