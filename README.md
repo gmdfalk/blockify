@@ -110,9 +110,9 @@ You can use relative and absolute paths as well as basically any audio source/fo
 ## Troubleshooting
 If you experience errors or unexpected behaviour, please start blockify/blockify-ui with the -vvv parameter to enable debug logging and see if you get any helpful information this way.  
 You're welcome to open an issue on this site and ask for help but when you do, please provide the following information:  
-- A debug log, acquired by starting blockify via `blockify -vvv`.
+- A debug log, acquired by starting blockify(-ui) via `blockify(-ui) -vvv -l logfile`. Then upload it with `curl -F "c=logfile" https://ptpbw.pw` (or paste it to a git or bpaste.net or directly into the git issue, you get the idea).
 - The blockify version: `blockify --version`.
-- If you suspect pulseaudio as culprit, the list of sinks: `pacmd list-sink-inputs`.
+- If you suspect pulseaudio as culprit, the list of sinks: `pacmd list-sink-inputs | curl -F c=@- https://ptpb.pw`.
 
 ## Known Issues
 - If Spotify is minimized to the system tray, ad detection will not work.  
