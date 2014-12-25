@@ -12,7 +12,8 @@ Options:
     --version         Show current version of blockify.
 """
 # TODO: Fix detection delay for GUI?
-# TODO: Unit tests.
+# TODO: Handle http://example.com/playlist.m3u?
+# TODO: Write some unit tests, slacko.
 # TODO: Try experimental mode suggested by spam0cal to skip the last
 #       second of each song to skip ads altogether (could not verify this).
 # TODO: Continuous update of tray icon tooltip.

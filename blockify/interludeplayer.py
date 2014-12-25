@@ -104,7 +104,9 @@ class InterludePlayer(object):
 
     def is_radio(self):
         "Spot radio tracks so we can deal with them appropriately."
-        return self.get_current_uri().startswith("http://")
+        uri = self.get_current_uri()
+        # We assume the URI is a radio station if it doesn't have a file ending we associate with (audio) files.
+        return uri.startswith("http://") and not any([uri.endswith("." + fmt) for fmt in self.formats])
 
     def is_valid_uri(self, item):
         "Determine if a item in the playlist file is a valid URI."
@@ -144,7 +146,7 @@ class InterludePlayer(object):
         if self.b.found and not playing and not self.manual_control:
             self.play()
             if self.is_radio() and self.radio_timeout:
-                log.info("Radio is playing. Switching back to spotify in"
+                log.info("Radio is playing. Switching back to spotify in "
                          "{}s (or when the ad has finished).".format(self.radio_timeout))
                 gtk.timeout_add(self.radio_timeout * 1000, self.resume_spotify_playback)
         elif not self.b.found and playing:
