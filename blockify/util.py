@@ -62,7 +62,7 @@ def init_config_dir():
         log.info("Creating thumbnail directory.")
         os.makedirs(THUMBNAIL_DIR)
 
-    # During transition to blockify v1.6 rename the playlist and blocklist files.
+    # During transition from v1.6 to v1.7, rename the playlist and blocklist files.
     rename_file(PLAYLIST_FILE)
     rename_file(BLOCKLIST_FILE)
 
@@ -89,7 +89,8 @@ def get_default_options():
             "use_interlude_music": True,
             "playlist": PLAYLIST_FILE,
             "autoresume": False,
-            "radio_timeout": 180
+            "radio_timeout": 180,
+            "playback_delay": 500
         }
     }
 
@@ -97,11 +98,11 @@ def get_default_options():
 
 
 def load_options():
-    config = ConfigParser.ConfigParser()
-    config.read(CONFIG_FILE)
-
     options = {}
+    config = ConfigParser.ConfigParser()
     try:
+        config.read(CONFIG_FILE)
+
         options["general"] = {
             "autodetect":config.getboolean("general", "autodetect"),
             "automute":config.getboolean("general", "automute")
@@ -119,12 +120,13 @@ def load_options():
             "use_interlude_music":config.getboolean("interlude", "use_interlude_music"),
             "autoresume":config.getboolean("interlude", "autoresume"),
             "radio_timeout":config.getint("interlude", "radio_timeout"),
+            "playback_delay":config.getint("interlude", "playback_delay"),
             "playlist":config.get("interlude", "playlist")
         }
         if not options["interlude"]["playlist"]:
             options["interlude"]["playlist"] = PLAYLIST_FILE
     except Exception as e:
-        log.error("Could not completely read config file: {}. Merging with default options.".format(e))
+        log.error("Could not read config file: {}. Merging with default options.".format(e))
         # Merge with default options to make sure we have everything we need.
         defoptions = get_default_options()
         options = dict(defoptions.items() + options.items())

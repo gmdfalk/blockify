@@ -20,6 +20,8 @@ class InterludePlayer(object):
         self._index = 0
         self.manual_control = False
         self.temp_autoresume = False
+        self.temp_disable = False
+        self.playback_delay = self.b.options["interlude"]["playback_delay"]
         # Automatically resume spotify playback after n seconds.
         self.radio_timeout = self.b.options["interlude"]["radio_timeout"]
         self.autoresume = self.b.options["interlude"]["autoresume"]
@@ -93,7 +95,7 @@ class InterludePlayer(object):
         "Song is ending. What do we do?"
         self.queue_next()
         log.debug("Interlude song finished. Queued: {}.".format(self.get_current_uri()))
-        if not self.autoresume and self.b.dbus.get_song_status() != "Playing":
+        if not self.autoresume and not self.b.dbus.is_playing:
             self.pause()
             self.b.dbus.playpause()
 
@@ -129,7 +131,7 @@ class InterludePlayer(object):
 
     def resume_spotify_playback(self):
         if not self.b.found:
-            if not self.b.song_status == "Playing":
+            if not self.b.dbus.is_playing:
                 self.b.dbus.playpause()
             self.pause()
             log.info("Switched from radio back to Spotify.")
@@ -141,7 +143,17 @@ class InterludePlayer(object):
 
         return True
 
+    def play_with_delay(self):
+        self.temp_disable = False
+        self.toggle_interlude_music()
+        return False
+
     def toggle_interlude_music(self):
+        "Method that gets called every update_interval ms via update()."
+        # In some cases (autodetection), we are going to delay toggling a bit,
+        # see b.find_ads() and self.play_with_delay().
+        if self.temp_disable:
+            return
         playing = self.is_playing()
         if self.b.found and not playing and not self.manual_control:
             self.play()
@@ -153,9 +165,8 @@ class InterludePlayer(object):
             if self.autoresume or self.temp_autoresume:
                 self.pause()
                 self.temp_autoresume = False
-            else:
-                if self.b.song_status == "Playing":
-                    self.b.dbus.playpause()
+            elif self.b.dbus.is_playing:
+                self.b.dbus.playpause()
 
     def is_playing(self):
         return self.player.get_state()[1] == gst.STATE_PLAYING

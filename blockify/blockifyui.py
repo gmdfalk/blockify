@@ -457,14 +457,13 @@ class BlockifyUI(gtk.Window):
         if self.b.use_interlude_music:
             self.b.player.toggle_interlude_music()
 
-        # Our main GUI workers here, updating labels, buttons and the likes.
-        self.update_cover()
         self.update_labels()
         self.update_buttons()
         self.update_icons()
+        # Cover art is not a priority, so let gtk decide when exactly we handle them.
+        gtk.idle_add(self.update_cover)
 
-        # Keep the gtk.timeout loop going indefinately as we
-        # don't ever want to break this loop.
+        # Always return True to keep looping this method.
         return True
 
     def update_cover(self):
@@ -511,7 +510,7 @@ class BlockifyUI(gtk.Window):
             self.toggleblock_btn.set_label("Block")
             self.set_title("Blockify")
 
-        if self.b.song_status == "Playing" and self.b.current_song:
+        if self.b.dbus.is_playing and self.b.current_song:
             self.toggleplay_btn.set_label("Pause")
         else:
             self.toggleplay_btn.set_label("Play")
@@ -648,7 +647,7 @@ class BlockifyUI(gtk.Window):
         if widget.get_active():
             self.b.player.autoresume = True
             self.b.player.manual_control = False
-            if not self.b.found and self.b.song_status != "Playing":
+            if not self.b.found and not self.b.dbus.is_playing:
                 self.b.dbus.playpause()
         else:
             self.b.player.autoresume = False
@@ -657,7 +656,7 @@ class BlockifyUI(gtk.Window):
         self.b.use_interlude_music = False
         self.interlude_box.hide()
         self.b.player.pause()
-        if self.b.song_status != "Playing":
+        if not self.b.dbus.is_playing:
             self.b.dbus.playpause()
         self.toggle_interlude_btn.set_label("Enable player")
         self.restore_size()
@@ -704,7 +703,7 @@ class BlockifyUI(gtk.Window):
             else:
                 self.b.player.manual_control = True
                 self.b.player.pause()
-                if not self.b.found and (self.b.song_status != "Playing" or
+                if not self.b.found and (not self.b.dbus.is_playing or
                                          not self.b.current_song):
                     self.b.dbus.playpause()
 

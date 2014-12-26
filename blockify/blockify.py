@@ -136,26 +136,14 @@ class Blockify(object):
         if self.use_interlude_music:
             self.player.toggle_interlude_music()
 
+        # Always return True to keep looping this method.
         return True
-
-    def current_song_is_ad(self):
-        """Compares the wnck song info to dbus song info."""
-        if self.song_status == "Playing":
-            try:
-                return self.current_song != self.dbus.get_song_artist() + \
-                u" \u2013 " + self.dbus.get_song_title()
-            except TypeError as e:
-                # Spotify has technically stopped playing and has stopped
-                # sending dbus metadata so we get NoneType-errors.
-                # However, it might still play one last ad so we assume that
-                # is the case here.
-                log.debug("TypeError during ad detection: {}".format(e))
-                return True
 
     def find_ad(self):
         "Main loop. Checks for ads and mutes accordingly."
         self.current_song = self.get_current_song()
         self.song_status = self.dbus.get_song_status()
+        self.dbus.is_playing = self.song_status == "Playing"
 
         # Manual control is enabled so we exit here.
         if not self.automute:
@@ -166,10 +154,12 @@ class Blockify(object):
             self.toggle_mute(2)
             return False
 
-        if self.autodetect:
-            if self.current_song_is_ad():  # Ad found, force mute.
-                self.toggle_mute(1)
-                return True
+        if self.autodetect and self.current_song_is_ad():
+            if self.use_interlude_music and not self.player.temp_disable:
+                self.player.temp_disable = True
+                gtk.timeout_add(self.player.playback_delay, self.player.play_with_delay)
+            self.toggle_mute(1)
+            return True
 
         # Check if the blockfile has changed.
         try:
@@ -198,6 +188,19 @@ class Blockify(object):
 
         return False
 
+    def current_song_is_ad(self):
+        "Compares the wnck song info to dbus song info."
+        try:
+            is_ad = self.current_song != self.dbus.get_song_artist() + u" \u2013 " + self.dbus.get_song_title()
+            return self.dbus.is_playing and is_ad
+        except TypeError as e:
+            # Spotify has technically stopped playing and sending dbus
+            # metadata so we get NoneType-errors.
+            # However, it might still play one last ad so we assume that
+            # is the case here.
+            log.debug("TypeError during ad detection: {}".format(e))
+            return True
+
     def unmute_with_delay(self):
         if not self.found:
             self.toggle_mute()
@@ -207,6 +210,7 @@ class Blockify(object):
         "Libwnck list of currently open windows."
         # Get the current screen.
         screen = wnck.screen_get_default()
+        screen.force_update()
 
         # Object list of windows in screen.
         windows = screen.get_windows()

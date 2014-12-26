@@ -38,6 +38,7 @@ class BlockifyDBus(object):
         self.prop_path = "org.freedesktop.DBus.Properties"
         self.player_path = "org.mpris.MediaPlayer2.Player"
         self.spotify_path = None
+        self.is_playing = False
 
         if not bus:
             bus = dbus.SessionBus()
