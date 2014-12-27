@@ -65,7 +65,7 @@ Alternatively, you can use the GUI with `blockify-ui` which spawns this window.
 
 ##### Configuration
 Please see the provided [example_blockify.ini](https://github.com/mikar/blockify/blob/master/blockify/data/example_blockify.ini) on what settings are available and their purpose.  
-If you're upgrading from v1.6, please note that configuration syntax has changed slightly in v1.7 and you'll _need_ to adjust your configuration file accordingly.  
+Blockify automatically creates a configuration file at `$HOME/.config/blockify/blockify.ini` if you don't have one already. It will also tell you via ERROR-logging messages, if you configuration file is faulty or incomplete, in which case the options that could be read will be merged with the default options you see in example_blockify.ini but you'll still want to fix your configuration file.  
 
 ##### Interlude Music
 From version 1.4 onwards blockify can play music of your choice during commercial breaks.  
