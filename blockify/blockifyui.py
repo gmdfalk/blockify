@@ -570,6 +570,7 @@ class BlockifyUI(gtk.Window):
             self.slider.handler_unblock_by_func(self.on_slider_change)
         except Exception as e:
             log.error("Exception while updating slider: {}".format(e))
+            return False
 
         # Continue calling every self.slider_update_interval milliseconds.
         return True
@@ -741,11 +742,12 @@ class BlockifyUI(gtk.Window):
         all_filter.add_pattern("*")
         dialog.add_filter(all_filter)
 
-        av_filter = gtk.FileFilter()
-        av_filter.set_name("Audio and video files")
+        playable_filter = gtk.FileFilter()
+        playable_filter.set_name("Playable files")
         for fmt in self.b.player.formats:
-            av_filter.add_pattern("*." + fmt)
-        dialog.add_filter(av_filter)
+            playable_filter.add_pattern("*." + fmt)
+        playable_filter.add_pattern("*.m3u")
+        dialog.add_filter(playable_filter)
 
         audio_filter = gtk.FileFilter()
         audio_filter.set_name("Audio files")
@@ -758,13 +760,14 @@ class BlockifyUI(gtk.Window):
         playlist_filter.add_pattern("*.m3u")
         dialog.add_filter(playlist_filter)
 
-        dialog.set_filter(playlist_filter)
+        dialog.set_filter(playable_filter)
         dialog.set_select_multiple(True)
 
         response = dialog.run()
         if response == gtk.RESPONSE_OK:
             file_list = dialog.get_filenames()
             self.b.player.load_playlist(self.b.player.parse_playlist(file_list))
+            self.on_play_btn(None)
 
         dialog.destroy()
 
