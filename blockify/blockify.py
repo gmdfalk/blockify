@@ -29,7 +29,7 @@ import util
 
 log = logging.getLogger("main")
 pygtk.require("2.0")
-VERSION = "1.7"
+VERSION = "1.7.1"
 
 try:
     from docopt import docopt
