@@ -10,7 +10,8 @@ Before installing blockify, please make sure you have the appropriate dependenci
 
 ##### Automatic (AUR)
 Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). You can choose between a stable version ([blockify](https://aur.archlinux.org/packages/blockify/)) or the hopefully stable development version ([blockify-git](https://aur.archlinux.org/packages/blockify-git/)). I try to publish new changes from the latter to the former version quickly so most of the time there is little difference between these two packages other than the source.  
-Example installation routine:  
+
+Example AUR installation routine:  
 ``` bash
 mkdir blockify
 cd blockify
@@ -21,7 +22,8 @@ sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
 
 ##### Direct (pip/setup.py)
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
-Example installation routine:  
+
+Example manual/direct installation routine:  
 ``` bash
 git clone https://github.com/mikar/blockify
 cd blockify
@@ -34,13 +36,15 @@ It is important to know that blockify relies on dbus (and, for some features, on
 If any of these criteria are true ad detection _will not work_:  
 * DBus is disabled
 * Spotify is minimized to the system tray (task bar is fine)
-* Notifications are disabled in Spotify
-Additionally, blockify makes use of pulseaudio sinks, allowing processes to be muted individually.  
+* Notifications are disabled in Spotify  
+* 
+Additionally, blockify makes use of pulseaudio sinks, allowing processes to be muted individually.    
 If you do not have/want pulseaudio, blockify will mute the system sound during commercials instead of just Spotify. The interlude music feature will not work as a consequence.
 
 #### Detection
 Blockify will automatically detect and block ads for you so besides starting it, there's not a lot to do.  
-However, it also comes with the option to complement or replace that autoblock functionality with a blocklist (saved as ~/.config/blockify/blocklist).  
+However, it also comes with the option to complement or replace that autoblock functionality with a blocklist (saved as ~/.config/blockify/blocklist.txt).  
+Blocklist-Entries are case-sensitive and greedy, e.g. the entry `Blood` would not only block all Bloodhound Gang songs but any song by any artist starting with `"Blood"`.  
 
 ##### CLI
 Blockify has a CLI/daemon that you can start with `blockify`.  
