@@ -119,6 +119,11 @@ You're welcome to open an issue on this site and ask for help but when you do, p
 - The blockify version: `blockify --version`.
 - If you suspect pulseaudio as culprit, the list of sinks: `pacmd list-sink-inputs | curl -F c=@- https://ptpb.pw`.
 
+Some wild stabs in the dark:  
+* Blockify has two binaries. `blockify` (CLI) and `blockify-ui` (GUI). Make sure you're using the right one.  
+* If blockify doesn't find a Spotify process, it won't start.  
+* If there's already a blockify process running, it won't start.  
+
 ## Known Issues
 - If Spotify is minimized to the system tray, ad detection will not work.  
 - If Notifications are disabled, ad detection will not work.
