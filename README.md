@@ -37,7 +37,7 @@ If any of these criteria are true ad detection _will not work_:
 * DBus is disabled
 * Spotify is minimized to the system tray (task bar is fine)
 * Notifications are disabled in Spotify  
-* 
+
 Additionally, blockify makes use of pulseaudio sinks, allowing processes to be muted individually.    
 If you do not have/want pulseaudio, blockify will mute the system sound during commercials instead of just Spotify. The interlude music feature will not work as a consequence.
 
