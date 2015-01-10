@@ -11,7 +11,20 @@ Before installing blockify, please make sure you have the appropriate dependenci
 ##### Automatic (AUR)
 Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). You can choose between a stable version ([blockify](https://aur.archlinux.org/packages/blockify/)) or the hopefully stable development version ([blockify-git](https://aur.archlinux.org/packages/blockify-git/)). I try to publish new changes from the latter to the former version quickly so most of the time there is little difference between these two packages other than the source.  
 
-Example AUR installation routine:  
+Example Ubuntu installation routine:
+``` bash
+sudo apt-get install python-pip python-wnck
+
+sudo pip install http://github.com/mikar/blockify/archive/v1.7.1.zip
+
+# Create desktop icon
+echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify
+commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources;
+print pkg_resources.resource_filename("blockify",
+"data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' |
+sudo tee /usr/share/applications/blockify.desktop
+```
+Example ArchLinux installation routine:  
 ``` bash
 mkdir blockify
 cd blockify
