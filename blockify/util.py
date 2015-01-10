@@ -6,6 +6,7 @@ import sys
 
 
 log = logging.getLogger("util")
+BLOCKIFY_VERSION = "1.7.2"
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
 BLOCKLIST_FILE = os.path.join(CONFIG_DIR, "blocklist.txt")
@@ -82,6 +83,7 @@ def get_default_options():
         },
         "gui": {
             "update_interval": 350,
+            "unmute_delay": 650,
             "use_cover_art": True,
             "autohide_cover": False
         },
@@ -115,6 +117,7 @@ def load_options():
             "use_cover_art":config.getboolean("gui", "use_cover_art"),
             "autohide_cover":config.getboolean("gui", "autohide_cover"),
             "update_interval":config.getint("gui", "update_interval"),
+            "unmute_delay":config.getint("gui", "unmute_delay")
         }
         options["interlude"] = {
             "use_interlude_music":config.getboolean("interlude", "use_interlude_music"),

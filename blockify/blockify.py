@@ -29,7 +29,6 @@ import util
 
 log = logging.getLogger("main")
 pygtk.require("2.0")
-VERSION = "1.7.1"
 
 try:
     from docopt import docopt
@@ -51,7 +50,6 @@ class Blockify(object):
         self._automute = self.options["general"]["automute"]
         self.update_interval = self.options["cli"]["update_interval"]
         self.unmute_delay = self.options["cli"]["unmute_delay"]
-        self.use_gui = False
         self.found = False
         self.current_song = ""
         self.song_status = ""
@@ -149,11 +147,6 @@ class Blockify(object):
         if not self.automute:
             return False
 
-        # No song playing, force unmute.
-        if not self.current_song:
-            self.toggle_mute(2)
-            return False
-
         if self.autodetect and self.current_song_is_ad():
             if self.use_interlude_music and not self.player.temp_disable:
                 self.player.temp_disable = True
@@ -179,12 +172,7 @@ class Blockify(object):
 
         # Unmute with a certain delay to avoid the last second
         # of commercial you sometimes hear because it's unmuted too early.
-        # Do that only for the CLI though because the GUI feels unresponsive
-        # with that delay, imo.
-        if not self.use_gui:
-            gtk.timeout_add(self.unmute_delay, self.unmute_with_delay)
-        else:
-            self.toggle_mute()
+        gtk.timeout_add(self.unmute_delay, self.unmute_with_delay)
 
         return False
 
@@ -375,7 +363,7 @@ def initialize(doc=__doc__):
     util.init_config_dir()
 
     try:
-        args = docopt(doc, version=VERSION)
+        args = docopt(doc, version=util.BLOCKIFY_VERSION)
         util.init_logger(args["--log"], args["-v"], args["--quiet"])
     except NameError:
         util.init_logger()

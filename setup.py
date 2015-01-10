@@ -1,4 +1,5 @@
 from os.path import dirname, join
+from blockify.util import BLOCKIFY_VERSION
 
 try:
     from setuptools import setup
@@ -19,7 +20,7 @@ setup(
     name=_name,
     description="Mute spotify advertisements.",
     long_description=read("README.md"),
-    version="1.7.1",
+    version=BLOCKIFY_VERSION,
     license=_license,
     url="https://github.com/mikar/{}".format(_name),
     author="Max Demian",

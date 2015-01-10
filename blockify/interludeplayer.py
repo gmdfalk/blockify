@@ -47,7 +47,10 @@ class InterludePlayer(object):
         self.stop()
         self.set_uri()
         log.info("Playlist loaded (Length: {}).".format(len(playlist)))
-        log.info("Playlist: {0}".format(playlist))
+        self.show_playlist()
+
+    def show_playlist(self):
+        log.info("Playlist: {0}".format([os.path.basename(i) for i in self.playlist]))
 
     def parse_playlist(self, sourcelist=None, source=None):
         playlist = []
@@ -213,6 +216,7 @@ class InterludePlayer(object):
         # uri = self.get_current_uri()
         random.shuffle(self.playlist)
         log.info("Shuffled playlist.")
+        self.show_playlist()
         # Adjust index to make sure self.get_current_uri() returns the current song.
         # However, right now, that's not necessary as that method is only used when
         # the song changes.

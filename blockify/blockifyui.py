@@ -11,7 +11,7 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: Fix detection delay for GUI?
+# FIXME: Cover art download broken after temporarily losing internet connection.
 # TODO: Handle http://example.com/playlist.m3u?
 # TODO: Write some unit tests, slacko.
 # TODO: Try experimental mode suggested by spam0cal to skip the last
@@ -21,7 +21,6 @@ Options:
 # TODO: Try xlib for minimized window detection. Probably won't help.
 # TODO: Notepad: Use ListStore instead of TextView?
 # TODO: Notepad: Undo/Redo Ctrl+Z, Ctrl+Y, Fix Ctrl+D to completely delete line.
-# TODO: Add update_interval option to docopt.
 import codecs
 import datetime
 import logging
@@ -165,7 +164,6 @@ class BlockifyUI(gtk.Window):
 
         # Initialize blockify.
         self.b = blockify
-        self.b.use_gui = True
 
         # Images used for interlude media buttons.
         self.play_img = gtk.image_new_from_stock(gtk.STOCK_MEDIA_PLAY, gtk.ICON_SIZE_BUTTON)
@@ -179,6 +177,7 @@ class BlockifyUI(gtk.Window):
         self.cover_server = "https://i.scdn.co/image/"
         self.use_cover_art = self.b.options["gui"]["use_cover_art"]
         self.autohide_cover = self.b.options["gui"]["autohide_cover"]
+        self.b.unmute_delay = self.b.options["gui"]["unmute_delay"]
         self.previous_cover_file = ""
 
         self.editor = None
@@ -228,7 +227,7 @@ class BlockifyUI(gtk.Window):
 
         self.status_icon.connect("popup-menu", self.on_tray_right_click)
         self.status_icon.connect("activate", self.on_tray_left_click)
-        self.status_icon.set_tooltip("blockify v{0}".format(blockify.VERSION))
+        self.status_icon.set_tooltip("blockify v{0}".format(util.BLOCKIFY_VERSION))
         self.connect("delete-event", self.on_delete_event)
 
     def create_traymenu(self, event_button, event_time):
@@ -438,7 +437,7 @@ class BlockifyUI(gtk.Window):
         about.set_destroy_with_parent (True)
         about.set_icon_name ("blockify")
         about.set_name("blockify")
-        about.set_version(blockify.VERSION)
+        about.set_version(util.BLOCKIFY_VERSION)
         about.set_website("http://github.com/mikar/blockify")
         about.set_copyright("(c) 2014 Max Demian")
         about.set_license("The MIT License (MIT)")
@@ -605,7 +604,7 @@ class BlockifyUI(gtk.Window):
             cover_file = os.path.join(util.THUMBNAIL_DIR, cover_hash + ".png")
 
             if not os.path.exists(cover_file):
-                log.info("Downloading cover art for {0} ({1}).".format(self.b.current_song, cover_hash))
+                log.debug("Downloading cover art for {0} ({1})".format(self.b.current_song, cover_hash))
                 urllib.urlretrieve(cover_url, cover_file)
 
         return cover_file
