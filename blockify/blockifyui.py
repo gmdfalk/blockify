@@ -454,7 +454,7 @@ class BlockifyUI(gtk.Window):
 
         # Adjust playback of interlude music.
         if self.b.use_interlude_music:
-            self.b.player.toggle_interlude_music()
+            self.b.player.toggle_music()
 
         self.update_labels()
         self.update_buttons()

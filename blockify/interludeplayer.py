@@ -148,10 +148,10 @@ class InterludePlayer(object):
 
     def play_with_delay(self):
         self.temp_disable = False
-        self.toggle_interlude_music()
+        self.toggle_music()
         return False
 
-    def toggle_interlude_music(self):
+    def toggle_music(self):
         "Method that gets called every update_interval ms via update()."
         # In some cases (autodetection), we are going to delay toggling a bit,
         # see b.find_ads() and self.play_with_delay().
@@ -164,7 +164,7 @@ class InterludePlayer(object):
                 log.info("Radio is playing. Switching back to spotify in "
                          "{}s (or when the ad has finished).".format(self.radio_timeout))
                 gtk.timeout_add(self.radio_timeout * 1000, self.resume_spotify_playback)
-        elif not self.b.found and playing:
+        elif not self.b.found and playing and self.b.current_song:
             if self.autoresume or self.temp_autoresume:
                 self.pause()
                 self.temp_autoresume = False

@@ -132,7 +132,7 @@ class Blockify(object):
 
         # Adjust playback of interlude music.
         if self.use_interlude_music:
-            self.player.toggle_interlude_music()
+            self.player.toggle_music()
 
         # Always return True to keep looping this method.
         return True
