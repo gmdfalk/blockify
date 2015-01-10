@@ -23,17 +23,12 @@ sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
 ##### Direct (pip/setup.py)
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
 
-Example Ubuntu installation routine for v1.7.1:
+Example Ubuntu installation routine for fixed version (e.g. v1.7.1):
 ``` bash
 sudo apt-get install python-pip python-wnck
 sudo pip install http://github.com/mikar/blockify/archive/v1.7.1.zip
-
-# Create desktop icon
-echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify
-commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources;
-print pkg_resources.resource_filename("blockify",
-"data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' |
-sudo tee /usr/share/applications/blockify.desktop
+# Create optional desktop icon
+echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources; print pkg_resources.resource_filename("blockify", "data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
 Example Ubuntu installation routine for master branch:  
 ``` bash
@@ -41,6 +36,8 @@ git clone https://github.com/mikar/blockify
 cd blockify
 sudo apt-get install python-pip python-wnck
 sudo pip2 install . (OR sudo python2 setup.py install)
+# Create optional desktop icon
+echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources; print pkg_resources.resource_filename("blockify", "data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
 
 ## Usage
