@@ -8,22 +8,9 @@ Before installing blockify, please make sure you have the appropriate dependenci
 - Optional (but highly recommended): pulseaudio python2-docopt  
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
 
-##### Automatic (AUR)
+##### Automatic
 Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). You can choose between a stable version ([blockify](https://aur.archlinux.org/packages/blockify/)) or the hopefully stable development version ([blockify-git](https://aur.archlinux.org/packages/blockify-git/)). I try to publish new changes from the latter to the former version quickly so most of the time there is little difference between these two packages other than the source.  
 
-Example Ubuntu installation routine:
-``` bash
-sudo apt-get install python-pip python-wnck
-
-sudo pip install http://github.com/mikar/blockify/archive/v1.7.1.zip
-
-# Create desktop icon
-echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify
-commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources;
-print pkg_resources.resource_filename("blockify",
-"data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' |
-sudo tee /usr/share/applications/blockify.desktop
-```
 Example ArchLinux installation routine:  
 ``` bash
 mkdir blockify
@@ -36,10 +23,23 @@ sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
 ##### Direct (pip/setup.py)
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
 
-Example manual/direct installation routine:  
+Example Ubuntu installation routine for v1.7.1:
+``` bash
+sudo apt-get install python-pip python-wnck
+sudo pip install http://github.com/mikar/blockify/archive/v1.7.1.zip
+
+# Create desktop icon
+echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify
+commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources;
+print pkg_resources.resource_filename("blockify",
+"data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' |
+sudo tee /usr/share/applications/blockify.desktop
+```
+Example Ubuntu installation routine for master branch:  
 ``` bash
 git clone https://github.com/mikar/blockify
 cd blockify
+sudo apt-get install python-pip python-wnck
 sudo pip2 install . (OR sudo python2 setup.py install)
 ```
 
