@@ -147,11 +147,11 @@ class Blockify(object):
         if not self.automute:
             return False
 
-        if self.autodetect and self.current_song_is_ad():
+        if self.autodetect and self.current_song and self.current_song_is_ad():
             if self.use_interlude_music and not self.player.temp_disable:
                 self.player.temp_disable = True
                 gtk.timeout_add(self.player.playback_delay, self.player.play_with_delay)
-            self.toggle_mute(1)
+            self.ad_found()
             return True
 
         # Check if the blockfile has changed.
@@ -167,7 +167,7 @@ class Blockify(object):
 
         for i in self.blocklist:
             if self.current_song.startswith(i):
-                self.toggle_mute(1)
+                self.ad_found()
                 return True
 
         # Unmute with a certain delay to avoid the last second
@@ -175,6 +175,10 @@ class Blockify(object):
         gtk.timeout_add(self.unmute_delay, self.unmute_with_delay)
 
         return False
+
+    def ad_found(self):
+        # log.debug("Ad found: {0}".format(self.current_song))
+        self.toggle_mute(1)
 
     def current_song_is_ad(self):
         "Compares the wnck song info to dbus song info."
