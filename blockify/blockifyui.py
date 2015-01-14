@@ -638,7 +638,10 @@ class BlockifyUI(gtk.Window):
         return True
 
     def on_tray_left_click(self, status):
-        self.show_all()
+        if self.get_visible():
+            self.hide()
+        else:
+            self.show()
 
     def on_tray_right_click(self, icon, event_button, event_time):
         self.create_traymenu(event_button, event_time)
