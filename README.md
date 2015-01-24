@@ -3,13 +3,15 @@ Blockify is a linux only application that allows you to automatically mute songs
 
 ## Installation
 ##### Dependencies
-Before installing blockify, please make sure you have the appropriate dependencies installed. Package names are for ArchLinux and will probably differ slightly between distributions. 
+Before installing blockify, please make sure you have the appropriate dependencies installed.
 - Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus
 - Optional (but highly recommended): pulseaudio python2-docopt  
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
+- 
+Package names are for ArchLinux and will probably differ slightly between distributions. 
 
 ##### Automatic
-Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). You can choose between a stable version ([blockify](https://aur.archlinux.org/packages/blockify/)) or the hopefully stable development version ([blockify-git](https://aur.archlinux.org/packages/blockify-git/)). I try to publish new changes from the latter to the former version quickly so most of the time there is little difference between these two packages other than the source.  
+Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). You can choose between a stable version ([blockify](https://aur.archlinux.org/packages/blockify/)) or the development version ([blockify-git](https://aur.archlinux.org/packages/blockify-git/)).  
 
 Example ArchLinux installation routine:  
 ``` bash
@@ -23,21 +25,19 @@ sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
 ##### Direct (pip/setup.py)
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
 
-Example Ubuntu installation routine for fixed version (e.g. v1.7.1):
+Example Ubuntu installation routine for fixed version (e.g. v1.7.2):
 ``` bash
 sudo apt-get install python-pip python-wnck
-sudo pip install http://github.com/mikar/blockify/archive/v1.7.1.zip
+sudo pip install http://github.com/mikar/blockify/archive/v1.7.2.zip
 # Create optional desktop icon
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources; print pkg_resources.resource_filename("blockify", "data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
 Example Ubuntu installation routine for master branch:  
 ``` bash
+sudo apt-get install python-pip python-wnck
 git clone https://github.com/mikar/blockify
 cd blockify
-sudo apt-get install python-pip python-wnck
-sudo pip2 install . (OR sudo python2 setup.py install)
-# Create optional desktop icon
-echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources; print pkg_resources.resource_filename("blockify", "data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
+sudo pip install .
 ```
 
 ## Usage
@@ -111,6 +111,7 @@ http://skyserver5.skydisc.net:8000
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v1.7.2 (2015-01-10): Added unmute_delay option for the GUI, too. Removed forced unmute when Spotify is not playing a song or blockify can't find an ad. 
 - v1.7.1 (2014-12-26): Fix for [issue #32](https://github.com/mikar/blockify/issues/32) (introduced playback_delay option), better load_config and update_slider error catching
 - v1.7 (2014-12-24): Unmute delay (avoid last second of commercial), segfault bug fix, Timeout for radio stations, logging improvements, threading improvements (complete switch to gtk), refactorings.
 - v1.6 (2014-12-23): Configuration file, playlist and notepad improvements, bug fixes.
