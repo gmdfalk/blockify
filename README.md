@@ -7,7 +7,7 @@ Before installing blockify, please make sure you have the appropriate dependenci
 - Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus
 - Optional (but highly recommended): pulseaudio python2-docopt  
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
-- 
+
 Package names are for ArchLinux and will probably differ slightly between distributions. 
 
 ##### Automatic
