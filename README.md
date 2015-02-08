@@ -27,14 +27,14 @@ If there is no blockify package available on your distribution, you'll have to i
 
 Example Ubuntu installation routine for fixed version (e.g. v1.7.2):
 ``` bash
-sudo apt-get install python-pip python-wnck
+sudo apt-get install python-pip python-wnck python-gst0.10
 sudo pip install http://github.com/mikar/blockify/archive/v1.7.2.zip
 # Create optional desktop icon
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources; print pkg_resources.resource_filename("blockify", "data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
 Example Ubuntu installation routine for master branch:  
 ``` bash
-sudo apt-get install python-pip python-wnck
+sudo apt-get install python-pip python-wnck python-gst0.10
 git clone https://github.com/mikar/blockify
 cd blockify
 sudo pip install .
