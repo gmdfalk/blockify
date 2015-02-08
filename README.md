@@ -4,7 +4,7 @@ Blockify is a linux only application that allows you to automatically mute songs
 ## Installation
 ##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed.
-- Mandatory: pygtk alsa-utils python-gst0.10 python2-wnck python2-dbus
+- Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus
 - Optional (but highly recommended): pulseaudio python2-docopt  
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
 
