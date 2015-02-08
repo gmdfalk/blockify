@@ -4,7 +4,7 @@ Blockify is a linux only application that allows you to automatically mute songs
 ## Installation
 ##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed.
-- Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus
+- Mandatory: pygtk alsa-utils python-gst0.10 python2-wnck python2-dbus
 - Optional (but highly recommended): pulseaudio python2-docopt  
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
 
@@ -130,7 +130,11 @@ You're welcome to open an issue on this site and ask for help but when you do, p
 - The blockify version: `blockify --version`.
 - If you suspect pulseaudio as culprit, the list of sinks: `pacmd list-sink-inputs | curl -F c=@- https://ptpb.pw`.
 
-Some wild stabs in the dark:  
+Common errors:  
+* `ImportError: No module named gst`: You need to install python-gst0.10.
+
+
+Further guesses for why your blockify doesn't work:  
 * Blockify has two binaries. `blockify` (CLI) and `blockify-ui` (GUI). Make sure you're using the right one.  
 * If blockify doesn't find a Spotify process, it won't start.  
 * If there's already a blockify process running, it won't start.  
