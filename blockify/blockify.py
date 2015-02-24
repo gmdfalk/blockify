@@ -166,7 +166,7 @@ class Blockify(object):
             self.blocklist.__init__()
 
         for i in self.blocklist:
-            if self.current_song.startswith(i):
+            if i in self.current_song:
                 self.ad_found()
                 return True
 
