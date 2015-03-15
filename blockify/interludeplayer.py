@@ -7,6 +7,7 @@ import urlparse
 import gst
 import gtk
 import random
+from blockify import util
 
 
 log = logging.getLogger("player")
@@ -21,10 +22,10 @@ class InterludePlayer(object):
         self.manual_control = False
         self.temp_autoresume = False
         self.temp_disable = False
-        self.playback_delay = self.b.options["interlude"]["playback_delay"]
+        self.playback_delay = util.CONFIG["interlude"]["playback_delay"]
         # Automatically resume spotify playback after n seconds.
-        self.radio_timeout = self.b.options["interlude"]["radio_timeout"]
-        self.autoresume = self.b.options["interlude"]["autoresume"]
+        self.radio_timeout = util.CONFIG["interlude"]["radio_timeout"]
+        self.autoresume = util.CONFIG["interlude"]["autoresume"]
         self.uri_rx = re.compile("[A-Za-z]+:\/\/")
         self.formats = ["mp3", "mp4", "flac", "wav", "wma", "ogg", "avi", "mov", "mpg", "flv", "wmv", \
                         "spx", "3gp", "b-mtp", "aac", "aiff", "raw", "midi", "ulaw", "alaw", "gsm" ]
@@ -56,7 +57,7 @@ class InterludePlayer(object):
         playlist = []
 
         if sourcelist is None:
-            sourcelist = [self.b.options["interlude"]["playlist"]]
+            sourcelist = [util.CONFIG["interlude"]["playlist"]]
 
         try:
             for item in sourcelist:

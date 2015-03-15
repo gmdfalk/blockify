@@ -30,11 +30,6 @@ import util
 log = logging.getLogger("main")
 pygtk.require("2.0")
 
-try:
-    from docopt import docopt
-except ImportError:
-    log.error("ImportError: Please install docopt to use the CLI.")
-
 
 class Blockify(object):
 
@@ -44,12 +39,11 @@ class Blockify(object):
         self.check_for_blockify_process()
         self.check_for_spotify_process()
 
-        self.options = util.load_options()
-
-        self._autodetect = self.options["general"]["autodetect"]
-        self._automute = self.options["general"]["automute"]
-        self.update_interval = self.options["cli"]["update_interval"]
-        self.unmute_delay = self.options["cli"]["unmute_delay"]
+        self._autodetect = util.CONFIG["general"]["autodetect"]
+        self._automute = util.CONFIG["general"]["automute"]
+        self.update_interval = util.CONFIG["cli"]["update_interval"]
+        self.unmute_delay = util.CONFIG["cli"]["unmute_delay"]
+        self.pacmd_muted_value = util.CONFIG["general"]["pacmd_muted_value"]
         self.found = False
         self.current_song = ""
         self.song_status = ""
@@ -74,7 +68,7 @@ class Blockify(object):
             self.mutemethod = self.alsa_mute
 
         # Only use interlude music if we use pulse sinks and the interlude playlist is non-empty.
-        self.use_interlude_music = self.options["interlude"]["use_interlude_music"] and \
+        self.use_interlude_music = util.CONFIG["interlude"]["use_interlude_music"] and \
                                    self.mutemethod == self.pulsesink_mute and \
                                    self.player.max_index >= 0
 
@@ -120,7 +114,6 @@ class Blockify(object):
         self.bind_signals()
         self.toggle_mute()
 
-        gtk.threads_init()
         gtk.timeout_add(self.update_interval, self.update)
         log.info("Blockify started.")
         gtk.main()
@@ -165,10 +158,9 @@ class Blockify(object):
             log.info("Blockfile changed. Reloading.")
             self.blocklist.__init__()
 
-        for i in self.blocklist:
-            if self.current_song.startswith(i):
-                self.ad_found()
-                return True
+        if self.blocklist.find(self.current_song):
+            self.ad_found()
+            return True
 
         # Unmute with a certain delay to avoid the last second
         # of commercial you sometimes hear because it's unmuted too early.
@@ -198,11 +190,10 @@ class Blockify(object):
             self.toggle_mute()
         return False
 
-    def get_windows(self):
+    def find_spotify_window(self):
         "Libwnck list of currently open windows."
         # Get the current screen.
         screen = wnck.screen_get_default()
-        screen.force_update()
 
         # Object list of windows in screen.
         windows = screen.get_windows()
@@ -214,10 +205,13 @@ class Blockify(object):
     def get_current_song(self):
         "Checks if a Spotify window exists and returns the current songname."
         song = ""
-        spotify_window = self.get_windows()
+        spotify_window = self.find_spotify_window()
 
         if spotify_window:
-            song = " ".join(spotify_window[0].split()[2:]).decode("utf-8")
+            try:
+                song = " ".join(spotify_window[0].split()[2:]).decode("utf-8")
+            except Exception as e:
+                log.debug("Could not match spotify pid to sink pid: %s", e, exc_info=1)
 
         return song
 
@@ -308,18 +302,18 @@ class Blockify(object):
         try:
             pid = [k for k in idxd.keys() if k in self.spotify_pids][0]
             index, muted = idxd[pid]
-            self.is_sink_muted = True if muted == "yes" else False
+            self.is_sink_muted = True if muted == self.pacmd_muted_value else False
         except IndexError as e:
             log.debug("Could not match spotify pid to sink pid: {}".format(e))
             return
 
-        if muted == "yes" and (mode == 2 or not self.current_song):
+        if self.is_sink_muted and (mode == 2 or not self.current_song):
             log.info("Forcing unmute.")
             subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
-        elif muted == "no" and mode == 1:
+        elif not self.is_sink_muted and mode == 1:
             log.info("Muting {}.".format(self.current_song))
             subprocess.call(["pacmd", "set-sink-input-mute", index, "1"])
-        elif muted == "yes" and not mode:
+        elif self.is_sink_muted and not mode:
             log.info("Unmuting.")
             subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
 
@@ -363,14 +357,7 @@ class Blockify(object):
 
 
 def initialize(doc=__doc__):
-    # Set up the configuration directory & files, if necessary.
-    util.init_config_dir()
-
-    try:
-        args = docopt(doc, version=util.BLOCKIFY_VERSION)
-        util.init_logger(args["--log"], args["-v"], args["--quiet"])
-    except NameError:
-        util.init_logger()
+    util.initialize(doc)
 
     blockify = Blockify(blocklist.Blocklist())
 

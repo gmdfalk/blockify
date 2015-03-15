@@ -175,9 +175,9 @@ class BlockifyUI(gtk.Window):
 
         self.thumbnail_dir = util.THUMBNAIL_DIR
         self.cover_server = "https://i.scdn.co/image/"
-        self.use_cover_art = self.b.options["gui"]["use_cover_art"]
-        self.autohide_cover = self.b.options["gui"]["autohide_cover"]
-        self.b.unmute_delay = self.b.options["gui"]["unmute_delay"]
+        self.use_cover_art = util.CONFIG["gui"]["use_cover_art"]
+        self.autohide_cover = util.CONFIG["gui"]["autohide_cover"]
+        self.b.unmute_delay = util.CONFIG["gui"]["unmute_delay"]
         self.previous_cover_file = ""
 
         self.editor = None
@@ -187,7 +187,7 @@ class BlockifyUI(gtk.Window):
         # reduce CPU usage and decrease it to improve responsiveness.
         # If you need absolutely minimal CPU usage you could, in self.start(),
         # change the line to glib.timeout_add_seconds(2, self.update) or more.
-        self.update_interval = self.b.options["gui"]["update_interval"]
+        self.update_interval = util.CONFIG["gui"]["update_interval"]
 
         # Update interval for interlude music slider.
         self.slider_update_interval = 100
@@ -209,7 +209,6 @@ class BlockifyUI(gtk.Window):
         self.show_all()
         self.set_states()
         log.info("Blockify-UI initialized.")
-        self.start()
 
     def create_tray(self):
         basedir = os.path.dirname(os.path.realpath(__file__))
@@ -227,7 +226,7 @@ class BlockifyUI(gtk.Window):
 
         self.status_icon.connect("popup-menu", self.on_tray_right_click)
         self.status_icon.connect("activate", self.on_tray_left_click)
-        self.status_icon.set_tooltip("blockify v{0}".format(util.BLOCKIFY_VERSION))
+        self.status_icon.set_tooltip("blockify v{0}".format(util.VERSION))
         self.connect("delete-event", self.on_delete_event)
 
     def create_traymenu(self, event_button, event_time):
@@ -396,8 +395,8 @@ class BlockifyUI(gtk.Window):
     def set_states(self):
 
         checkboxes = [self.autodetect_chk, self.automute_chk, self.autoresume_chk, self.autohidecover_chk]
-        values = [self.b.options["general"]["autodetect"], self.b.options["general"]["automute"],
-               self.b.options["interlude"]["autoresume"], self.b.options["gui"]["autohide_cover"]]
+        values = [util.CONFIG["general"]["autodetect"], util.CONFIG["general"]["automute"],
+               util.CONFIG["interlude"]["autoresume"], util.CONFIG["gui"]["autohide_cover"]]
 
         for i in range(len(checkboxes)):
             checkboxes[i].set_active(values[i])
@@ -412,7 +411,6 @@ class BlockifyUI(gtk.Window):
         self.b.toggle_mute()
         self.bind_signals()
 
-        gtk.threads_init()
         # Start and loop the main update routine once every X ms.
         # To influence responsiveness or CPU usage, decrease/increase self.update_interval.
         gtk.timeout_add(self.update_interval, self.update)
@@ -437,7 +435,7 @@ class BlockifyUI(gtk.Window):
         about.set_destroy_with_parent (True)
         about.set_icon_name ("blockify")
         about.set_name("blockify")
-        about.set_version(util.BLOCKIFY_VERSION)
+        about.set_version(util.VERSION)
         about.set_website("http://github.com/mikar/blockify")
         about.set_copyright("(c) 2014 Max Demian")
         about.set_license("The MIT License (MIT)")
@@ -877,7 +875,8 @@ class BlockifyUI(gtk.Window):
 
 def main():
     "Entry point for the GUI-version of Blockify."
-    BlockifyUI(blockify.initialize(__doc__))
+    blockifyUI = BlockifyUI(blockify.initialize(__doc__))
+    blockifyUI.start()
 
 
 if __name__ == "__main__":

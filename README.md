@@ -25,10 +25,10 @@ sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
 ##### Direct (pip/setup.py)
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
 
-Example Ubuntu installation routine for fixed version (e.g. v1.7.2):
+Example Ubuntu installation routine for fixed version (e.g. v1.8.0):
 ``` bash
 sudo apt-get install python-pip python-wnck python-gst0.10
-sudo pip install http://github.com/mikar/blockify/archive/v1.7.2.zip
+sudo pip install http://github.com/mikar/blockify/archive/v1.8.0.zip
 # Create optional desktop icon
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources; print pkg_resources.resource_filename("blockify", "data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
@@ -111,6 +111,7 @@ http://skyserver5.skydisc.net:8000
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v1.8.0 (2015-03-15): Added substring_search option (#36). Added pacmd_muted_value option (#38). Removed gtk.threads_init() (#39).
 - v1.7.2 (2015-01-10): Added unmute_delay option for the GUI, too. Removed forced unmute when Spotify is not playing a song or blockify can't find an ad. 
 - v1.7.1 (2014-12-26): Fix for [issue #32](https://github.com/mikar/blockify/issues/32) (introduced playback_delay option), better load_config and update_slider error catching
 - v1.7 (2014-12-24): Unmute delay (avoid last second of commercial), segfault bug fix, Timeout for radio stations, logging improvements, threading improvements (complete switch to gtk), refactorings.

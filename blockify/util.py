@@ -4,9 +4,14 @@ import logging
 import os
 import sys
 
-
 log = logging.getLogger("util")
-BLOCKIFY_VERSION = "1.7.2"
+
+try:
+    from docopt import docopt
+except ImportError:
+    log.error("ImportError: Please install docopt to use the CLI.")
+
+VERSION = "1.8.0"
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
 BLOCKLIST_FILE = os.path.join(CONFIG_DIR, "blocklist.txt")
@@ -45,6 +50,7 @@ def init_logger(logpath=None, loglevel=0, quiet=False):
         except IOError:
             log.error("Could not attach file handler.")
 
+
 def rename_file(fname):
     if not os.path.isfile(fname):
         try:
@@ -75,7 +81,9 @@ def get_default_options():
     options = {
         "general": {
             "autodetect": True,
-            "automute": True
+            "automute": True,
+            "substring_search": False,
+            "pacmd_muted_value":"yes"
         },
         "cli": {
             "update_interval": 200,
@@ -107,7 +115,9 @@ def load_options():
 
         options["general"] = {
             "autodetect":config.getboolean("general", "autodetect"),
-            "automute":config.getboolean("general", "automute")
+            "automute":config.getboolean("general", "automute"),
+            "substring_search":config.getboolean("general", "substring_search"),
+            "pacmd_muted_value":config.get("general", "pacmd_muted_value")
         }
         options["cli"] = {
             "update_interval":config.getint("cli", "update_interval"),
@@ -153,3 +163,16 @@ def save_options(CONFIG_DIR, options):
         config.write(f)
 
     log.info("Configuration file written to {}.".format(configfile))
+
+
+def initialize(doc):
+    # Set up the configuration directory & files, if necessary.
+    init_config_dir()
+
+    try:
+        args = docopt(doc, version=VERSION)
+        init_logger(args["--log"], args["-v"], args["--quiet"])
+    except NameError:
+        init_logger()
+
+CONFIG = load_options()

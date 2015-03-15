@@ -9,9 +9,10 @@ log = logging.getLogger("list")
 
 
 class Blocklist(list):
-    "A python list extended to store (manually) blocked songs/ads persisently."
+    "List extended to store (manually) blocked songs/ads persisently."
     # Could subclass UserList.UserList here instead which inherits from
     # collections.MutableSequence. In Python3 it's collections.UserList.
+
     def __init__(self):
         super(Blocklist, self).__init__()
         self.location = util.BLOCKLIST_FILE
@@ -38,12 +39,17 @@ class Blocklist(list):
             log.warn("Could not remove {} from blocklist: {}".format(item, e))
 
     def find(self, song):
-        # Arbitrary minimum length of 4 to avoid ambiguous song names.
-        while len(song) > 4:
+        if util.CONFIG["general"]["substring_search"]:
             for item in self:
-                if item.startswith(song):
+                if item in song:
                     return item
-            song = song[:len(song) / 2]
+        else:
+            # Arbitrary minimum length of 4 to avoid ambiguous song names.
+            while len(song) > 4:
+                for item in self:
+                    if item.startswith(song):
+                        return item
+                song = song[:len(song) / 2]
 
     def get_timestamp(self):
         return os.path.getmtime(self.location)
