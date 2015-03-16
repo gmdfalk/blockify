@@ -43,7 +43,9 @@ class Blockify(object):
         self._automute = util.CONFIG["general"]["automute"]
         self.update_interval = util.CONFIG["cli"]["update_interval"]
         self.unmute_delay = util.CONFIG["cli"]["unmute_delay"]
-        self.pacmd_muted_value = util.CONFIG["general"]["pacmd_muted_value"]
+        self.pacmd_muted_value = "yes"  # util.CONFIG["general"]["pacmd_muted_value"]
+        self.env = os.environ.copy()
+        self.env["LC_ALL"] = "en_US"
         self.found = False
         self.current_song = ""
         self.song_status = ""
@@ -277,7 +279,7 @@ class Blockify(object):
     def pulsesink_mute(self, mode):
         "Finds spotify's audio sink and toggles its mute state."
         try:
-            pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
+            pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"], env=self.env)
         except subprocess.CalledProcessError:
             log.error("Spotify sink not found. Is Pulse running? Resorting to pulse amixer as mute method.")
             self.mutemethod = self.pulse_mute  # Fall back to amixer mute.

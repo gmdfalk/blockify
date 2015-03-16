@@ -11,7 +11,7 @@ try:
 except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
 
-VERSION = "1.8.0"
+VERSION = "1.8.1"
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
 BLOCKLIST_FILE = os.path.join(CONFIG_DIR, "blocklist.txt")
@@ -82,8 +82,8 @@ def get_default_options():
         "general": {
             "autodetect": True,
             "automute": True,
-            "substring_search": False,
-            "pacmd_muted_value":"yes"
+            "substring_search": False
+            # "pacmd_muted_value":"yes"
         },
         "cli": {
             "update_interval": 200,
@@ -116,8 +116,8 @@ def load_options():
         options["general"] = {
             "autodetect":config.getboolean("general", "autodetect"),
             "automute":config.getboolean("general", "automute"),
-            "substring_search":config.getboolean("general", "substring_search"),
-            "pacmd_muted_value":config.get("general", "pacmd_muted_value")
+            "substring_search":config.getboolean("general", "substring_search")
+            # "pacmd_muted_value":config.get("general", "pacmd_muted_value")
         }
         options["cli"] = {
             "update_interval":config.getint("cli", "update_interval"),

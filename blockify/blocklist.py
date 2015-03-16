@@ -16,6 +16,7 @@ class Blocklist(list):
     def __init__(self):
         super(Blocklist, self).__init__()
         self.location = util.BLOCKLIST_FILE
+        self.use_substring_search = util.CONFIG["general"]["substring_search"]
         self.extend(self.load())
         log.info("Blocklist loaded from {}.".format(self.location))
         self.timestamp = self.get_timestamp()
@@ -39,7 +40,7 @@ class Blocklist(list):
             log.warn("Could not remove {} from blocklist: {}".format(item, e))
 
     def find(self, song):
-        if util.CONFIG["general"]["substring_search"]:
+        if self.use_substring_search:
             for item in self:
                 if item in song:
                     return item
