@@ -12,6 +12,7 @@ except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
 
 VERSION = "1.8.2"
+CONFIG = None
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
 BLOCKLIST_FILE = os.path.join(CONFIG_DIR, "blocklist.txt")

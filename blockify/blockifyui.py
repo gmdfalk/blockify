@@ -481,6 +481,7 @@ class BlockifyUI(gtk.Window):
                     self.enable_cover()
             except Exception as e:
                 log.error("Failed to load cover art: {}. Disabling.".format(e))
+                self.coverimage.set_from_pixbuf(None)
                 self.use_cover_art = False
                 self.autohidecover_chk.set_active(False)
                 self.disable_cover()
