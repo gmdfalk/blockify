@@ -677,7 +677,7 @@ class BlockifyUI(gtk.Window):
 
     def on_interlude_audio_changed (self, player):
         "Audio source for interlude music has changed."
-        log.debug("Interlude track changed to {}.".format(self.b.player.get_current_uri()))
+        log.info("Interlude track changed to {}.".format(self.b.player.get_current_uri()))
         gtk.timeout_add(self.slider_update_interval, self.update_slider)
         uri = self.b.player.get_current_uri()
         if uri.startswith("file://"):
@@ -723,6 +723,7 @@ class BlockifyUI(gtk.Window):
         "Interlude open playlist button."
         if self.b.use_interlude_music:
             self.b.player.shuffle()
+            self.b.player.show_playlist()
 
     def on_open_btn(self, widget):
         "Interlude open playlist button."

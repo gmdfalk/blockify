@@ -216,16 +216,14 @@ class InterludePlayer(object):
         self.play()
 
     def shuffle(self):
-        # uri = self.get_current_uri()
+        uri = self.get_current_uri()
         random.shuffle(self.playlist)
-        log.info("Shuffled playlist.")
-        self.show_playlist()
+        log.info("Playlist was shuffled.")
         # Adjust index to make sure self.get_current_uri() returns the current song.
-        # However, right now, that's not necessary as that method is only used when
-        # the song changes.
-        # If there are duplicate entries of uri in the playlist, this next line
-        # isn't all that, too, so for now, let's just leave it out.
-        # self.index = self.playlist.index(uri)
+        try:
+            self.index = self.playlist.index(uri)
+        except ValueError:
+            self.index = 0
 
     def queue_next(self):
         self.index += 1
