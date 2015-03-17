@@ -11,7 +11,7 @@ try:
 except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
 
-VERSION = "1.8.1"
+VERSION = "1.8.2"
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
 BLOCKLIST_FILE = os.path.join(CONFIG_DIR, "blocklist.txt")
@@ -97,8 +97,9 @@ def get_default_options():
         },
         "interlude": {
             "use_interlude_music": True,
-            "playlist": PLAYLIST_FILE,
+            "start_shuffled": False,
             "autoresume": False,
+            "playlist": PLAYLIST_FILE,
             "radio_timeout": 180,
             "playback_delay": 500
         }
@@ -131,6 +132,7 @@ def load_options():
         }
         options["interlude"] = {
             "use_interlude_music":config.getboolean("interlude", "use_interlude_music"),
+            "start_shuffled":config.getboolean("interlude", "start_shuffled"),
             "autoresume":config.getboolean("interlude", "autoresume"),
             "radio_timeout":config.getint("interlude", "radio_timeout"),
             "playback_delay":config.getint("interlude", "playback_delay"),

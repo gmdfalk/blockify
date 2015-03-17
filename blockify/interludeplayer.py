@@ -38,12 +38,14 @@ class InterludePlayer(object):
         # self.bus.connect("message::eos", self.on_finish)
         # Finally, load the playlist file.
         log.info("InterludePlayer initialized.")
-        self.load_playlist(self.parse_playlist())
+        self.load_playlist(self.parse_playlist(), util.CONFIG["interlude"]["start_shuffled"])
 
-    def load_playlist(self, playlist):
+    def load_playlist(self, playlist, shuffle=False):
         "Read the music to be played instead of commercials into a list."
         log.debug("Loading playlist.")
         self.playlist = playlist
+        if shuffle:
+            self.shuffle()
         self.max_index = len(self.playlist) - 1
         self.stop()
         self.set_uri()
