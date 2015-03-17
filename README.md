@@ -111,7 +111,7 @@ http://skyserver5.skydisc.net:8000
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
-- v1.8.1 (2015-03-17): Added start_shuffled option in interlude-section ([issue #36](https://github.com/mikar/blockify/issues/41))
+- v1.8.1 (2015-03-17): Added start_shuffled option in interlude-section ([issue #41](https://github.com/mikar/blockify/issues/41))
 - v1.8.0 (2015-03-15): Added substring_search option ([issue #36](https://github.com/mikar/blockify/issues/36)). Added pacmd_muted_value option ([issue #38](https://github.com/mikar/blockify/issues/38)). Removed gtk.threads_init() ([issue #39](https://github.com/mikar/blockify/issues/39)).
 - v1.7.2 (2015-01-10): Added unmute_delay option for the GUI, too. Removed forced unmute when Spotify is not playing a song or blockify can't find an ad. 
 - v1.7.1 (2014-12-26): Fix for [issue #32](https://github.com/mikar/blockify/issues/32) (introduced playback_delay option), better load_config and update_slider error catching
