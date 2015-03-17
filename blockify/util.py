@@ -11,7 +11,7 @@ try:
 except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
 
-VERSION = "1.8.1"
+VERSION = "1.8.2"
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
 BLOCKLIST_FILE = os.path.join(CONFIG_DIR, "blocklist.txt")
@@ -109,46 +109,42 @@ def get_default_options():
 
 
 def load_options():
-    options = {}
+    log.info("Loading configuration.")
+    options = get_default_options()
     config = ConfigParser.ConfigParser()
     try:
         config.read(CONFIG_FILE)
-
-        options["general"] = {
-            "autodetect":config.getboolean("general", "autodetect"),
-            "automute":config.getboolean("general", "automute"),
-            "substring_search":config.getboolean("general", "substring_search")
-            # "pacmd_muted_value":config.get("general", "pacmd_muted_value")
-        }
-        options["cli"] = {
-            "update_interval":config.getint("cli", "update_interval"),
-            "unmute_delay":config.getint("cli", "unmute_delay")
-        }
-        options["gui"] = {
-            "use_cover_art":config.getboolean("gui", "use_cover_art"),
-            "autohide_cover":config.getboolean("gui", "autohide_cover"),
-            "update_interval":config.getint("gui", "update_interval"),
-            "unmute_delay":config.getint("gui", "unmute_delay")
-        }
-        options["interlude"] = {
-            "use_interlude_music":config.getboolean("interlude", "use_interlude_music"),
-            "start_shuffled":config.getboolean("interlude", "start_shuffled"),
-            "autoresume":config.getboolean("interlude", "autoresume"),
-            "radio_timeout":config.getint("interlude", "radio_timeout"),
-            "playback_delay":config.getint("interlude", "playback_delay"),
-            "playlist":config.get("interlude", "playlist")
-        }
+    except Exception as e:
+        log.error("Could not read config file: {}. Using default options.".format(e))
+    else:
+        option_tuples = [("general", "autodetect", "bool"), ("general", "automute", "bool"), ("general", "substring_search", "bool"),
+          ("cli", "update_interval", "int"), ("cli", "unmute_delay", "int"),
+          ("gui", "use_cover_art", "bool"), ("gui", "autohide_cover", "bool"), ("gui", "update_interval", "int"), ("gui", "unmute_delay", "int"),
+          ("interlude", "use_interlude_music", "bool"), ("interlude", "start_shuffled", "bool"), ("interlude", "autoresume", "bool"),
+          ("interlude", "radio_timeout", "int"), ("interlude", "playback_delay", "int"), ("interlude", "playlist", "str")
+          ]
+        for option_tuple in option_tuples:
+            load_option(config, options, option_tuple)
         if not options["interlude"]["playlist"]:
             options["interlude"]["playlist"] = PLAYLIST_FILE
-    except Exception as e:
-        log.error("Could not read config file: {}. Merging with default options.".format(e))
-        # Merge with default options to make sure we have everything we need.
-        defoptions = get_default_options()
-        options = dict(defoptions.items() + options.items())
-    else:
         log.info("Configuration file loaded from {}.".format(CONFIG_FILE))
 
     return options
+
+
+def load_option(config, options, option_tuple):
+    section_name, option_name, option_type = option_tuple[0], option_tuple[1], option_tuple[2]
+    try:
+        option = None
+        if (option_type == "bool"):
+            option = config.getboolean(section_name, option_name)
+        elif (option_type == "int"):
+            option = config.getint(section_name, option_name)
+        else:
+            option = config.get(section_name, option_name)
+        options[section_name][option_name] = option
+    except Exception:
+        log.error("Could not parse option %s for section %s. Using default value.", option_name, section_name)
 
 
 def save_options(CONFIG_DIR, options):
@@ -168,13 +164,14 @@ def save_options(CONFIG_DIR, options):
 
 
 def initialize(doc):
-    # Set up the configuration directory & files, if necessary.
-    init_config_dir()
-
     try:
         args = docopt(doc, version=VERSION)
         init_logger(args["--log"], args["-v"], args["--quiet"])
     except NameError:
         init_logger()
 
-CONFIG = load_options()
+    global CONFIG
+    CONFIG = load_options()
+
+    # Set up the configuration directory & files, if necessary.
+    init_config_dir()

@@ -44,9 +44,9 @@ class InterludePlayer(object):
         "Read the music to be played instead of commercials into a list."
         log.debug("Loading playlist.")
         self.playlist = playlist
+        self.max_index = len(self.playlist) - 1
         if shuffle:
             self.shuffle()
-        self.max_index = len(self.playlist) - 1
         self.stop()
         self.set_uri()
         log.info("Playlist loaded (Length: {}).".format(len(playlist)))
