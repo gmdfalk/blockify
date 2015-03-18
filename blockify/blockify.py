@@ -43,7 +43,7 @@ class Blockify(object):
         self._automute = util.CONFIG["general"]["automute"]
         self.update_interval = util.CONFIG["cli"]["update_interval"]
         self.unmute_delay = util.CONFIG["cli"]["unmute_delay"]
-        self.pacmd_muted_value = "yes"  # util.CONFIG["general"]["pacmd_muted_value"]
+        self.pacmd_muted_value = util.CONFIG["general"]["pacmd_muted_value"]
         self.env = os.environ.copy()
         self.env["LC_ALL"] = "en_US"
         self.found = False
