@@ -4,6 +4,8 @@ import re
 import urllib
 import urlparse
 
+import gobject
+gobject.threads_init()
 import gst
 import gtk
 import random
