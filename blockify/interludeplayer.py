@@ -218,14 +218,14 @@ class InterludePlayer(object):
         self.play()
 
     def shuffle(self):
-        uri = self.get_current_uri()
+#         uri = self.get_current_uri()
         random.shuffle(self.playlist)
         log.info("Playlist was shuffled.")
         # Adjust index to make sure self.get_current_uri() returns the current song.
-        try:
-            self.index = self.playlist.index(uri)
-        except ValueError:
-            self.index = 0
+#         try:
+#             self.index = self.playlist.index(uri)
+#         except ValueError:
+#             self.index = 0
 
     def queue_next(self):
         self.index += 1
