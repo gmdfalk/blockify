@@ -118,7 +118,7 @@ def load_options():
     except Exception as e:
         log.error("Could not read config file: {}. Using default options.".format(e))
     else:
-        option_tuples = [("general", "autodetect", "bool"), ("general", "automute", "bool"), ("general", "substring_search", "bool"), ("general", "pamcd_muted_value", "str"),
+        option_tuples = [("general", "autodetect", "bool"), ("general", "automute", "bool"), ("general", "substring_search", "bool"), ("general", "pacmd_muted_value", "str"),
           ("cli", "update_interval", "int"), ("cli", "unmute_delay", "int"),
           ("gui", "use_cover_art", "bool"), ("gui", "autohide_cover", "bool"), ("gui", "update_interval", "int"), ("gui", "unmute_delay", "int"),
           ("interlude", "use_interlude_music", "bool"), ("interlude", "start_shuffled", "bool"), ("interlude", "autoresume", "bool"),
