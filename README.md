@@ -25,10 +25,10 @@ sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
 ##### Direct (pip/setup.py)
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
 
-Example Ubuntu installation routine for fixed version (e.g. v1.8.0):
+Example Ubuntu installation routine for fixed version (e.g. v1.8.3):
 ``` bash
 sudo apt-get install python-pip python-wnck python-gst0.10
-sudo pip install http://github.com/mikar/blockify/archive/v1.8.0.zip
+sudo pip install http://github.com/mikar/blockify/archive/v1.8.3.zip
 # Create optional desktop icon
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources; print pkg_resources.resource_filename("blockify", "data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
@@ -111,6 +111,7 @@ http://skyserver5.skydisc.net:8000
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v1.8.3 (2015-05-06): Fix [issue #44](https://github.com/mikar/blockify/issues/44): Cancel current interlude song and resume spotify playback if next spotify song button is clicked when no ad is playing
 - v1.8.2 (2015-03-18): Reintroduced pacmd_muted_value option in general section ([issue #38](https://github.com/mikar/blockify/issues/38)). Added `gobject.threads_init()` to address ([issue #42](https://github.com/mikar/blockify/issues/42)). 
 - v1.8.1 (2015-03-17): Added start_shuffled option in interlude-section ([issue #41](https://github.com/mikar/blockify/issues/41))
 - v1.8.0 (2015-03-15): Added substring_search option ([issue #36](https://github.com/mikar/blockify/issues/36)). Added pacmd_muted_value option ([issue #38](https://github.com/mikar/blockify/issues/38)). Removed gtk.threads_init() ([issue #39](https://github.com/mikar/blockify/issues/39)).
