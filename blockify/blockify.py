@@ -134,6 +134,8 @@ class Blockify(object):
 
     def find_ad(self):
         "Main loop. Checks for ads and mutes accordingly."
+        if self.current_song != self.get_current_song() and self.player.is_playing() and not self.dbus.is_playing:
+            self.player.pause()
         self.current_song = self.get_current_song()
         self.song_status = self.dbus.get_song_status()
         self.dbus.is_playing = self.song_status == "Playing"
