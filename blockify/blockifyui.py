@@ -1,4 +1,8 @@
 #!/usr/bin/env python2
+# blockifyui.py
+#
+# Abandon all hope, ye who enter here.
+#
 """blockify-ui
 
 Usage:
@@ -425,10 +429,21 @@ class BlockifyUI(gtk.Window):
 
     def bind_signals(self):
         "Binds SIGTERM, SIGINT and SIGUSR1 to custom actions."
-        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())
-        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.b.unblock_current())
-        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
-        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
+        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())  # 9
+        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())  # 15
+
+        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())  # 10
+        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.b.unblock_current())  # 12
+
+        signal.signal(signal.SIGRTMIN, lambda sig, hdl: self.on_prev_btn(self.prev_btn))  # 34
+        signal.signal(signal.SIGRTMIN + 1, lambda sig, hdl: self.on_next_btn(self.next_btn))  # 35
+        signal.signal(signal.SIGRTMIN + 2, lambda sig, hdl: self.on_toggleplay_btn(self.toggleplay_btn))  # 35
+        signal.signal(signal.SIGRTMIN + 3, lambda sig, hdl: self.on_toggle_block_btn(self.toggle_block_btn))  # 37
+
+        signal.signal(signal.SIGRTMIN + 10, lambda sig, hdl: self.on_prev_interlude_btn(self.prev_interlude_btn))  # 44
+        signal.signal(signal.SIGRTMIN + 11, lambda sig, hdl: self.on_next_interlude_btn(self.next_interlude_btn))  # 45
+        signal.signal(signal.SIGRTMIN + 12, lambda sig, hdl: self.on_play_interlude_btn(self.play_interlude_btn))  # 46
+        signal.signal(signal.SIGRTMIN + 13, lambda sig, hdl: self.on_autoresume(self.autoresume_chk))  # 47
 
     def show_about_dialogue(self, widget):
         about = gtk.AboutDialog()
@@ -517,6 +532,13 @@ class BlockifyUI(gtk.Window):
             self.toggle_cover_btn.set_label("Hide Cover")
         else:
             self.toggle_cover_btn.set_label("Show Cover")
+
+        if self.b.player.autoresume and not self.autoresume_chk.get_active():
+            self.b.player.autoresume = False  # Inverse the state to avoid a toggle loop
+            self.autoresume_chk.set_active(True)
+        elif not self.b.player.autoresume and self.autoresume_chk.get_active():
+            self.b.player.autoresume = True  # Inverse the state to avoid a toggle loop
+            self.autoresume_chk.set_active(False)
 
         # Correct state of Open/Close List toggle button.
         if self.editor:
@@ -646,7 +668,7 @@ class BlockifyUI(gtk.Window):
         self.create_traymenu(event_button, event_time)
 
     def on_autoresume(self, widget):
-        if widget.get_active():
+        if not self.b.player.autoresume:
             self.b.player.autoresume = True
             self.b.player.manual_control = False
             if not self.b.found and not self.b.dbus.is_playing:
@@ -811,14 +833,11 @@ class BlockifyUI(gtk.Window):
 
     def on_toggle_block_btn(self, widget):
         "Button to block/unblock the current song."
+        self.b.toggle_block()
         if self.b.found:
-            self.b.unblock_current()
             widget.set_label("Block")
         else:
-            self.b.block_current()
             widget.set_label("Unblock")
-            if self.b.use_interlude_music:
-                self.b.player.manual_control = False
 
     def on_autodetect_chk(self, widget):
         if widget.get_active():
@@ -870,16 +889,10 @@ class BlockifyUI(gtk.Window):
         self.b.dbus.playpause()
 
     def on_next_btn(self, widget):
-        self.b.dbus.next()
-        self.try_resume_spotify_playback()
+        self.b.next()
 
     def on_prev_btn(self, widget):
-        self.b.dbus.prev()
-        self.try_resume_spotify_playback()
-
-    def try_resume_spotify_playback(self):
-        if self.b.player.is_playing() and not self.b.found:
-            self.b.player.pause()
+        self.b.prev()
 
     def on_exit_btn(self, widget):
         self.stop()

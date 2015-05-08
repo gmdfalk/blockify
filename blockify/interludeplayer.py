@@ -137,6 +137,11 @@ class InterludePlayer(object):
 
         return not any(exclusions) and any(valid_format)
 
+    def try_resume_spotify_playback(self):
+        if self.is_playing() and not self.b.found:
+            self.pause()
+            self.b.dbus.playpause()
+
     def resume_spotify_playback(self):
         if not self.b.found:
             if not self.b.dbus.is_playing:
@@ -151,10 +156,22 @@ class InterludePlayer(object):
 
         return True
 
+    def playpause(self):
+        if self.is_playing():
+            self.pause()
+        else:
+            self.play()
+
     def play_with_delay(self):
         self.temp_disable = False
         self.toggle_music()
         return False
+
+    def toggle_autoresume(self):
+        if self.autoresume:
+            self.autoresume = False
+        else:
+            self.autoresume = True
 
     def toggle_music(self):
         "Method that gets called every update_interval ms via update()."

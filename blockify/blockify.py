@@ -319,12 +319,31 @@ class Blockify(object):
             log.info("Unmuting.")
             subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
 
+    def prev(self):
+        self.dbus.prev()
+        self.player.try_resume_spotify_playback()
+
+    def next(self):
+        self.dbus.next()
+        self.player.try_resume_spotify_playback()
+
     def bind_signals(self):
-        "Catch SIGINT and SIGTERM to exit cleanly & SIGUSR1 to block a song."
-        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.block_current())
-        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.unblock_current())
-        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())
-        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())
+        "Catch signals because it seems like a great idea, right? ... Right?"
+        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())  # 9
+        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())  # 15
+
+        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.block_current())  # 10
+        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.unblock_current())  # 12
+
+        signal.signal(signal.SIGRTMIN, lambda sig, hdl: self.prev())  # 34
+        signal.signal(signal.SIGRTMIN + 1, lambda sig, hdl: self.next())  # 35
+        signal.signal(signal.SIGRTMIN + 2, lambda sig, hdl: self.dbus.playpause()())  # 35
+        signal.signal(signal.SIGRTMIN + 3, lambda sig, hdl: self.toggle_block())  # 37
+
+        signal.signal(signal.SIGRTMIN + 10, lambda sig, hdl: self.player.prev())  # 44
+        signal.signal(signal.SIGRTMIN + 11, lambda sig, hdl: self.player.next())  # 45
+        signal.signal(signal.SIGRTMIN + 12, lambda sig, hdl: self.player.playpause())  # 46
+        signal.signal(signal.SIGRTMIN + 13, lambda sig, hdl: self.player.toggle_autoresume())  # 47
 
     def stop(self):
         log.info("Exiting safely. Bye.")
@@ -338,6 +357,15 @@ class Blockify(object):
         # Unmute before exiting.
         self.toggle_mute(2)
         sys.exit()
+
+    def toggle_block(self):
+        "Block/unblock the current song."
+        if self.found:
+            self.unblock_current()
+        else:
+            self.block_current()
+            if self.use_interlude_music:
+                self.player.manual_control = False
 
     @property
     def automute(self):

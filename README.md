@@ -56,10 +56,30 @@ Blockify will automatically detect and block ads for you so besides starting it,
 However, it also comes with the option to complement or replace that autoblock functionality with a blocklist (saved as ~/.config/blockify/blocklist.txt).  
 Blocklist-Entries are case-sensitive and greedy, e.g. the entry `Blood` would not only block all Bloodhound Gang songs but any song by any artist starting with `"Blood"`.  
 
+#### Controls/Actions
+Blockify accepts several signals:
+* SIGINT(9)/SIGTERM(15): Exit cleanly.
+* SIGUSR1(10): Block current song.
+* SIGUSR2(12): Unblock current song.
+* SIGRTMIN(34): Play previous spotify song.
+* SIGRTMIN+1(35): Play next spotify song.
+* SIGRTMIN+2(36): Toggle play/pause the current spotify song.
+* SIGRTMIN+3(37): Toggle block state of current song.
+* SIGRTMIN+10(44): Play previous interlude song.
+* SIGRTMIN+11(45): Play next interlude song.
+* SIGRTMIN+12(46): Toggle play/pause the current interlude song.
+* SIGRTMIN+13(47): Toggle interlude autoresume.
+
+Example usage:
+```bash
+pkill -USR1 -f "python2.*blockify"
+pkill -RTMIN+1 -f "python2.*blockify"
+```
+Bind to keys for fun and profit.
+
 ##### CLI
 Blockify has a CLI/daemon that you can start with `blockify`.  
 `blockify -h` will print out a help text with available options.  
-To block or unblock a song with the cli running, use `pkill -USR1 -f "python2.*blockify"` and `pkill -USR2 -f "python2.*blockify"` respectively.   
 
 ##### GUI
 Alternatively, you can use the GUI with `blockify-ui` which spawns this window.  
@@ -111,6 +131,7 @@ http://skyserver5.skydisc.net:8000
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v1.8.4 (2015-05-08): Add additional signals for both spotify and interlude controls (prev/next/playpause, ...), see Controls/Actions section in this README
 - v1.8.3 (2015-05-06): Fix [issue #44](https://github.com/mikar/blockify/issues/44): Cancel current interlude song and resume spotify playback if next spotify song button is clicked when no ad is playing
 - v1.8.2 (2015-03-18): Reintroduced pacmd_muted_value option in general section ([issue #38](https://github.com/mikar/blockify/issues/38)). Added `gobject.threads_init()` to address ([issue #42](https://github.com/mikar/blockify/issues/42)). 
 - v1.8.1 (2015-03-17): Added start_shuffled option in interlude-section ([issue #41](https://github.com/mikar/blockify/issues/41))
