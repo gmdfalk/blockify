@@ -131,6 +131,7 @@ http://skyserver5.skydisc.net:8000
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v1.8.5 (2015-05-09): Signal cleanups and [issue #44](https://github.com/mikar/blockify/issues/44) again.
 - v1.8.4 (2015-05-08): Add additional signals for both spotify and interlude controls (prev/next/playpause, ...), see Controls/Actions section in this README
 - v1.8.3 (2015-05-06): Fix [issue #44](https://github.com/mikar/blockify/issues/44): Cancel current interlude song and resume spotify playback if next spotify song button is clicked when no ad is playing
 - v1.8.2 (2015-03-18): Reintroduced pacmd_muted_value option in general section ([issue #38](https://github.com/mikar/blockify/issues/38)). Added `gobject.threads_init()` to address ([issue #42](https://github.com/mikar/blockify/issues/42)). 
