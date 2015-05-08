@@ -427,23 +427,58 @@ class BlockifyUI(gtk.Window):
         log.debug("Exiting GUI.")
         gtk.main_quit()
 
+    def signal_stop_received(self, sig, hdl):
+        log.debug("{} received. Exiting safely.".format(sig))
+        self.stop()
+
+    def signal_prev_received(self, sig, hdl):
+        log.debug("Signal {} received. Playing previous interlude.".format(sig))
+        self.on_prev_btn(self.prev_btn)
+
+    def signal_next_received(self, sig, hdl):
+        log.debug("Signal {} received. Playing next song.".format(sig))
+        self.on_next_btn(self.next_btn)
+
+    def signal_playpause_received(self, sig, hdl):
+        log.debug("Signal {} received. Toggling play state.".format(sig))
+        self.on_toggleplay_btn(self.toggleplay_btn)
+
+    def signal_toggle_block_received(self, sig, hdl):
+        log.debug("Signal {} received. Toggling blocked state.".format(sig))
+        self.on_toggle_block_btn(self.toggle_block_btn)
+
+    def signal_prev_interlude_received(self, sig, hdl):
+        log.debug("Signal {} received. Playing previous interlude.".format(sig))
+        self.on_prev_interlude_btn(self.prev_interlude_btn)
+
+    def signal_next_interlude_received(self, sig, hdl):
+        log.debug("Signal {} received. Playing next interlude.".format(sig))
+        self.on_next_interlude_btn(self.next_interlude_btn)
+
+    def signal_playpause_interlude_received(self, sig, hdl):
+        log.debug("Signal {} received. Toggling interlude play state.".format(sig))
+        self.on_play_interlude_btn(self.play_interlude_btn)
+
+    def signal_toggle_autoresume_received(self, sig, hdl):
+        log.debug("Signal {} received. Toggling autoresume.".format(sig))
+        self.on_autoresume(self.autoresume_chk)
+
     def bind_signals(self):
-        "Binds SIGTERM, SIGINT and SIGUSR1 to custom actions."
-        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())  # 9
-        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())  # 15
+        signal.signal(signal.SIGINT, self.signal_stop_received)  # 9
+        signal.signal(signal.SIGTERM, self.signal_stop_received)  # 15
 
-        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.b.block_current())  # 10
-        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.b.unblock_current())  # 12
+        signal.signal(signal.SIGUSR1, self.b.signal_block_received)  # 10
+        signal.signal(signal.SIGUSR2, self.b.signal_unblock_received)  # 12
 
-        signal.signal(signal.SIGRTMIN, lambda sig, hdl: self.on_prev_btn(self.prev_btn))  # 34
-        signal.signal(signal.SIGRTMIN + 1, lambda sig, hdl: self.on_next_btn(self.next_btn))  # 35
-        signal.signal(signal.SIGRTMIN + 2, lambda sig, hdl: self.on_toggleplay_btn(self.toggleplay_btn))  # 35
-        signal.signal(signal.SIGRTMIN + 3, lambda sig, hdl: self.on_toggle_block_btn(self.toggle_block_btn))  # 37
+        signal.signal(signal.SIGRTMIN, self.signal_prev_received)  # 34
+        signal.signal(signal.SIGRTMIN + 1, self.signal_next_received)  # 35
+        signal.signal(signal.SIGRTMIN + 2, self.signal_playpause_received)  # 35
+        signal.signal(signal.SIGRTMIN + 3, self.signal_toggle_block_received)  # 37
 
-        signal.signal(signal.SIGRTMIN + 10, lambda sig, hdl: self.on_prev_interlude_btn(self.prev_interlude_btn))  # 44
-        signal.signal(signal.SIGRTMIN + 11, lambda sig, hdl: self.on_next_interlude_btn(self.next_interlude_btn))  # 45
-        signal.signal(signal.SIGRTMIN + 12, lambda sig, hdl: self.on_play_interlude_btn(self.play_interlude_btn))  # 46
-        signal.signal(signal.SIGRTMIN + 13, lambda sig, hdl: self.on_autoresume(self.autoresume_chk))  # 47
+        signal.signal(signal.SIGRTMIN + 10, self.signal_prev_interlude_received)  # 44
+        signal.signal(signal.SIGRTMIN + 11, self.signal_next_interlude_received)  # 45
+        signal.signal(signal.SIGRTMIN + 12, self.signal_playpause_interlude_received)  # 46
+        signal.signal(signal.SIGRTMIN + 13, self.signal_toggle_autoresume_received)  # 47
 
     def show_about_dialogue(self, widget):
         about = gtk.AboutDialog()

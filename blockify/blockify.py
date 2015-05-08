@@ -327,23 +327,67 @@ class Blockify(object):
         self.dbus.next()
         self.player.try_resume_spotify_playback()
 
+    def signal_stop_received(self, sig, hdl):
+        log.debug("{} received. Exiting safely.".format(sig))
+        self.stop()
+
+    def signal_block_received(self, sig, hdl):
+        log.debug("Signal {} received. Blocking current song.".format(sig))
+        self.block_current()
+
+    def signal_unblock_received(self, sig, hdl):
+        log.debug("Signal {} received. Unblocking current song.".format(sig))
+        self.unblock_current()
+
+    def signal_prev_received(self, sig, hdl):
+        log.debug("Signal {} received. Playing previous interlude.".format(sig))
+        self.prev()
+
+    def signal_next_received(self, sig, hdl):
+        log.debug("Signal {} received. Playing next song.".format(sig))
+        self.next()
+
+    def signal_playpause_received(self, sig, hdl):
+        log.debug("Signal {} received. Toggling play state.".format(sig))
+        self.dbus.playpause()
+
+    def signal_toggle_block_received(self, sig, hdl):
+        log.debug("Signal {} received. Toggling blocked state.".format(sig))
+        self.toggle_block()
+
+    def signal_prev_interlude_received(self, sig, hdl):
+        log.debug("Signal {} received. Playing previous interlude.".format(sig))
+        self.player.prev()
+
+    def signal_next_interlude_received(self, sig, hdl):
+        log.debug("Signal {} received. Playing next interlude.".format(sig))
+        self.player.next()
+
+    def signal_playpause_interlude_received(self, sig, hdl):
+        log.debug("Signal {} received. Toggling interlude play state.".format(sig))
+        self.player.playpause()
+
+    def signal_toggle_autoresume_received(self, sig, hdl):
+        log.debug("Signal {} received. Toggling autoresume.".format(sig))
+        self.player.toggle_autoresume()
+
     def bind_signals(self):
         "Catch signals because it seems like a great idea, right? ... Right?"
-        signal.signal(signal.SIGINT, lambda sig, hdl: self.stop())  # 9
-        signal.signal(signal.SIGTERM, lambda sig, hdl: self.stop())  # 15
+        signal.signal(signal.SIGINT, self.signal_stop_received)  # 9
+        signal.signal(signal.SIGTERM, self.signal_stop_received)  # 15
 
-        signal.signal(signal.SIGUSR1, lambda sig, hdl: self.block_current())  # 10
-        signal.signal(signal.SIGUSR2, lambda sig, hdl: self.unblock_current())  # 12
+        signal.signal(signal.SIGUSR1, self.signal_block_received)  # 10
+        signal.signal(signal.SIGUSR2, self.signal_unblock_received)  # 12
 
-        signal.signal(signal.SIGRTMIN, lambda sig, hdl: self.prev())  # 34
-        signal.signal(signal.SIGRTMIN + 1, lambda sig, hdl: self.next())  # 35
-        signal.signal(signal.SIGRTMIN + 2, lambda sig, hdl: self.dbus.playpause()())  # 35
-        signal.signal(signal.SIGRTMIN + 3, lambda sig, hdl: self.toggle_block())  # 37
+        signal.signal(signal.SIGRTMIN, self.signal_prev_received)  # 34
+        signal.signal(signal.SIGRTMIN + 1, self.signal_next_received)  # 35
+        signal.signal(signal.SIGRTMIN + 2, self.signal_playpause_received)  # 35
+        signal.signal(signal.SIGRTMIN + 3, self.signal_toggle_block_received)  # 37
 
-        signal.signal(signal.SIGRTMIN + 10, lambda sig, hdl: self.player.prev())  # 44
-        signal.signal(signal.SIGRTMIN + 11, lambda sig, hdl: self.player.next())  # 45
-        signal.signal(signal.SIGRTMIN + 12, lambda sig, hdl: self.player.playpause())  # 46
-        signal.signal(signal.SIGRTMIN + 13, lambda sig, hdl: self.player.toggle_autoresume())  # 47
+        signal.signal(signal.SIGRTMIN + 10, self.signal_prev_interlude_received)  # 44
+        signal.signal(signal.SIGRTMIN + 11, self.signal_next_interlude_received)  # 45
+        signal.signal(signal.SIGRTMIN + 12, self.signal_playpause_interlude_received)  # 46
+        signal.signal(signal.SIGRTMIN + 13, self.signal_toggle_autoresume_received)  # 47
 
     def stop(self):
         log.info("Exiting safely. Bye.")
