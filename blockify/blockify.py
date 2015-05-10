@@ -48,6 +48,7 @@ class Blockify(object):
         self.env["LC_ALL"] = "en_US"
         self.found = False
         self.current_song = ""
+        self.previous_song = ""
         self.song_status = ""
         self.is_fully_muted = False
         self.is_sink_muted = False
@@ -120,25 +121,31 @@ class Blockify(object):
         log.info("Blockify started.")
         gtk.main()
 
+    def adjust_interlude(self):
+        if self.use_interlude_music:
+#             if self.current_song != self.previous_song and not self.spotify_is_playing():
+#                 self.player.try_resume_spotify_playback()
+#             else:
+            self.player.toggle_music()
+
+    def spotify_is_playing(self):
+        return self.song_status == "Playing"
+
     def update(self):
         "Main update routine, looped every self.update_interval milliseconds."
         # Determine if a commercial is running and act accordingly.
         self.found = self.find_ad()
 
-        # Adjust playback of interlude music.
-        if self.use_interlude_music:
-            self.player.toggle_music()
+        self.adjust_interlude()
 
         # Always return True to keep looping this method.
         return True
 
     def find_ad(self):
         "Main loop. Checks for ads and mutes accordingly."
-        if self.current_song != self.get_current_song() and self.player.is_playing() and not self.dbus.is_playing:
-            self.player.pause()
+        self.previous_song = self.current_song
         self.current_song = self.get_current_song()
         self.song_status = self.dbus.get_song_status()
-        self.dbus.is_playing = self.song_status == "Playing"
 
         # Manual control is enabled so we exit here.
         if not self.automute:
@@ -180,7 +187,7 @@ class Blockify(object):
         "Compares the wnck song info to dbus song info."
         try:
             is_ad = self.current_song != self.dbus.get_song_artist() + u" \u2013 " + self.dbus.get_song_title()
-            return self.dbus.is_playing and is_ad
+            return self.spotify_is_playing() and is_ad
         except TypeError as e:
             # Spotify has technically stopped playing and sending dbus
             # metadata so we get NoneType-errors.

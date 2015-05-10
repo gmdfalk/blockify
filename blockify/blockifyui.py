@@ -500,9 +500,7 @@ class BlockifyUI(gtk.Window):
         # (True/False) depending on whether a song to be blocked was found.
         self.b.found = self.b.find_ad()
 
-        # Adjust playback of interlude music.
-        if self.b.use_interlude_music:
-            self.b.player.toggle_music()
+        self.b.adjust_interlude()
 
         self.update_labels()
         self.update_buttons()
@@ -558,7 +556,7 @@ class BlockifyUI(gtk.Window):
             self.toggle_block_btn.set_label("Block")
             self.set_title("Blockify")
 
-        if self.b.dbus.is_playing and self.b.current_song:
+        if self.b.spotify_is_playing() and self.b.current_song:
             self.toggleplay_btn.set_label("Pause")
         else:
             self.toggleplay_btn.set_label("Play")
@@ -706,7 +704,7 @@ class BlockifyUI(gtk.Window):
         if not self.b.player.autoresume:
             self.b.player.autoresume = True
             self.b.player.manual_control = False
-            if not self.b.found and not self.b.dbus.is_playing:
+            if not self.b.found and not self.b.spotify_is_playing():
                 self.b.dbus.playpause()
         else:
             self.b.player.autoresume = False
@@ -715,7 +713,7 @@ class BlockifyUI(gtk.Window):
         self.b.use_interlude_music = False
         self.interlude_box.hide()
         self.b.player.pause()
-        if not self.b.dbus.is_playing:
+        if not self.b.spotify_is_playing():
             self.b.dbus.playpause()
         self.toggle_interlude_btn.set_label("Enable player")
         self.restore_size()
@@ -761,7 +759,7 @@ class BlockifyUI(gtk.Window):
         else:
             self.b.player.manual_control = True
             self.b.player.pause()
-            if not self.b.found and (not self.b.dbus.is_playing or
+            if not self.b.found and (not self.b.spotify_is_playing() or
                 not self.b.current_song):
                 self.b.dbus.playpause()
 
