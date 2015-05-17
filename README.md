@@ -151,15 +151,18 @@ You can use relative and absolute paths as well as basically any audio source/fo
 - v0.9 (2014-04-29): Pulseaudio (sink) support  
 
 ## Troubleshooting
-If you experience errors or unexpected behaviour, please start blockify/blockify-ui with the -vvv parameter to enable debug logging and see if you get any helpful information this way.  
-You're welcome to open an issue on this site and ask for help but when you do, please provide the following information:  
-- A debug log, acquired by starting blockify(-ui) via `blockify(-ui) -vvv -l logfile`. Then upload it with `curl -F "c=logfile" https://ptpbw.pw` (or paste it to a git or bpaste.net or directly into the git issue, you get the idea).
+### Checklist
+1. Do you have the newest version?
+2. Is your configuration (and playlist) file syntax OK? If in doubt, delete them.
+3. Have you tried starting blockify in debug mode to look for useful information (i.e. `blockify -vvv`).
+
+If you can't find or fix the error by yourself, you are welcome to open an issue on this site. When you do, please provide the following information:
+- A debug log, acquired by starting blockify(-ui) via `blockify(-ui) -vvv -l logfile`. Then upload it with `curl -F "c=logfile" https://ptpbw.pw` or paste it to a gist or bpaste.net or directly into the git issue (preferably with code tags -> three backticks before and after the snippet).
 - The blockify version: `blockify --version`.
 - If you suspect pulseaudio as culprit, the list of sinks: `pacmd list-sink-inputs | curl -F c=@- https://ptpb.pw`.
 
 Common errors:  
 * `ImportError: No module named gst`: You need to install python-gst0.10.
-
 
 Further guesses for why your blockify doesn't work:  
 * Blockify has two binaries. `blockify` (CLI) and `blockify-ui` (GUI). Make sure you're using the right one.  
@@ -167,5 +170,5 @@ Further guesses for why your blockify doesn't work:
 * If there's already a blockify process running, it won't start.  
 
 ## Known Issues
-- If Spotify is minimized to the system tray, ad detection will not work.  
-- If Notifications are disabled, ad detection will not work.
+- If Spotify is minimized to the system tray, ad detection will not work.
+- If DBus/Notifications are disabled, ad detection will not work.
