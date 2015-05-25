@@ -43,7 +43,7 @@ sudo pip install .
 ## Usage
 #### Requirements
 It is important to know that blockify relies on dbus (and, for some features, on pulseaudio) for ad detection.  
-If any of these criteria are true ad detection _will not work_:  
+If any of these statements are true for your configuration, ad detection will _not_ work:  
 * DBus is disabled
 * Spotify is minimized to the system tray (task bar is fine)
 * Notifications are disabled in Spotify  
