@@ -137,8 +137,8 @@ class InterludePlayer(object):
 
         return not any(exclusions) and any(valid_format)
 
-    def try_resume_spotify_playback(self):
-        if self.is_playing() and not self.b.found:
+    def try_resume_spotify_playback(self, ignore_player=False):
+        if (self.is_playing() or ignore_player) and not self.b.found:
             self.pause()
             if not self.b.spotify_is_playing():
                 self.b.dbus.playpause()

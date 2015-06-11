@@ -919,7 +919,10 @@ class BlockifyUI(gtk.Window):
                 self.editor.destroy()
 
     def on_toggleplay_btn(self, widget):
-        self.b.dbus.playpause()
+        if not self.b.spotify_is_playing():
+            self.b.player.try_resume_spotify_playback(True)
+        else:
+            self.b.dbus.playpause()
 
     def on_next_btn(self, widget):
         self.b.next()
