@@ -236,35 +236,35 @@ class BlockifyUI(gtk.Window):
     def create_traymenu(self, event_button, event_time):
         menu = gtk.Menu()
 
-        toggleblock = gtk.MenuItem("Toggle Block")
-        toggleblock.show()
-        menu.append(toggleblock)
-        toggleblock.connect("activate", self.on_toggle_block_btn)
+        toggleblock_menuitem = gtk.MenuItem("Toggle Block")
+        toggleblock_menuitem.show()
+        menu.append(toggleblock_menuitem)
+        toggleblock_menuitem.connect("activate", self.on_toggle_block_btn)
 
-        toggleplay = gtk.MenuItem("Toggle Play")
-        toggleplay.show()
-        toggleplay.connect("activate", self.on_toggleplay_btn)
-        menu.append(toggleplay)
+        toggleplay_menuitem = gtk.MenuItem("Toggle Play")
+        toggleplay_menuitem.show()
+        toggleplay_menuitem.connect("activate", self.on_toggleplay_btn)
+        menu.append(toggleplay_menuitem)
 
-        prevsong = gtk.MenuItem("Previous Song")
-        prevsong.show()
-        prevsong.connect("activate", self.on_prev_btn)
-        menu.append(prevsong)
+        prevsong_menuitem = gtk.MenuItem("Previous Song")
+        prevsong_menuitem.show()
+        prevsong_menuitem.connect("activate", self.on_prev_btn)
+        menu.append(prevsong_menuitem)
 
-        nextsong = gtk.MenuItem("Next Song")
-        nextsong.show()
-        nextsong.connect("activate", self.on_next_btn)
-        menu.append(nextsong)
+        nextsong_menuitem = gtk.MenuItem("Next Song")
+        nextsong_menuitem.show()
+        nextsong_menuitem.connect("activate", self.on_next_btn)
+        menu.append(nextsong_menuitem)
 
-        about = gtk.MenuItem("About")
-        about.show()
-        menu.append(about)
-        about.connect("activate", self.show_about_dialogue)
+        about_menuitem = gtk.MenuItem("About")
+        about_menuitem.show()
+        menu.append(about_menuitem)
+        about_menuitem.connect("activate", self.show_about_dialogue)
 
-        exit = gtk.MenuItem("Exit")
-        exit.show()
-        menu.append(exit)
-        exit.connect("activate", self.on_exit_btn)
+        exit_menuitem = gtk.MenuItem("Exit")
+        exit_menuitem.show()
+        menu.append(exit_menuitem)
+        exit_menuitem.connect("activate", self.on_exit_btn)
 
         menu.popup(None, None, gtk.status_icon_position_menu,
                    event_button, event_time, self.status_icon)
@@ -397,12 +397,11 @@ class BlockifyUI(gtk.Window):
         self.add(main)
 
     def set_states(self):
-
-        checkboxes = [self.autodetect_chk, self.automute_chk, self.autoresume_chk, self.autohide_cover_chk]
+        checkboxes = [self.autodetect_chk, self.automute_chk, self.autohide_cover_chk, self.autoresume_chk]
         values = [util.CONFIG["general"]["autodetect"], util.CONFIG["general"]["automute"],
-               util.CONFIG["interlude"]["autoresume"], util.CONFIG["gui"]["autohide_cover"]]
+               util.CONFIG["gui"]["autohide_cover"], util.CONFIG["interlude"]["autoresume"]]
 
-        for i in range(len(checkboxes)):
+        for i in range(len(checkboxes) - 1):
             checkboxes[i].set_active(values[i])
 
         # Pretend that a song is playing to keep disable_interlude_box() from pausing playback.

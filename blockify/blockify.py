@@ -33,6 +33,7 @@ pygtk.require("2.0")
 
 class Blockify(object):
 
+
     def __init__(self, blocklist):
         self.blocklist = blocklist
         self.orglist = blocklist[:]
@@ -43,7 +44,7 @@ class Blockify(object):
         self._automute = util.CONFIG["general"]["automute"]
         self.update_interval = util.CONFIG["cli"]["update_interval"]
         self.unmute_delay = util.CONFIG["cli"]["unmute_delay"]
-        self.pacmd_muted_value = util.CONFIG["general"]["pacmd_muted_value"]
+        self.pulse_unmuted_value = ""
         self.env = os.environ.copy()
         self.env["LC_ALL"] = "en_US"
         self.found = False
@@ -63,8 +64,12 @@ class Blockify(object):
         # Determine if we can use sinks or have to use alsa.
         try:
             devnull = open(os.devnull)
-            subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
+            pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
             self.mutemethod = self.pulsesink_mute
+            # Properly initialize unmuted state, i.e. self.pulse_unmuted_value
+            self.toggle_mute(2)
+            sink_status = self.extract_pulse_sink_status(pacmd_out)
+            self.pulse_unmuted_value = sink_status[1]
             log.debug("Mute method is pulse sink.")
         except (OSError, subprocess.CalledProcessError):
             log.info("No pulse sinks found, falling back to system mute via alsa.")
@@ -76,6 +81,7 @@ class Blockify(object):
                                    self.player.max_index >= 0
 
         log.info("Blockify initialized.")
+
 
     def check_for_blockify_process(self):
         try:
@@ -115,6 +121,7 @@ class Blockify(object):
 
     def start(self):
         self.bind_signals()
+        # Force unmute to properly initialize unmuted state
         self.toggle_mute()
 
         gtk.timeout_add(self.update_interval, self.update)
@@ -285,6 +292,28 @@ class Blockify(object):
         for channel in self.channels:
             subprocess.Popen(["amixer", "-qD", "pulse", "set", channel, state])
 
+
+    def extract_pulse_sink_status(self, pacmd_out):
+        sink_status = ("", "")
+        # Match muted_value and application.process.id values.
+        pattern = re.compile(r"(?: index|muted|application\.process\.id).*?(\w+)")
+        # Put valid spotify PIDs in a list
+        output = pacmd_out.decode("utf-8")
+
+        spotify_sink_list = [" index: " + i for i in output.split("index: ") if "spotify" in i]
+
+        if len(spotify_sink_list) and self.spotify_pids:
+            sink_infos = [pattern.findall(sink) for sink in spotify_sink_list]
+            # Every third element per sublist is a key, the value is the preceding
+            # two elements in the form of a tuple - {pid : (index, muted_value)}
+            idxd = {sink_status[2]: (sink_status[0], sink_status[1]) for sink_status in sink_infos if len(sink_status) == 3}
+
+            pid = [k for k in idxd.keys() if k in self.spotify_pids][0]
+            sink_status = idxd[pid]  # tuple of 2 elements: (index, muted_value)
+
+        return sink_status
+
+
     def pulsesink_mute(self, mode):
         "Finds spotify's audio sink and toggles its mute state."
         try:
@@ -295,38 +324,20 @@ class Blockify(object):
             self.use_interlude_music = False
             return
 
-        # Match muted and application.process.id values.
-        pattern = re.compile(r"(?: index|muted|application\.process\.id).*?(\w+)")
-        # Put valid spotify PIDs in a list
-        output = pacmd_out.decode("utf-8")
+        index, muted_value = self.extract_pulse_sink_status(pacmd_out)
 
-        spotify_sink_list = [" index: " + i for i in output.split("index: ") if "spotify" in i]
+        self.is_sink_muted = False if muted_value == self.pulse_unmuted_value else True
 
-        if not len(spotify_sink_list):
-            return
-
-        sink_infos = [pattern.findall(sink) for sink in spotify_sink_list]
-        # Every third element per sublist is a key, the value is the preceding
-        # two elements in the form of a tuple - {pid : (index, muted)}
-        idxd = {info[2]: (info[0], info[1]) for info in sink_infos if len(info) == 3}
-
-        try:
-            pid = [k for k in idxd.keys() if k in self.spotify_pids][0]
-            index, muted = idxd[pid]
-            self.is_sink_muted = True if muted == self.pacmd_muted_value else False
-        except IndexError as e:
-            log.debug("Could not match spotify pid to sink pid: {}".format(e))
-            return
-
-        if self.is_sink_muted and (mode == 2 or not self.current_song):
-            log.info("Forcing unmute.")
-            subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
-        elif not self.is_sink_muted and mode == 1:
-            log.info("Muting {}.".format(self.current_song))
-            subprocess.call(["pacmd", "set-sink-input-mute", index, "1"])
-        elif self.is_sink_muted and not mode:
-            log.info("Unmuting.")
-            subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
+        if index:
+            if self.is_sink_muted and (mode == 2 or not self.current_song):
+                log.info("Forcing unmute.")
+                subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
+            elif not self.is_sink_muted and mode == 1:
+                log.info("Muting {}.".format(self.current_song))
+                subprocess.call(["pacmd", "set-sink-input-mute", index, "1"])
+            elif self.is_sink_muted and not mode:
+                log.info("Unmuting.")
+                subprocess.call(["pacmd", "set-sink-input-mute", index, "0"])
 
     def prev(self):
         self.dbus.prev()

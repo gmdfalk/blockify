@@ -20,14 +20,14 @@ class InterludePlayer(object):
     def __init__(self, blockify):
         self.gst = gst
         self.b = blockify
-        self._index = 0
         self.manual_control = False
         self.temp_autoresume = False
         self.temp_disable = False
+        self._index = 0
+        self._autoresume = util.CONFIG["interlude"]["autoresume"]
         self.playback_delay = util.CONFIG["interlude"]["playback_delay"]
         # Automatically resume spotify playback after n seconds.
         self.radio_timeout = util.CONFIG["interlude"]["radio_timeout"]
-        self.autoresume = util.CONFIG["interlude"]["autoresume"]
         self.uri_rx = re.compile("[A-Za-z]+:\/\/")
         self.formats = ["mp3", "mp4", "flac", "wav", "wma", "ogg", "avi", "mov", "mpg", "flv", "wmv", \
                         "spx", "3gp", "b-mtp", "aac", "aiff", "raw", "midi", "ulaw", "alaw", "gsm" ]
@@ -259,6 +259,16 @@ class InterludePlayer(object):
             uri = self.get_current_uri()
             log.debug("Setting interlude to: {0}".format(uri))
             self.player.set_property("uri", uri)
+
+
+    @property
+    def autoresume(self):
+        return self._autoresume
+
+    @autoresume.setter
+    def autoresume(self, autoresume):
+        log.debug("Setting autoresume to: {0}".format(autoresume))
+        self._autoresume = autoresume
 
     @property
     def index(self):

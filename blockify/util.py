@@ -11,7 +11,7 @@ try:
 except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
 
-VERSION = "1.8.7"
+VERSION = "1.8.8"
 CONFIG = None
 CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
@@ -83,9 +83,8 @@ def get_default_options():
         "general": {
             "autodetect": True,
             "automute": True,
-            "substring_search": False,
-            "pacmd_muted_value":"yes"
-        },
+            "substring_search": False
+            },
         "cli": {
             "update_interval": 200,
             "unmute_delay": 700
@@ -118,7 +117,7 @@ def load_options():
     except Exception as e:
         log.error("Could not read config file: {}. Using default options.".format(e))
     else:
-        option_tuples = [("general", "autodetect", "bool"), ("general", "automute", "bool"), ("general", "substring_search", "bool"), ("general", "pacmd_muted_value", "str"),
+        option_tuples = [("general", "autodetect", "bool"), ("general", "automute", "bool"), ("general", "substring_search", "bool"),
           ("cli", "update_interval", "int"), ("cli", "unmute_delay", "int"),
           ("gui", "use_cover_art", "bool"), ("gui", "autohide_cover", "bool"), ("gui", "update_interval", "int"), ("gui", "unmute_delay", "int"),
           ("interlude", "use_interlude_music", "bool"), ("interlude", "start_shuffled", "bool"), ("interlude", "autoresume", "bool"),

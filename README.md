@@ -131,6 +131,7 @@ http://skyserver5.skydisc.net:8000
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v1.8.8 (2015-07-11): Fix [issue #46](https://github.com/mikar/blockify/issues/46) and [issue #47](https://github.com/mikar/blockify/issues/47)
 - v1.8.7 (2015-06-11): Pressing play will now properly pause interlude music before resuming spotify playback.
 - v1.8.6 (2015-05-10): Minor refactoring and removed incomplete "fix" for [issue #44](https://github.com/mikar/blockify/issues/44).
 - v1.8.5 (2015-05-09): Signal cleanups and [issue #44](https://github.com/mikar/blockify/issues/44) again.
