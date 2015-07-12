@@ -181,7 +181,7 @@ Further guesses for why your blockify doesn't work:
 - [Spotify-AdKiller](https://github.com/SecUpwN/Spotify-AdKiller) - automatic ad-blocker written in Bash
 
 ### On Windows:
-- [Spotify-Ad-Blocker (has a closed-source Android port)](https://github.com/Xeroday/Spotify-Ad-Blocker)
+- [Spotify-Ad-Blocker](https://github.com/Xeroday/Spotify-Ad-Blocker)
 
 ### On OS X:
 - [SpotiFree](https://github.com/ArtemGordinsky/SpotiFree)
