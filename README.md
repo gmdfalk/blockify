@@ -174,3 +174,11 @@ Further guesses for why your blockify doesn't work:
 ## Known Issues
 - If Spotify is minimized to the system tray, ad detection will not work.
 - If DBus/Notifications are disabled, ad detection will not work.
+
+
+### Similar projects
+
+- [Spotify-AdKiller](https://github.com/SecUpwN/Spotify-AdKiller) - automatic ad-blocker written in Bash
+- [indicator-muteads](https://launchpad.net/indicator-muteads) - blacklist-based ad-blocker written in C
+- [spotify_ad_blocker_linux.rb](https://github.com/superr4y/hacks/blob/master/spotify/spotify_ad_blocker_linux.rb) - automatic ad-blocker written in Ruby
+- [spotimute](https://github.com/romaindeveaud/spotimute) - automatic/blacklist-based ad-blocker written in Ruby
