@@ -176,7 +176,7 @@ Further guesses for why your blockify doesn't work:
 - If DBus/Notifications are disabled, ad detection will not work.
 
 
-### Similar projects
+## Similar projects
 
 - [Spotify-AdKiller](https://github.com/SecUpwN/Spotify-AdKiller) - automatic ad-blocker written in Bash
 - [indicator-muteads](https://launchpad.net/indicator-muteads) - blacklist-based ad-blocker written in C
