@@ -17,6 +17,7 @@ import re
 import signal
 import subprocess
 import sys
+import time
 
 import gtk
 import pygtk
@@ -38,7 +39,17 @@ class Blockify(object):
         self.blocklist = blocklist
         self.orglist = blocklist[:]
         self.check_for_blockify_process()
-        self.check_for_spotify_process()
+        if not self.check_for_spotify_process():
+            log.error("No spotify process found.")
+            if util.CONFIG["general"]["start_spotify"] == "no":
+                log.error("Exiting.")
+                sys.exit()
+            else:
+                log.info("Launching Spotify {}...".format(util.CONFIG["general"]["start_spotify"]))
+                self.start_spotify()
+                if not self.check_for_spotify_process():
+                    log.error("Failed to start Spotify!")
+                    sys.exit()
 
         self._autodetect = util.CONFIG["general"]["autodetect"]
         self._automute = util.CONFIG["general"]["automute"]
@@ -98,8 +109,22 @@ class Blockify(object):
         try:
             pidof_out = subprocess.check_output(["pidof", "spotify"])
             self.spotify_pids = pidof_out.decode("utf-8").strip().split(" ")
+            return True
         except subprocess.CalledProcessError:
-            log.error("No spotify process found. Exiting.")
+            return False
+
+    def start_spotify(self):
+        if util.CONFIG["general"]["start_spotify"] == "native":
+            devNull = open('/dev/null', 'w')
+            spid = subprocess.Popen(['/usr/bin/spotify'], stdout=devNull, stderr=devNull).pid
+            if spid:
+                log.info("Spotify launched!")
+                time.sleep(10)
+        elif util.CONFIG["general"]["start_spotify"] == "wine":
+            log.error("Not implemented.")
+            sys.exit()
+        else:
+            log.error("Wrong option: {}".format(util.CONFIG["general"]["start_spotify"]))
             sys.exit()
 
     def init_channels(self):
