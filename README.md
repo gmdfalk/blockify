@@ -55,7 +55,8 @@ Additionally, blockify makes use of pulseaudio sinks, allowing processes to be m
 If you do not have/want pulseaudio, blockify will mute the system sound during commercials instead of just Spotify. The interlude music feature will not work as a consequence.
 
 #### Detection
-Blockify will automatically detect and block ads for you so besides starting it, there's not a lot to do.  
+Blockify will automatically detect and block ads for you so besides starting it
+after running spotify, there's not a lot to do.
 However, it also comes with the option to complement or replace that autoblock functionality with a blocklist (saved as ~/.config/blockify/blocklist.txt).  
 Blocklist-Entries are case-sensitive and greedy, e.g. the entry `Blood` would not only block all Bloodhound Gang songs but any song by any artist starting with `"Blood"`.  
 
