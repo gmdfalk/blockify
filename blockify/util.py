@@ -13,7 +13,7 @@ except ImportError:
 
 VERSION = "1.8.8"
 CONFIG = None
-CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".config/blockify")
+CONFIG_DIR = os.path.expanduser("~/.config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
 BLOCKLIST_FILE = os.path.join(CONFIG_DIR, "blocklist.txt")
 PLAYLIST_FILE = os.path.join(CONFIG_DIR, "playlist.m3u")
