@@ -135,6 +135,7 @@ http://skyserver5.skydisc.net:8000
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v1.9.0 (2015-08-15): Fix [issue #52](https://github.com/mikar/blockify/issues/52), introduce autoplay option and change start_spotify option to boolean type
 - v1.8.8 (2015-07-11): Fix [issue #46](https://github.com/mikar/blockify/issues/46) and [issue #47](https://github.com/mikar/blockify/issues/47)
 - v1.8.7 (2015-06-11): Pressing play will now properly pause interlude music before resuming spotify playback.
 - v1.8.6 (2015-05-10): Minor refactoring and removed incomplete "fix" for [issue #44](https://github.com/mikar/blockify/issues/44).
@@ -159,7 +160,7 @@ You can use relative and absolute paths as well as basically any audio source/fo
 ## Troubleshooting
 ### Checklist
 1. Do you have the newest version?
-2. Is your configuration (and playlist) file syntax OK? If in doubt, delete them.
+2. Is your configuration (and playlist) file syntax OK? If in doubt, delete it. It will be rewritten with default values.
 3. Have you tried starting blockify in debug mode to look for useful information (i.e. `blockify -vvv`).
 
 If you can't find or fix the error by yourself, you are welcome to open an issue on this site. When you do, please provide the following information:

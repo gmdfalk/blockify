@@ -413,11 +413,15 @@ class BlockifyUI(gtk.Window):
         "Start the main update routine."
         self.b.toggle_mute()
         self.bind_signals()
-
+            
         # Start and loop the main update routine once every X ms.
         # To influence responsiveness or CPU usage, decrease/increase self.update_interval.
         gtk.timeout_add(self.update_interval, self.update)
+        # Delay autoplayback until self.spotify_is_playing was called at least once.
+        gtk.timeout_add(self.update_interval+100, self.b.start_autoplay)
+        
         log.info("Blockify-UI started.")
+            
         gtk.main()
 
     def stop(self, *args):

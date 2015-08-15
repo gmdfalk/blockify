@@ -11,7 +11,7 @@ try:
 except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
 
-VERSION = "1.8.8"
+VERSION = "1.9.0"
 CONFIG = None
 CONFIG_DIR = os.path.expanduser("~/.config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
@@ -52,14 +52,6 @@ def init_logger(logpath=None, loglevel=0, quiet=False):
             log.error("Could not attach file handler.")
 
 
-def rename_file(fname):
-    if not os.path.isfile(fname):
-        try:
-            os.rename(fname[:-4], fname)
-        except OSError:
-            pass
-
-
 def init_config_dir():
     "Determine if a config dir for blockify exists and if not, create it."
     if not os.path.isdir(CONFIG_DIR):
@@ -70,10 +62,6 @@ def init_config_dir():
         log.info("Creating thumbnail directory.")
         os.makedirs(THUMBNAIL_DIR)
 
-    # During transition from v1.6 to v1.7, rename the playlist and blocklist files.
-    rename_file(PLAYLIST_FILE)
-    rename_file(BLOCKLIST_FILE)
-
     if not os.path.isfile(CONFIG_FILE):
         save_options(CONFIG_DIR, get_default_options())
 
@@ -83,8 +71,9 @@ def get_default_options():
         "general": {
             "autodetect": True,
             "automute": True,
+            "autoplay": False,
             "substring_search": False,
-            "start_spotify": "no"
+            "start_spotify": True
         },
         "cli": {
             "update_interval": 200,
@@ -118,12 +107,14 @@ def load_options():
     except Exception as e:
         log.error("Could not read config file: {}. Using default options.".format(e))
     else:
-        option_tuples = [("general", "autodetect", "bool"), ("general", "automute", "bool"), ("general", "start_spotify", "str"), ("general", "substring_search", "bool"),
-          ("cli", "update_interval", "int"), ("cli", "unmute_delay", "int"),
-          ("gui", "use_cover_art", "bool"), ("gui", "autohide_cover", "bool"), ("gui", "update_interval", "int"), ("gui", "unmute_delay", "int"),
-          ("interlude", "use_interlude_music", "bool"), ("interlude", "start_shuffled", "bool"), ("interlude", "autoresume", "bool"),
-          ("interlude", "radio_timeout", "int"), ("interlude", "playback_delay", "int"), ("interlude", "playlist", "str")
-          ]
+        option_tuples = [
+            ("general", "autodetect", "bool"), ("general", "automute", "bool"), ("general", "autoplay", "bool"),
+            ("general", "start_spotify", "bool"), ("general", "substring_search", "bool"),
+            ("cli", "update_interval", "int"), ("cli", "unmute_delay", "int"),
+            ("gui", "use_cover_art", "bool"), ("gui", "autohide_cover", "bool"), ("gui", "update_interval", "int"), ("gui", "unmute_delay", "int"),
+            ("interlude", "use_interlude_music", "bool"), ("interlude", "start_shuffled", "bool"), ("interlude", "autoresume", "bool"),
+            ("interlude", "radio_timeout", "int"), ("interlude", "playback_delay", "int"), ("interlude", "playlist", "str")
+        ]
         for option_tuple in option_tuples:
             load_option(config, options, option_tuple)
         if not options["interlude"]["playlist"]:
