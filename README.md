@@ -159,7 +159,7 @@ You can use relative and absolute paths as well as basically any audio source/fo
 ## Troubleshooting
 ### Checklist
 1. Do you have the newest version?
-2. Is your configuration (and playlist) file syntax OK? If in doubt, delete them.
+2. Is your configuration (and playlist) file syntax OK? If in doubt, delete it. It will be rewritten with default values.
 3. Have you tried starting blockify in debug mode to look for useful information (i.e. `blockify -vvv`).
 
 If you can't find or fix the error by yourself, you are welcome to open an issue on this site. When you do, please provide the following information:
