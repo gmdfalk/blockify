@@ -2,7 +2,7 @@
 """blockifydbus
 
 Usage:
-    blockifydbus (toggle | next | prev | stop | play) [-v...] [options]
+    blockifydbus (toggle | next | prev | stop | play | pause) [-v...] [options]
     blockifydbus get [title | artist | length | status | all] [-v...] [options]
     blockifydbus (openuri <uri> | seek <secs> | setpos <pos>) [-v...] [options]
 
@@ -39,6 +39,9 @@ class BlockifyDBus(object):
         self.player_path = "org.mpris.MediaPlayer2.Player"
         self.spotify_path = None
 
+        self.connect_to_spotify_dbus(bus)
+
+    def connect_to_spotify_dbus(self, bus):
         if not bus:
             bus = dbus.SessionBus()
         self.session_bus = bus
@@ -47,163 +50,161 @@ class BlockifyDBus(object):
             if re.match(r".*mpris.*spotify", name):
                 self.spotify_path = str(name)
 
-        if self.is_running():
+        try:
             self.proxy = self.session_bus.get_object(self.spotify_path,
                                                      self.obj_path)
             self.properties = dbus.Interface(self.proxy, self.prop_path)
             self.player = dbus.Interface(self.proxy, self.player_path)
-        else:
-            self.properties = None
-            self.player = None
-            self.proxy = None
-            log.error("Spotify not found in DBus session. Is it running?")
-
-    def is_running(self):
-        "TODO: This is  redundant"
-        return self.spotify_path is not None
+        except Exception as e:
+            log.error("Could not connect to Spotify dbus session: {}", e)
 
     def get_property(self, key):
         "Gets the value from any available property."
-        if self.is_running():
-            try:
-                return self.properties.Get(self.player_path, key)
-            except dbus.exceptions.DBusException as e:
-                log.error("Failed to get DBus property. Disabling dbus-mode. Msg: {}".format(e))
-                self.spotify_path = None
+        prop = None
+        try:
+            prop = self.properties.Get(self.player_path, key)
+        except dbus.exceptions.DBusException as e:
+            log.error("Failed to get DBus property: {}".format(e))
+        return prop
 
     def set_property(self, key, value):
         "Sets the value for any available property."
-        if self.is_running():
-            return self.properties.Set(self.player_path, key, value)
+        try:
+            self.properties.Set(self.player_path, key, value)
+        except Exception as e:
+            log.warn("Cannot Set Property: {}", e)
 
     def playpause(self):
         "Toggles the current song between Play and Pause."
-        if self.is_running():
-            can_pause = self.get_property("CanPause")
-            can_play = self.get_property("CanPlay")
-            if can_pause and can_play:
-                self.player.PlayPause()
-            else:
-                log.warn("Cannot Play/Pause")
+        try:
+            self.player.PlayPause()
+        except Exception as e:
+            log.warn("Cannot Play/Pause: {}", e)
 
     def play(self):
-        "DEFUNCT: Tries to play the current title."
-        if self.is_running():
-            can_play = self.get_property("CanPlay")
-            if can_play:
-                self.player.Play()
-            else:
-                log.warn("Cannot Play")
+        "Tries to play the current title."
+        try:
+            self.player.Play()
+        except Exception as e:
+            log.warn("Cannot Play: {}", e)
+
+    def pause(self):
+        "Tries to pause the current title."
+        try:
+            self.player.Pause()
+        except Exception as e:
+            log.warn("Cannot Pause: {}", e)
 
     def stop(self):
         "Tries to stop playback. PlayPause is probably preferable."
-        if self.is_running():
+        try:
             self.player.Stop()
+        except Exception as e:
+            log.warn("Cannot Stop playback: {}", e)
 
     def next(self):
         "Tries to skip to next song."
-        if self.is_running():
-            can_next = self.get_property("CanGoNext")
-            if can_next:
-                self.player.Next()
-            else:
-                log.warn("Cannot Go Next")
+        try:
+            self.player.Next()
+        except Exception as e:
+            log.warn("Cannot Go Next: {}", e)
 
     def prev(self):
         "Tries to go back to last song."
-        if self.is_running():
-            can_prev = self.get_property("CanGoPrevious")
-            if can_prev:
-                self.player.Previous()
-            else:
-                log.warn("Cannot Go Previous.")
+        try:
+            self.player.Previous()
+        except Exception as e:
+            log.warn("Cannot Go Previous: {}", e)
 
     def set_position(self, track, position):
-        if self.is_running():
+        try:
             self.player.SetPosition(track, position)
+        except Exception as e:
+            log.warn("Cannot Set Position: {}", e)
+
 
     def open_uri(self, uri):
-        if self.is_running():
+        try:
             self.player.OpenUri(uri)
+        except Exception as e:
+            log.warn("Cannot Open URI: {}", e)
+
 
     def seek(self, seconds):
-        "DEFUNCT: Calls seek method."
-        if self.is_running():
-            can_seek = self.get_property("CanSeek")
-            if can_seek:
-                self.player.Seek(seconds)
-            else:
-                log.warn("Cannot Seek.")
+        "Skips n seconds forward."
+        try:
+            self.player.Seek(seconds)
+        except Exception as e:
+            log.warn("Cannot Seek: {}", e)
 
     def get_art_url(self):
         "Get album cover"
         url = ""
-        if self.is_running():
+        try:
             metadata = self.get_property("Metadata")
-            if metadata:
-                url = metadata["mpris:artUrl"].encode("utf-8")
+            url = metadata["mpris:artUrl"].encode("utf-8")
+        except Exception as e:
+            log.error("Cannot fetch album cover: {}", e)
         return url
 
     def get_song_status(self):
         "Get current PlaybackStatus (Paused/Playing...)."
         status = ""
-        if self.is_running():
+        try:
             status = self.get_property("PlaybackStatus")
+        except Exception as e:
+            log.warn("Cannot get PlaybackStatus: {}", e)
+
         return status
 
     def get_song_length(self):
         "Gets the length of current song from metadata (in seconds)."
         length = 0
-        if self.is_running():
+        try:
             metadata = self.get_property("Metadata")
-            if metadata:
-                length = int(metadata["mpris:length"] / 1000000)
+            length = int(metadata["mpris:length"] / 1000000)
+        except Exception as e:
+            log.warn("Cannot get song length: {}", e)
+
         return length
 
     def get_song_title(self):
         "Gets title of current song from metadata"
         title = ""
-        if self.is_running():
+        try:
             metadata = self.get_property("Metadata")
-            if metadata:
-                title = metadata["xesam:title"].encode("utf-8")
+            title = metadata["xesam:title"].encode("utf-8")
+        except Exception as e:
+            log.warn("Cannot get song title: {}", e)
+
         return title
 
     def get_song_album(self):
         "Gets album of current song from metadata"
         album = ""
-        if self.is_running():
+        try:
             metadata = self.get_property("Metadata")
-            if metadata:
-                album = metadata["xesam:album"].encode("utf-8")
+            album = metadata["xesam:album"].encode("utf-8")
+        except Exception as e:
+            log.warn("Cannot get song album: {}", e)
+
         return album
 
     def get_song_artist(self):
         "Gets the artist of current song from metadata"
         artist = ""
-        if self.is_running():
+        try:
             metadata = self.get_property("Metadata")
-            if metadata:
-                artist = metadata["xesam:artist"][0].encode("utf-8")
+            artist = metadata["xesam:artist"][0].encode("utf-8")
+        except Exception as e:
+            log.warn("Cannot get song artist: {}", e)
+
         return artist
 
     def print_info(self):
         "Print all the DBus info we can get our hands on."
         try:
-            interfaces = self.properties.GetAll(self.player_path)
             metadata = self.get_property("Metadata")
-
-            i_keys = list(map(str, interfaces.keys()))
-            i_keys.remove("Metadata")
-            i_keys.sort()
-
-            for i in i_keys:
-                if len(i) < 7:
-                    print i, "\t\t= ", self.get_property(i)
-                else:
-                    print i, "\t= ", self.get_property(i)
-
-            print ""
 
             d_keys = list(metadata.keys())
             d_keys.sort()
@@ -237,6 +238,8 @@ def main():
         dbus.prev()
     elif args["play"]:
         dbus.play()
+    elif args["pause"]:
+        dbus.pause()
     elif args["stop"]:
         dbus.stop()
 
