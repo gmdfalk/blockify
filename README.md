@@ -1,7 +1,9 @@
 # blockify
 Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.  
 
-**Blockify currently does not support Spotify version 1.0.0 and higher.**
+**Blockify v1.9.0 currently does not support the current Spotify beta client (version 1.0.0 and higher).   
+If you need support for Spotify v1.0.13 and higher, use the pre-release of Blockify, v2.0.0.  
+Be aware, however, that this pre-release is in beta status, too.**  
 
 ## Installation
 ##### Dependencies
