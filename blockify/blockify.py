@@ -47,6 +47,7 @@ class Blockify(object):
         self.update_interval = util.CONFIG["cli"]["update_interval"]
         self.unmute_delay = util.CONFIG["cli"]["unmute_delay"]
         self.pulse_unmuted_value = ""
+        self.song_delimiter = " - "  # u" \u2013 "
         self.found = False
         self.current_song = ""
         self.previous_song = ""
@@ -77,11 +78,11 @@ class Blockify(object):
         if self.check_for_spotify_process():
             return
         log.error("No spotify process found.")
-        
+
         if not util.CONFIG["general"]["start_spotify"]:
             log.info("Exiting. Bye.")
             sys.exit()
-            
+
         self.start_spotify()
         if not self.check_for_spotify_process():
             log.error("Failed to start Spotify!")
@@ -102,14 +103,14 @@ class Blockify(object):
                       "mute behaviour. A possible fix is to replace the "
                       "value of unmuted_value in blockify.py with your "
                       "translation of 'no', e.g. 'tak' in polish.")
-        self.pulse_unmuted_value = unmuted_value 
+        self.pulse_unmuted_value = unmuted_value
 
 
     def initialize_mute_method(self):
         """Determine if we can use sinks or have to use alsa."""
         try:
             devnull = open(os.devnull)
-            pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
+            subprocess.check_output(["pacmd", "list-sink-inputs"], stderr=devnull)
             self.mutemethod = self.pulsesink_mute
             log.debug("Mute method is pulse sink.")
         except (OSError, subprocess.CalledProcessError):
@@ -125,7 +126,7 @@ class Blockify(object):
         current_locale, encoding = locale.getdefaultlocale()
         pulseaudio_domain = 'pulseaudio'
         localedir = gettext.find(pulseaudio_domain, languages=[current_locale])
-        localedir = localedir[:localedir.find('locale/')]+'locale'
+        localedir = localedir[:localedir.find('locale/')] + 'locale'
         locale = gettext.translation(pulseaudio_domain, localedir=localedir, languages=[current_locale])
         locale.install()
 
@@ -154,18 +155,13 @@ class Blockify(object):
         if util.CONFIG["general"]["start_spotify"]:
             log.info("Starting Spotify ...")
             null = open('/dev/null', 'w')
-            spid = subprocess.Popen(['/usr/bin/spotify'], stdout=null, stderr=null) #.pid
-            for i in range(20):
+            subprocess.Popen(['/usr/bin/spotify'], stdout=null, stderr=null)  # .pid
+            for _ in range(20):
                 time.sleep(1)
                 spotify_is_running = self.check_for_spotify_process()
                 if spotify_is_running:
                     log.info("Spotify launched!")
                     break
-                
-            #if spid:
-            #    log.info("Spotify launched!")
-            #    time.sleep(10)
-
 
     def init_channels(self):
         channel_list = ["Master"]
@@ -190,21 +186,21 @@ class Blockify(object):
         self.bind_signals()
         # Force unmute to properly initialize unmuted state
         self.toggle_mute()
-        
+
         gtk.timeout_add(self.update_interval, self.update)
         # Delay autoplayback until self.spotify_is_playing was called at least once.
-        gtk.timeout_add(self.update_interval+100, self.start_autoplay)
+        gtk.timeout_add(self.update_interval + 100, self.start_autoplay)
 
         log.info("Blockify started.")
-            
+
         gtk.main()
 
 
     def start_autoplay(self):
-        log.debug("Autoplay is activated.")
-        if not self.spotify_is_playing():
+        if self.autoplay:
+            log.debug("Autoplay is activated.")
             log.info("Starting Spotify autoplayback.")
-            self.dbus.playpause()
+            self.dbus.play()
         return False
 
 
@@ -232,7 +228,7 @@ class Blockify(object):
         "Main loop. Checks for ads and mutes accordingly."
         self.previous_song = self.current_song
         self.current_song = self.get_current_song()
-        self.song_status = self.dbus.get_song_status()
+        # self.song_status = self.dbus.get_song_status()
 
         # Manual control is enabled so we exit here.
         if not self.automute:
@@ -275,8 +271,9 @@ class Blockify(object):
     def current_song_is_ad(self):
         "Compares the wnck song info to dbus song info."
         try:
-            is_ad = self.current_song != self.dbus.get_song_artist() + u" \u2013 " + self.dbus.get_song_title()
-            return self.spotify_is_playing() and is_ad
+            dbus_song = self.dbus.get_song_artist() + self.song_delimiter + self.dbus.get_song_title()
+            is_ad = self.current_song != dbus_song
+            return is_ad
         except TypeError as e:
             # Spotify has technically stopped playing and sending dbus
             # metadata so we get NoneType-errors.
@@ -290,6 +287,23 @@ class Blockify(object):
         if not self.found:
             self.toggle_mute()
         return False
+
+    def find_spotify_window_wmctrl(self):
+        spotify_window = []
+        try:
+            pipe = subprocess.Popen(['wmctrl', '-lx'], stdout=subprocess.PIPE).stdout
+            window_list = pipe.read().split("\n")
+            for window in window_list:
+                if (window.find("spotify.Spotify") >= 0):
+                    # current_song = " ".join(window.split()[5:])
+                    spotify_window.append(window)
+                    break
+
+        except OSError:
+            print "wmctrl needs to be installed"
+            sys.exit(1)
+
+        return spotify_window
 
 
     def find_spotify_window(self):
@@ -308,11 +322,11 @@ class Blockify(object):
     def get_current_song(self):
         "Checks if a Spotify window exists and returns the current songname."
         song = ""
-        spotify_window = self.find_spotify_window()
+        spotify_window = self.find_spotify_window_wmctrl()
 
         if spotify_window:
             try:
-                song = " ".join(spotify_window[0].split()[2:]).decode("utf-8")
+                song = " ".join(spotify_window[0].split()[4:]).decode("utf-8")
             except Exception as e:
                 log.debug("Could not match spotify pid to sink pid: %s", e, exc_info=1)
 
@@ -326,6 +340,8 @@ class Blockify(object):
 
     def unblock_current(self):
         if self.current_song:
+            if self.use_interlude_music:
+                self.player.pause()
             song = self.blocklist.find(self.current_song)
             if song:
                 self.blocklist.remove(song)
@@ -460,12 +476,12 @@ class Blockify(object):
     def signal_prev_received(self, sig, hdl):
         log.debug("Signal {} received. Playing previous interlude.".format(sig))
         self.prev()
-        
+
 
     def signal_next_received(self, sig, hdl):
         log.debug("Signal {} received. Playing next song.".format(sig))
         self.next()
-        
+
 
     def signal_playpause_received(self, sig, hdl):
         log.debug("Signal {} received. Toggling play state.".format(sig))

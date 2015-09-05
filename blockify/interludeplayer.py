@@ -103,7 +103,7 @@ class InterludePlayer(object):
         "Song is ending. What do we do?"
         self.queue_next()
         log.debug("Interlude song finished. Queued: {}.".format(self.get_current_uri()))
-        if not self.autoresume and not self.b.spotify_is_playing():
+        if not self.autoresume:  # and not self.b.spotify_is_playing():
             self.pause()
             self.b.dbus.playpause()
 
@@ -141,22 +141,19 @@ class InterludePlayer(object):
         log.info("Trying to resume spotify playback.")
         if (self.is_playing() or ignore_player) and not self.b.found:
             self.pause()
-            if not self.b.spotify_is_playing():
-                self.b.dbus.playpause()
+            self.b.dbus.play()
 
     def resume_spotify_playback(self):
         if not self.b.found:
-            if not self.b.spotify_is_playing():
-                self.b.dbus.playpause()
             self.pause()
+            self.b.dbus.play()
             log.info("Switched from radio back to Spotify.")
-            return False
+            return True
         else:
             log.info("Tried to switch from radio to Spotify but commercial still playing. Will resume when commercial ends.")
             self.temp_autoresume = True
-            return False
 
-        return True
+        return False
 
     def playpause(self):
         if self.is_playing():
@@ -192,8 +189,8 @@ class InterludePlayer(object):
             if self.autoresume or self.temp_autoresume:
                 self.pause()
                 self.temp_autoresume = False
-            elif self.b.spotify_is_playing():
-                self.b.dbus.playpause()
+            else:
+                self.b.dbus.play()
 
     def is_playing(self):
         return self.player.get_state()[1] == gst.STATE_PLAYING

@@ -1,12 +1,10 @@
 # blockify
 Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.  
 
-**Blockify currently does not support Spotify version 1.0.0 and higher.**
-
 ## Installation
 ##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed.
-- Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus
+- Mandatory: pygtk alsa-utils gstreamer0.10-python python-wnck python2-dbus
 - Optional (but highly recommended): pulseaudio python2-docopt  
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
 
@@ -135,6 +133,7 @@ http://skyserver5.skydisc.net:8000
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
 ## Changelog
+- v2.0.0 (2015-09-05): (prerelease) Added rudimentary support for Spotify v1.0 and higher. Fixed autoplay option.
 - v1.9.0 (2015-08-15): Fix [issue #52](https://github.com/mikar/blockify/issues/52), introduce autoplay option and change start_spotify option to boolean type
 - v1.8.8 (2015-07-11): Fix [issue #46](https://github.com/mikar/blockify/issues/46) and [issue #47](https://github.com/mikar/blockify/issues/47)
 - v1.8.7 (2015-06-11): Pressing play will now properly pause interlude music before resuming spotify playback.

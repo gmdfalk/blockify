@@ -413,15 +413,15 @@ class BlockifyUI(gtk.Window):
         "Start the main update routine."
         self.b.toggle_mute()
         self.bind_signals()
-            
+
         # Start and loop the main update routine once every X ms.
         # To influence responsiveness or CPU usage, decrease/increase self.update_interval.
         gtk.timeout_add(self.update_interval, self.update)
         # Delay autoplayback until self.spotify_is_playing was called at least once.
-        gtk.timeout_add(self.update_interval+100, self.b.start_autoplay)
-        
+        gtk.timeout_add(self.update_interval + 100, self.b.start_autoplay)
+
         log.info("Blockify-UI started.")
-            
+
         gtk.main()
 
     def stop(self, *args):
@@ -543,7 +543,7 @@ class BlockifyUI(gtk.Window):
         if not self.b.found:
             self.albumlabel.set_text(self.b.dbus.get_song_album())
         else:
-            self.albumlabel.set_text("(blocked)")
+            self.albumlabel.set_text("N/A")
 
         artist, title = self.format_current_song()
         self.artistlabel.set_text(artist)
@@ -559,10 +559,10 @@ class BlockifyUI(gtk.Window):
             self.toggle_block_btn.set_label("Block")
             self.set_title("Blockify")
 
-        if self.b.spotify_is_playing() and self.b.current_song:
-            self.toggleplay_btn.set_label("Pause")
-        else:
-            self.toggleplay_btn.set_label("Play")
+#         if self.b.current_song:  # and self.b.spotify_is_playing()
+#             self.toggleplay_btn.set_label("Pause")
+#         else:
+#             self.toggleplay_btn.set_label("Play")
 
         if self.coverimage.get_visible():
             self.toggle_cover_btn.set_label("Hide Cover")
@@ -707,7 +707,7 @@ class BlockifyUI(gtk.Window):
         if not self.b.player.autoresume:
             self.b.player.autoresume = True
             self.b.player.manual_control = False
-            if not self.b.found and not self.b.spotify_is_playing():
+            if not self.b.found:  # and not self.b.spotify_is_playing():
                 self.b.dbus.playpause()
         else:
             self.b.player.autoresume = False
@@ -716,8 +716,7 @@ class BlockifyUI(gtk.Window):
         self.b.use_interlude_music = False
         self.interlude_box.hide()
         self.b.player.pause()
-        if not self.b.spotify_is_playing():
-            self.b.dbus.playpause()
+        self.b.dbus.play()
         self.toggle_interlude_btn.set_label("Enable player")
         self.restore_size()
 
@@ -758,13 +757,13 @@ class BlockifyUI(gtk.Window):
     def toggle_interlude(self):
         if not self.b.player.is_playing():
             self.b.player.manual_control = False
+            self.b.dbus.pause()
             self.b.player.play()
         else:
             self.b.player.manual_control = True
             self.b.player.pause()
-            if not self.b.found and (not self.b.spotify_is_playing() or
-                not self.b.current_song):
-                self.b.dbus.playpause()
+            if not self.b.found and not self.b.current_song:  # or not self.b.spotify_is_playing()
+                self.b.dbus.play()
 
     def on_play_interlude_btn(self, widget):
         "Interlude play button."
