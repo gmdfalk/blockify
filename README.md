@@ -1,10 +1,13 @@
 # blockify
 Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.  
 
+**This is a beta version to support Spotify v1.0.13 and higher.  
+It needs wmctrl to be installed and might have limited functionality.** 
+
 ## Installation
 ##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed.
-- Mandatory: pygtk alsa-utils gstreamer0.10-python python-wnck python2-dbus
+- Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus wmctrl
 - Optional (but highly recommended): pulseaudio python2-docopt  
 - Installation tools: python2-pip (preferred) OR python2-setuptools  
 
