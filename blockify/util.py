@@ -11,7 +11,7 @@ try:
 except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 CONFIG = None
 CONFIG_DIR = os.path.expanduser("~/.config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
@@ -73,7 +73,7 @@ def get_default_options():
             "automute": True,
             "autoplay": False,
             "substring_search": False,
-            "start_spotify": True
+            "start_spotify": False
         },
         "cli": {
             "update_interval": 200,
@@ -88,7 +88,7 @@ def get_default_options():
         "interlude": {
             "use_interlude_music": True,
             "start_shuffled": False,
-            "autoresume": False,
+            "autoresume": True,
             "playlist": PLAYLIST_FILE,
             "radio_timeout": 180,
             "playback_delay": 500

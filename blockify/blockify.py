@@ -44,8 +44,10 @@ class Blockify(object):
         self._autodetect = util.CONFIG["general"]["autodetect"]
         self._automute = util.CONFIG["general"]["automute"]
         self.autoplay = util.CONFIG["general"]["autoplay"]
-        self.update_interval = util.CONFIG["cli"]["update_interval"]
         self.unmute_delay = util.CONFIG["cli"]["unmute_delay"]
+        self.update_interval = util.CONFIG["cli"]["update_interval"]
+        self.spotify_refresh_interval = 2500
+        self.suspend_blockify = False
         self.pulse_unmuted_value = ""
         self.song_delimiter = " - "  # u" \u2013 "
         self.found = False
@@ -89,20 +91,34 @@ class Blockify(object):
             log.info("Exiting. Bye.")
             sys.exit()
 
+    def is_localized_pulseaudio(self):
+        """Pulseaudio versions below 7.0 are localized."""
+        localized = False
+        try:
+            pulseaudio_version_string = subprocess.check_output("pulseaudio --version | awk '{print $2}'", shell=True)
+            pulseaudio_version = int(pulseaudio_version_string[0])
+            localized = pulseaudio_version < 7
+        except Exception as e:
+            log.error("Could not detect pulseaudio version: {}".format(e))
+
+        return localized
+
 
     def initialize_pulse_unmuted_value(self):
         """Set 'no' as self.pulse_unmuted_value and try to translate if necessary."""
         unmuted_value = 'no'
-        try:
-            self.install_locale()
-            # Translate 'no' to the system locale.
-            unmuted_value = _(unmuted_value)
-        except (Exception):
-            log.debug("Could not install localization. If your system "
-                      "language is not english this *might* lead to unexpected "
-                      "mute behaviour. A possible fix is to replace the "
-                      "value of unmuted_value in blockify.py with your "
-                      "translation of 'no', e.g. 'tak' in polish.")
+        if self.is_localized_pulseaudio():
+            try:
+                self.install_locale()
+                # Translate 'no' to the system locale.
+                unmuted_value = _(unmuted_value)
+            except (Exception):
+                log.debug("Could not install localization. If your system "
+                          "language is not english this *might* lead to unexpected "
+                          "mute behaviour. A possible fix is to replace the "
+                          "value of unmuted_value in blockify.py with your "
+                          "translation of 'no', e.g. 'tak' in polish.")
+
         self.pulse_unmuted_value = unmuted_value
 
 
@@ -154,8 +170,7 @@ class Blockify(object):
     def start_spotify(self):
         if util.CONFIG["general"]["start_spotify"]:
             log.info("Starting Spotify ...")
-            null = open('/dev/null', 'w')
-            subprocess.Popen(['/usr/bin/spotify'], stdout=null, stderr=null)  # .pid
+            subprocess.Popen(['/usr/bin/spotify'])
             for _ in range(20):
                 time.sleep(1)
                 spotify_is_running = self.check_for_spotify_process()
@@ -181,15 +196,34 @@ class Blockify(object):
             log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
             sys.exit()
 
+    def refresh_spotify_process_state(self):
+        """Check if Spotify is running periodically. If it's not, suspend blockify."""
+        previous_suspend_state = self.suspend_blockify
+        if not self.check_for_spotify_process():
+            self.suspend_blockify = True
+        else:
+            self.suspend_blockify = False
+
+        if previous_suspend_state is not self.suspend_blockify:
+            if not self.suspend_blockify:
+                self.dbus.connect_to_spotify_dbus(None)
+                self.player.try_resume_spotify_playback(True)
+                log.warn("Spotify was restarted! Connecting now.")
+            else:
+                log.warn("Spotify was closed!")
+
+        return True
 
     def start(self):
         self.bind_signals()
         # Force unmute to properly initialize unmuted state
-        self.toggle_mute()
+        self.toggle_mute(2)
 
+        gtk.timeout_add(self.spotify_refresh_interval, self.refresh_spotify_process_state)
         gtk.timeout_add(self.update_interval, self.update)
-        # Delay autoplayback until self.spotify_is_playing was called at least once.
-        gtk.timeout_add(self.update_interval + 100, self.start_autoplay)
+        if self.autoplay:
+            # Delay autoplayback until self.spotify_is_playing was called at least once.
+            gtk.timeout_add(self.update_interval + 100, self.start_autoplay)
 
         log.info("Blockify started.")
 
@@ -215,10 +249,11 @@ class Blockify(object):
 
     def update(self):
         "Main update routine, looped every self.update_interval milliseconds."
-        # Determine if a commercial is running and act accordingly.
-        self.found = self.find_ad()
+        if not self.suspend_blockify:
+            # Determine if a commercial is running and act accordingly.
+            self.found = self.find_ad()
 
-        self.adjust_interlude()
+            self.adjust_interlude()
 
         # Always return True to keep looping this method.
         return True
@@ -300,7 +335,7 @@ class Blockify(object):
                     break
 
         except OSError:
-            print "wmctrl needs to be installed"
+            log.error("Please install wmctrl first! Exiting.")
             sys.exit(1)
 
         return spotify_window
@@ -328,7 +363,7 @@ class Blockify(object):
             try:
                 song = " ".join(spotify_window[0].split()[4:]).decode("utf-8")
             except Exception as e:
-                log.debug("Could not match spotify pid to sink pid: %s", e, exc_info=1)
+                log.debug("Could not match spotify pid to sink pid: %s".format(e), exc_info=1)
 
         return song
 

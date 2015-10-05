@@ -56,7 +56,7 @@ class BlockifyDBus(object):
             self.properties = dbus.Interface(self.proxy, self.prop_path)
             self.player = dbus.Interface(self.proxy, self.player_path)
         except Exception as e:
-            log.error("Could not connect to Spotify dbus session: {}", e)
+            log.error("Could not connect to Spotify dbus session: {}".format(e))
 
     def get_property(self, key):
         "Gets the value from any available property."
@@ -64,6 +64,7 @@ class BlockifyDBus(object):
         try:
             prop = self.properties.Get(self.player_path, key)
         except dbus.exceptions.DBusException as e:
+            self.connect_to_spotify_dbus(None)
             log.error("Failed to get DBus property: {}".format(e))
         return prop
 
@@ -72,62 +73,63 @@ class BlockifyDBus(object):
         try:
             self.properties.Set(self.player_path, key, value)
         except Exception as e:
-            log.warn("Cannot Set Property: {}", e)
+            self.connect_to_spotify_dbus(None)
+            log.warn("Cannot Set Property: {}".format(e))
 
     def playpause(self):
         "Toggles the current song between Play and Pause."
         try:
             self.player.PlayPause()
         except Exception as e:
-            log.warn("Cannot Play/Pause: {}", e)
+            log.warn("Cannot Play/Pause: {}".format(e))
 
     def play(self):
         "Tries to play the current title."
         try:
             self.player.Play()
         except Exception as e:
-            log.warn("Cannot Play: {}", e)
+            log.warn("Cannot Play: {}".format(e))
 
     def pause(self):
         "Tries to pause the current title."
         try:
             self.player.Pause()
         except Exception as e:
-            log.warn("Cannot Pause: {}", e)
+            log.warn("Cannot Pause: {}".format(e))
 
     def stop(self):
         "Tries to stop playback. PlayPause is probably preferable."
         try:
             self.player.Stop()
         except Exception as e:
-            log.warn("Cannot Stop playback: {}", e)
+            log.warn("Cannot Stop playback: {}".format(e))
 
     def next(self):
         "Tries to skip to next song."
         try:
             self.player.Next()
         except Exception as e:
-            log.warn("Cannot Go Next: {}", e)
+            log.warn("Cannot Go Next: {}".format(e))
 
     def prev(self):
         "Tries to go back to last song."
         try:
             self.player.Previous()
         except Exception as e:
-            log.warn("Cannot Go Previous: {}", e)
+            log.warn("Cannot Go Previous: {}".format(e))
 
     def set_position(self, track, position):
         try:
             self.player.SetPosition(track, position)
         except Exception as e:
-            log.warn("Cannot Set Position: {}", e)
+            log.warn("Cannot Set Position: {}".format(e))
 
 
     def open_uri(self, uri):
         try:
             self.player.OpenUri(uri)
         except Exception as e:
-            log.warn("Cannot Open URI: {}", e)
+            log.warn("Cannot Open URI: {}".format(e))
 
 
     def seek(self, seconds):
@@ -135,7 +137,7 @@ class BlockifyDBus(object):
         try:
             self.player.Seek(seconds)
         except Exception as e:
-            log.warn("Cannot Seek: {}", e)
+            log.warn("Cannot Seek: {}".format(e))
 
     def get_art_url(self):
         "Get album cover"
@@ -144,7 +146,7 @@ class BlockifyDBus(object):
             metadata = self.get_property("Metadata")
             url = metadata["mpris:artUrl"].encode("utf-8")
         except Exception as e:
-            log.error("Cannot fetch album cover: {}", e)
+            log.error("Cannot fetch album cover: {}".format(e))
         return url
 
     def get_song_status(self):
@@ -153,7 +155,7 @@ class BlockifyDBus(object):
         try:
             status = self.get_property("PlaybackStatus")
         except Exception as e:
-            log.warn("Cannot get PlaybackStatus: {}", e)
+            log.warn("Cannot get PlaybackStatus: {}".format(e))
 
         return status
 
@@ -164,7 +166,7 @@ class BlockifyDBus(object):
             metadata = self.get_property("Metadata")
             length = int(metadata["mpris:length"] / 1000000)
         except Exception as e:
-            log.warn("Cannot get song length: {}", e)
+            log.warn("Cannot get song length: {}".format(e))
 
         return length
 
@@ -175,7 +177,7 @@ class BlockifyDBus(object):
             metadata = self.get_property("Metadata")
             title = metadata["xesam:title"].encode("utf-8")
         except Exception as e:
-            log.warn("Cannot get song title: {}", e)
+            log.warn("Cannot get song title: {}".format(e))
 
         return title
 
@@ -186,7 +188,7 @@ class BlockifyDBus(object):
             metadata = self.get_property("Metadata")
             album = metadata["xesam:album"].encode("utf-8")
         except Exception as e:
-            log.warn("Cannot get song album: {}", e)
+            log.warn("Cannot get song album: {}".format(e))
 
         return album
 
@@ -197,7 +199,7 @@ class BlockifyDBus(object):
             metadata = self.get_property("Metadata")
             artist = metadata["xesam:artist"][0].encode("utf-8")
         except Exception as e:
-            log.warn("Cannot get song artist: {}", e)
+            log.warn("Cannot get song artist: {}".format(e))
 
         return artist
 

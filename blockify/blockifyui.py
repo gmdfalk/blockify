@@ -411,14 +411,16 @@ class BlockifyUI(gtk.Window):
 
     def start(self):
         "Start the main update routine."
-        self.b.toggle_mute()
+        self.b.toggle_mute(2)
         self.bind_signals()
 
+        gtk.timeout_add(self.b.spotify_refresh_interval, self.b.refresh_spotify_process_state)
         # Start and loop the main update routine once every X ms.
         # To influence responsiveness or CPU usage, decrease/increase self.update_interval.
         gtk.timeout_add(self.update_interval, self.update)
-        # Delay autoplayback until self.spotify_is_playing was called at least once.
-        gtk.timeout_add(self.update_interval + 100, self.b.start_autoplay)
+        if self.b.autoplay:
+            # Delay autoplayback until self.spotify_is_playing was called at least once.
+            gtk.timeout_add(self.update_interval + 100, self.b.start_autoplay)
 
         log.info("Blockify-UI started.")
 
@@ -499,19 +501,22 @@ class BlockifyUI(gtk.Window):
 
     def update(self):
         "Main GUI loop at specific time interval (see self.update_interval)."
-        # Call the main update function of blockify and assign return value
-        # (True/False) depending on whether a song to be blocked was found.
-        self.b.found = self.b.find_ad()
+        if not self.b.suspend_blockify:
+            # Call the main update function of blockify and assign return value
+            # (True/False) depending on whether a song to be blocked was found.
+            self.b.found = self.b.find_ad()
 
-        self.b.adjust_interlude()
+            self.b.adjust_interlude()
 
-        self.update_labels()
-        self.update_buttons()
-        self.update_icons()
-        # Cover art is not a priority, so let gtk decide when exactly we handle them.
-        gtk.idle_add(self.update_cover)
+            self.update_labels()
+            self.update_buttons()
+            self.update_icons()
+            # Cover art is not a priority, so let gtk decide when exactly we handle them.
+            gtk.idle_add(self.update_cover)
+        else:
+            self.artistlabel.set_text("No Spotify process found!")
 
-        # Always return True to keep looping this method.
+        # Always return True to keep the update thread active.
         return True
 
     def update_cover(self):
