@@ -451,7 +451,12 @@ class Blockify(object):
             # two elements in the form of a tuple - {pid : (index, muted_value)}
             idxd = {sink_status[2]: (sink_status[0], sink_status[1]) for sink_status in sink_infos if len(sink_status) == 3}
 
-            pid = [k for k in idxd.keys() if k in self.spotify_pids][0]
+            while True:
+                try:
+                    pid = [k for k in idxd.keys() if k in self.spotify_pids][0]
+                    break
+                except IndexError:
+                    self.check_for_spotify_process()
             sink_status = idxd[pid]  # tuple of 2 elements: (index, muted_value)
 
         return sink_status
