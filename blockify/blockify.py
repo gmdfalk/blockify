@@ -44,10 +44,8 @@ class Blockify(object):
         self._autodetect = util.CONFIG["general"]["autodetect"]
         self._automute = util.CONFIG["general"]["automute"]
         self.autoplay = util.CONFIG["general"]["autoplay"]
-        self.unmute_delay = util.CONFIG["cli"]["unmute_delay"]
         self.update_interval = util.CONFIG["cli"]["update_interval"]
-        self.spotify_refresh_interval = 5000
-        self.suspend_blockify = False
+        self.unmute_delay = util.CONFIG["cli"]["unmute_delay"]
         self.pulse_unmuted_value = ""
         self.found = False
         self.current_song = ""
@@ -168,18 +166,13 @@ class Blockify(object):
     def start_spotify(self):
         if util.CONFIG["general"]["start_spotify"]:
             log.info("Starting Spotify ...")
-            null = open('/dev/null', 'w')
-            spid = subprocess.Popen(['/usr/bin/spotify'], stdout=null, stderr=null)  # .pid
+            spid = subprocess.Popen(['/usr/bin/spotify'])
             for i in range(20):
                 time.sleep(1)
                 spotify_is_running = self.check_for_spotify_process()
                 if spotify_is_running:
                     log.info("Spotify launched!")
                     break
-
-            # if spid:
-            #    log.info("Spotify launched!")
-            #    time.sleep(10)
 
 
     def init_channels(self):
@@ -200,21 +193,12 @@ class Blockify(object):
             log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
             sys.exit()
 
-    def refresh_spotify_process_state(self):
-        """Check if Spotify is running periodically. If it's not, suspend blockify."""
-        if not self.check_for_spotify_process():
-            self.suspend_blockify = True
-        else:
-            self.suspend_blockify = False
-
-        return True
 
     def start(self):
         self.bind_signals()
         # Force unmute to properly initialize unmuted state
         self.toggle_mute()
 
-        gtk.timeout_add(self.spotify_refresh_interval, self.refresh_spotify_process_state)
         gtk.timeout_add(self.update_interval, self.update)
         if self.autoplay:
             # Delay autoplayback until self.spotify_is_playing was called at least once.
@@ -244,11 +228,10 @@ class Blockify(object):
 
     def update(self):
         "Main update routine, looped every self.update_interval milliseconds."
-        if not self.suspend_blockify:
-            # Determine if a commercial is running and act accordingly.
-            self.found = self.find_ad()
+        # Determine if a commercial is running and act accordingly.
+        self.found = self.find_ad()
 
-            self.adjust_interlude()
+        self.adjust_interlude()
 
         # Always return True to keep looping this method.
         return True
