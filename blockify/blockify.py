@@ -348,7 +348,7 @@ class Blockify(object):
         spotify_window = self.find_spotify_window_wmctrl()
         if spotify_window:
             try:
-                song = " ".join(spotify_window[0].split()[4:]).decode("utf-8")
+                song = " ".join(map(str, spotify_window[0].split()[4:]))
             except Exception as e:
                 log.debug("Could not match spotify pid to sink pid: %s".format(e), exc_info=1)
 
