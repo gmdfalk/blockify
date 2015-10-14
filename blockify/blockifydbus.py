@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """blockifydbus
 
 Usage:
@@ -215,12 +215,12 @@ class BlockifyDBus(object):
                 d = k.split(":")[1]
 
                 if d == "artist":
-                    print d, "\t\t= ", metadata[k][0]
+                    print("{0}\t\t= {1}".format(d, metadata[k][0]))
                 # elif d == "length":
                 elif len(d) < 7:
-                    print d, "\t\t= ", metadata[k]
+                    print("{0}\t\t= {1}".format(d, metadata[k]))
                 else:
-                    print d, "\t= ", metadata[k]
+                    print("{0}\t= {1}".format(d, metadata[k]))
         except AttributeError as e:
             log.error("Could not get properties: {}".format(e))
 
@@ -253,26 +253,26 @@ def main():
         dbus.set_pos(args["<pos>"])
 
     if args["title"]:
-        print dbus.get_song_title()
+        print(dbus.get_song_title())
     elif args["artist"]:
-        print dbus.get_song_artist()
+        print(dbus.get_song_artist())
     elif args["status"]:
-        print dbus.get_song_status()
+        print(dbus.get_song_status())
     elif args["all"]:
         dbus.print_info()
     elif args["get"]:
         length = dbus.get_song_length()
         m, s = divmod(length, 60)
         if args["length"]:
-            print "{}m{}s ({})".format(m, s, length)
+            print("{}m{}s ({})".format(m, s, length))
         else:
             rating = dbus.get_property("Metadata")["xesam:autoRating"]
             artist = dbus.get_song_artist()
             title = dbus.get_song_title()
             album = dbus.get_song_album()
             state = dbus.get_song_status()
-            print "{} - {} ({}), {}m{}s, {} ({})".format(artist, title, album,
-                                                         m, s, rating, state)
+            print("{} - {} ({}), {}m{}s, {} ({})".format(artist, title, album,
+                                                         m, s, rating, state))
 
 
 if __name__ == "__main__":

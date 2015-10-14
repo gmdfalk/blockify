@@ -7,9 +7,9 @@ It needs wmctrl to be installed and might have limited functionality.**
 ## Installation
 ##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed.
-- Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus wmctrl
-- Optional (but highly recommended): pulseaudio python2-docopt  
-- Installation tools: python2-pip (preferred) OR python2-setuptools  
+- Mandatory: gtk3 python-gobject alsa-utils gst-python libwnck3 python-dbus wmctrl
+- Optional (but highly recommended): pulseaudio python-docopt  
+- Installation tools: python-pip (preferred) OR python-setuptools  
 
 Package names are for ArchLinux and will probably differ slightly between distributions. 
 
