@@ -59,7 +59,7 @@ class Notepad(Gtk.Window):
         self.set_title("Blocklist")
         self.set_wmclass("blocklist", "Blockify")
         self.set_default_size(300, 400)
-        self.set_position(Gtk.WIN_POS_CENTER)
+        self.set_position(Gtk.WindowPosition.CENTER)
 
         self.textview = Gtk.TextView()
         self.statusbar = Gtk.Statusbar()
@@ -80,9 +80,9 @@ class Notepad(Gtk.Window):
 
         # Put the textview into a ScrolledWindow.
         self.sw = Gtk.ScrolledWindow()
-        self.sw.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_AUTOMATIC)
+        self.sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.sw.add(self.textview)
-        textbox.pack_start(self.sw)
+        textbox.pack_start(self.sw, True, True, 0)
         statusbox.pack_start(self.statusbar, True, False, 0)
 
         self.add(vbox)
@@ -100,17 +100,17 @@ class Notepad(Gtk.Window):
         a_key, a_mod = self.split_accelerator("<Control>a")
 
         quit_group = Gtk.AccelGroup()
-        quit_group.connect_group(q_key, q_mod, Gtk.ACCEL_LOCKED, self.destroy)
-        quit_group.connect_group(w_key, w_mod, Gtk.ACCEL_LOCKED, self.destroy)
+        quit_group.connect(q_key, q_mod, Gtk.AccelFlags.LOCKED, self.destroy)
+        quit_group.connect(w_key, w_mod, Gtk.AccelFlags.LOCKED, self.destroy)
         self.add_accel_group(quit_group)
 
         save_group = Gtk.AccelGroup()
-        save_group.connect_group(s_key, s_mod, Gtk.ACCEL_LOCKED, self.save)
+        save_group.connect(s_key, s_mod, Gtk.AccelFlags.LOCKED, self.save)
         self.add_accel_group(save_group)
 
         edit_group = Gtk.AccelGroup()
-        edit_group.connect_group(d_key, d_mod, Gtk.ACCEL_LOCKED, self.delete_line)
-        edit_group.connect_group(a_key, a_mod, Gtk.ACCEL_LOCKED, self.select_all)
+        edit_group.connect(d_key, d_mod, Gtk.AccelFlags.LOCKED, self.delete_line)
+        edit_group.connect(a_key, a_mod, Gtk.AccelFlags.LOCKED, self.select_all)
         self.add_accel_group(edit_group)
 
     def undo(self, *args):
@@ -158,7 +158,7 @@ class Notepad(Gtk.Window):
     def save(self, *args):
         textbuffer = self.textview.get_buffer()
         start, end = textbuffer.get_start_iter(), textbuffer.get_end_iter()
-        text = textbuffer.get_text(start, end)
+        text = textbuffer.get_text(start, end, True)
         # Append a newline to the blocklist, if necessary.
         if not text.endswith("\n"):
             text += "\n"
@@ -554,17 +554,23 @@ class BlockifyUI(Gtk.Window):
         status = self.get_status_text()
         self.statuslabel.set_text(status)
         if not self.b.found:
-            self.albumlabel.set_text(self.b.dbus.get_song_album().decode("utf-8"))
+            # Avoid the attribute error if the dbus return a str
+            if isinstance(self.b.dbus.get_song_album(), str):
+                self.albumlabel.set_text(self.b.dbus.get_song_album())
+            else:
+                self.albumlabel.set_text(self.b.dbus.get_song_album().decode("utf-8"))
         else:
             self.albumlabel.set_text("N/A")
 
         artist, title = self.format_current_song()
-        # If there is an ad the artist type is str and the decode raise an exception
-        try:
+        if isinstance(artist, str):
+            self.artistlabel.set_text(artist)
+        else:
             self.artistlabel.set_text(artist.decode("utf-8"))
+        if isinstance(title, str):
+            self.titlelabel.set_text(title)
+        else:
             self.titlelabel.set_text(title.decode("utf-8"))
-        except Exception as e:
-            pass
         # self.status_icon.set_tooltip("{0} - {1}\n{2}\nblockify v{3}".format(artist, title, status, blockify.VERSION))
 
     def update_buttons(self):
@@ -631,14 +637,14 @@ class BlockifyUI(Gtk.Window):
             return False
 
         try:
-            nanosecs, format = self.b.player.player.query_position(self.b.player.gst.FORMAT_TIME)
-            duration_nanosecs, format = self.b.player.player.query_duration(self.b.player.gst.FORMAT_TIME)
+            nanosecs, format = self.b.player.player.query_position(self.b.player.Gst.Format.TIME)
+            duration_nanosecs, format = self.b.player.player.query_duration(self.b.player.Gst.Format.TIME)
 
             # Block seek handler so we don't seek when we set_value().
             self.interlude_slider.handler_block_by_func(self.on_interlude_slider_change)
 
-            self.interlude_slider.set_range(0, float(duration_nanosecs) / self.b.player.gst.SECOND)
-            self.interlude_slider.set_value(float(nanosecs) / self.b.player.gst.SECOND)
+            self.interlude_slider.set_range(0, float(duration_nanosecs) / self.b.player.Gst.SECOND)
+            self.interlude_slider.set_value(float(nanosecs) / self.b.player.Gst.SECOND)
 
             self.interlude_slider.handler_unblock_by_func(self.on_interlude_slider_change)
         except Exception as e:
@@ -760,15 +766,13 @@ class BlockifyUI(Gtk.Window):
     def on_interlude_tag_changed (self, bus, message):
         "Read and display tag information from AudioPlayer.player.bus."
         taglist = message.parse_tag()
-
-        if "artist" in taglist.keys():
+        if taglist.get_string_index("artist", 0)[0]:
             try:
-                label = taglist["artist"] + " - " + taglist["title"]
+                label = taglist.get_string_index("artist", 0)[1][0] + " - " + taglist.get_string_index("artist", 0)[1][0]
                 if len(label) > 5:
                     self.interlude_label.set_text(label)
             except KeyError as e:
                 log.debug("Exception when trying to set interlude label: {}.".format(e))
-
 
     def toggle_interlude(self):
         if not self.b.player.is_playing():
@@ -809,10 +813,10 @@ class BlockifyUI(Gtk.Window):
 
         dialog = Gtk.FileChooserDialog("Load playlist or audio folder/file",
                                         None,
-                                        Gtk.FILE_CHOOSER_ACTION_OPEN,
-                                        (Gtk.STOCK_CANCEL, Gtk.RESPONSE_CANCEL,
-                                         Gtk.STOCK_OPEN, Gtk.RESPONSE_OK))
-        dialog.set_default_response(Gtk.RESPONSE_OK)
+                                        Gtk.FileChooserAction.OPEN,
+                                        (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog.set_default_response(Gtk.ResponseType.OK)
 
         dialog.set_current_folder(util.CONFIG_DIR)
 
@@ -843,7 +847,7 @@ class BlockifyUI(Gtk.Window):
         dialog.set_select_multiple(True)
 
         response = dialog.run()
-        if response == Gtk.RESPONSE_OK:
+        if response == Gtk.ResponseType.OK:
             file_list = dialog.get_filenames()
             self.b.player.load_playlist(self.b.player.parse_playlist(file_list))
             self.on_play_interlude_btn(None)

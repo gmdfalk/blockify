@@ -200,7 +200,7 @@ class InterludePlayer(object):
         return self.player.get_state(0)[1] == Gst.State.PLAYING
 
     def is_playable(self):
-        return self.player.get_state(0)[0] == Gst.State.CHANGE_SUCCESS
+        return self.player.get_state(0)[0] == Gst.StateChangeReturn.SUCCESS
 
     def play(self):
         uri = self.get_current_uri()

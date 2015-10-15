@@ -293,7 +293,14 @@ class Blockify(object):
     def current_song_is_ad(self):
         "Compares the wnck song info to dbus song info."
         try:
-            dbus_song = self.dbus.get_song_artist().decode("utf-8") + self.song_delimiter + self.dbus.get_song_title().decode("utf-8")
+            song_artist = self.dbus.get_song_artist()
+            song_title = self.dbus.get_song_title()
+            # Avoid the attribute error if the dbus return a str
+            if not isinstance(song_artist, str):
+                song_artist = song_artist.decode("utf-8")
+            if not isinstance(song_title, str):
+                song_title = song_title.decode("utf-8")
+            dbus_song = song_artist + self.song_delimiter + song_title
             is_ad = self.current_song != dbus_song
             return is_ad
         except TypeError as e:
