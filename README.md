@@ -1,17 +1,21 @@
 # blockify
-Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.  
+Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.
 
-**Blockify < v2.0.0 (master branch) does not support the Spotify beta client (version 1.0.0 and higher).   
-If you need support for Spotify v1.0.13 and higher, use the pre-release of Blockify (v2.0.0 and higher) or clone the spotify-beta branch directly.
-Be aware, however, that this pre-release is in beta status, too, and is not backward compatible to Spotify < 1.0.13.
-The pre-release requires wmctrl to be installed.**
+**Important**: If you are using the 'old' Spotify client (version < 1.0), please use the legacy-branch (== blockify version < 2.0).
+
 
 ## Installation
+##### Basic Requirements:
+- Python3
+- Pulseaudio
+- Wmctrl
+- Gstreamer1.0 (including the plugins you need for the audio formats you want to be able to play as interlude music)
+
 ##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed.
-- Mandatory: pygtk alsa-utils gstreamer0.10-python python2-wnck python2-dbus
-- Optional (but highly recommended): pulseaudio python2-docopt  
-- Installation tools: python2-pip (preferred) OR python2-setuptools  
+- Mandatory: gtk3 python-gobject alsa-utils gst-python libwnck3 python-dbus wmctrl
+- Optional (but highly recommended): pulseaudio python-docopt  
+- Installation tools: python-pip (preferred) OR python-setuptools  
 
 Package names are for ArchLinux and will probably differ slightly between distributions. 
 
@@ -20,11 +24,10 @@ Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packag
 
 Example ArchLinux installation routine:  
 ``` bash
-mkdir blockify
+curl -L -O https://aur4.archlinux.org/cgit/aur.git/snapshot/blockify.tar.gz
+tar -xvf blockify.tar.gz
 cd blockify
-wget https://aur.archlinux.org/packages/bl/blockify/PKGBUILD
-makepkg
-sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
+makepkg -sri
 ```
 
 ##### Direct (pip/setup.py)
@@ -33,9 +36,9 @@ If there is no blockify package available on your distribution, you'll have to i
 First, the dependencies:  
 ``` bash
 # Dependencies on Ubuntu
-sudo apt-get install python-pip python-wnck python-gst0.10
+sudo apt-get install python-pip libwnck3 gst-python1.0 wmctrl
 # Dependencies on Fedora
-sudo dnf install python-dbus gstreamer-python gnome-python2-libwnck
+sudo dnf install python-dbus gstreamer-python libwnck3
 ```
 Then blockify itself:  
 ``` bash
@@ -58,10 +61,9 @@ Additionally, blockify makes use of pulseaudio sinks, allowing processes to be m
 If you do not have/want pulseaudio, blockify will mute the system sound during commercials instead of just Spotify. The interlude music feature will not work as a consequence.
 
 #### Detection
-Blockify will automatically detect and block ads for you so besides starting it
-after running spotify, there's not a lot to do.
+Blockify will automatically detect and block ads for you so besides starting it after running spotify, there's not a lot to do.  
 However, it also comes with the option to complement or replace that autoblock functionality with a blocklist (saved as ~/.config/blockify/blocklist.txt).  
-Blocklist-Entries are case-sensitive and greedy, e.g. the entry `Blood` would not only block all Bloodhound Gang songs but any song by any artist starting with `"Blood"`.  
+Blocklist entries are case-sensitive and greedy, e.g. the entry `Blood` would match any artist starting with those exact five letters.    
 
 #### Controls/Actions
 Blockify accepts several signals:
@@ -77,10 +79,11 @@ Blockify accepts several signals:
 * SIGRTMIN+12(46): Toggle play/pause the current interlude song.
 * SIGRTMIN+13(47): Toggle interlude autoresume.
 
-Example usage:
+Example usages:
 ```bash
 pkill -USR1 -f "python2.*blockify"
 pkill -RTMIN+1 -f "python2.*blockify"
+alias btoggle='pkill -RTMIN+2 -f "python2.*blockify"'
 ```
 Bind to keys for fun and profit.
 
@@ -137,9 +140,41 @@ http://skyserver5.skydisc.net:8000
 ```
 You can use relative and absolute paths as well as basically any audio source/format, as long as you have the respective gstreamer codec installed. 
 
+
+## Troubleshooting
+## Known issues
+- If Spotify is minimized to the system tray, ad detection will not work.
+- If DBus/Notifications are disabled, ad detection will not work.
+
+### Common issues 
+* `ImportError: No module named gst`: You need to install gst-python.  
+* Interlude music not playing: You might need to install gstreamer codecs (-bad, -ugly, ...).  
+* Configuration is not loaded properly: Syntax might have changed between blockify versions. If in doubt, delete your configuration file. It will be rewritten with current defaults.  
+
+### Debugging
+If you can't find or fix the issue you are having by yourself, you are welcome to open an issue on this site. When you do, **please** provide the following information:
+- A debug log, acquired by starting blockify(-ui) via `blockify(-ui) -vvv -l logfile`. Then upload it with `curl -F "c=logfile" https://ptpbw.pw` or paste it to a gist or bpaste.net or directly into the git issue (preferably with code tags -> three backticks before and after the snippet).
+- The blockify version: `blockify --version`.
+- If you suspect pulseaudio as culprit, the list of sinks: `pacmd list-sink-inputs | curl -F c=@- https://ptpb.pw`.
+
+
+## Similar open-source projects
+### On Linux:
+- [Spotify-AdKiller](https://github.com/SecUpwN/Spotify-AdKiller) - automatic ad-blocker written in Bash
+
+### On Windows:
+- [Spotify-Ad-Blocker](https://github.com/Xeroday/Spotify-Ad-Blocker)
+
+### On OS X:
+- [SpotiFree](https://github.com/ArtemGordinsky/SpotiFree)
+
+
 ## Changelog
-- v1.9.0 (2015-08-15): Fix [issue #52](https://github.com/mikar/blockify/issues/52), introduce autoplay option and change start_spotify option to boolean type
-- v1.8.8 (2015-07-11): Fix [issue #46](https://github.com/mikar/blockify/issues/46) and [issue #47](https://github.com/mikar/blockify/issues/47)
+- v3.0.0 (2015-10-16): Remove beta status and port to python3 and gstreamer1.0 (see [issue #59](https://github.com/mikar/blockify/issues/59)).
+- v2.0.1 (2015-10-05): (prerelease) Fix [issue #58](https://github.com/mikar/blockify/issues/58) and [issue #38](https://github.com/mikar/blockify/issues/38).  
+- v2.0.0 (2015-09-05): (prerelease) Added rudimentary support for Spotify v1.0 and higher. Fixed autoplay option.  
+- v1.9.0 (2015-08-15): Fix [issue #52](https://github.com/mikar/blockify/issues/52), introduce autoplay option and change start_spotify option to boolean type  
+- v1.8.8 (2015-07-11): Fix [issue #46](https://github.com/mikar/blockify/issues/46) and [issue #47](https://github.com/mikar/blockify/issues/47)  
 - v1.8.7 (2015-06-11): Pressing play will now properly pause interlude music before resuming spotify playback.
 - v1.8.6 (2015-05-10): Minor refactoring and removed incomplete "fix" for [issue #44](https://github.com/mikar/blockify/issues/44).
 - v1.8.5 (2015-05-09): Signal cleanups and [issue #44](https://github.com/mikar/blockify/issues/44) again.
@@ -159,38 +194,3 @@ You can use relative and absolute paths as well as basically any audio source/fo
 - v1.1 (2014-06-17): Autodetection of commercials  
 - v1.0 (2014-05-02): First moderately stable version  
 - v0.9 (2014-04-29): Pulseaudio (sink) support  
-
-## Troubleshooting
-### Checklist
-1. Do you have the newest version?
-2. Is your configuration (and playlist) file syntax OK? If in doubt, delete it. It will be rewritten with default values.
-3. Have you tried starting blockify in debug mode to look for useful information (i.e. `blockify -vvv`).
-
-If you can't find or fix the error by yourself, you are welcome to open an issue on this site. When you do, please provide the following information:
-- A debug log, acquired by starting blockify(-ui) via `blockify(-ui) -vvv -l logfile`. Then upload it with `curl -F "c=logfile" https://ptpbw.pw` or paste it to a gist or bpaste.net or directly into the git issue (preferably with code tags -> three backticks before and after the snippet).
-- The blockify version: `blockify --version`.
-- If you suspect pulseaudio as culprit, the list of sinks: `pacmd list-sink-inputs | curl -F c=@- https://ptpb.pw`.
-
-Common errors:  
-* `ImportError: No module named gst`: You need to install python-gst0.10.
-
-Further guesses for why your blockify doesn't work:  
-* Blockify has two binaries. `blockify` (CLI) and `blockify-ui` (GUI). Make sure you're using the right one.  
-* If blockify doesn't find a Spotify process, it won't start.  
-* If there's already a blockify process running, it won't start.  
-
-## Known Issues
-- Blockify currently does not support Spotify 1.0.0 and higher.
-- If Spotify is minimized to the system tray, ad detection will not work.
-- If DBus/Notifications are disabled, ad detection will not work.
-
-
-## Similar open-source projects
-### On Linux:
-- [Spotify-AdKiller](https://github.com/SecUpwN/Spotify-AdKiller) - automatic ad-blocker written in Bash
-
-### On Windows:
-- [Spotify-Ad-Blocker](https://github.com/Xeroday/Spotify-Ad-Blocker)
-
-### On OS X:
-- [SpotiFree](https://github.com/ArtemGordinsky/SpotiFree)

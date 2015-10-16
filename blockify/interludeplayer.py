@@ -2,12 +2,15 @@ import logging
 import os
 import re
 import urllib
-import urlparse
 
-import gobject
-gobject.threads_init()
-import gst
-import gtk
+from gi.repository import GObject
+GObject.threads_init()
+
+from gi import require_version
+require_version('Gst', '1.0')
+
+from gi.repository import Gst
+from gi.repository import Gtk
 import random
 from blockify import util
 
@@ -18,7 +21,8 @@ log = logging.getLogger("player")
 class InterludePlayer(object):
     "A simple gstreamer audio player to play interlude music."
     def __init__(self, blockify):
-        self.gst = gst
+        Gst.init(None)
+        self.Gst = Gst
         self.b = blockify
         self.manual_control = False
         self.temp_autoresume = False
@@ -31,7 +35,7 @@ class InterludePlayer(object):
         self.uri_rx = re.compile("[A-Za-z]+:\/\/")
         self.formats = ["mp3", "mp4", "flac", "wav", "wma", "ogg", "avi", "mov", "mpg", "flv", "wmv", \
                         "spx", "3gp", "b-mtp", "aac", "aiff", "raw", "midi", "ulaw", "alaw", "gsm" ]
-        self.player = gst.element_factory_make("playbin2", "player")
+        self.player = Gst.ElementFactory.make("playbin", "player")
         self.player.connect("about-to-finish", self.on_about_to_finish)
         # Get and watch the bus. We use this in blockify-ui.
         self.bus = self.player.get_bus()
@@ -97,7 +101,7 @@ class InterludePlayer(object):
 
     def path2url(self, path):
         "Properly translate a string to a file URI (i.e. space to %20)."
-        return urlparse.urljoin("file:", urllib.pathname2url(path))
+        return urllib.parse.urljoin("file:", urllib.pathname2url(path))
 
     def on_about_to_finish(self, player):
         "Song is ending. What do we do?"
@@ -141,22 +145,19 @@ class InterludePlayer(object):
         log.info("Trying to resume spotify playback.")
         if (self.is_playing() or ignore_player) and not self.b.found:
             self.pause()
-            if not self.b.spotify_is_playing():
-                self.b.dbus.playpause()
+            self.b.dbus.play()
 
     def resume_spotify_playback(self):
         if not self.b.found:
-            if not self.b.spotify_is_playing():
-                self.b.dbus.playpause()
             self.pause()
+            self.b.dbus.play()
             log.info("Switched from radio back to Spotify.")
-            return False
+            return True
         else:
             log.info("Tried to switch from radio to Spotify but commercial still playing. Will resume when commercial ends.")
             self.temp_autoresume = True
-            return False
 
-        return True
+        return False
 
     def playpause(self):
         if self.is_playing():
@@ -187,7 +188,7 @@ class InterludePlayer(object):
             if self.is_radio() and self.radio_timeout:
                 log.info("Radio is playing. Switching back to spotify in "
                          "{}s (or when the ad has finished).".format(self.radio_timeout))
-                gtk.timeout_add(self.radio_timeout * 1000, self.resume_spotify_playback)
+                GObject.timeout_add(self.radio_timeout * 1000, self.resume_spotify_playback)
         elif not self.b.found and playing and self.b.current_song:
             if self.autoresume or self.temp_autoresume:
                 self.pause()
@@ -196,10 +197,10 @@ class InterludePlayer(object):
                 self.b.dbus.playpause()
 
     def is_playing(self):
-        return self.player.get_state()[1] == gst.STATE_PLAYING
+        return self.player.get_state(0)[1] == Gst.State.PLAYING
 
     def is_playable(self):
-        return self.player.get_state()[0] == gst.STATE_CHANGE_SUCCESS
+        return self.player.get_state(0)[0] == Gst.StateChangeReturn.SUCCESS
 
     def play(self):
         uri = self.get_current_uri()
@@ -214,17 +215,17 @@ class InterludePlayer(object):
                 log.info("Removed unplayable item from playlist: {}.".format(uri))
             except ValueError:
                 pass
-        self.player.set_state(gst.STATE_PLAYING)
+        self.player.set_state(Gst.State.PLAYING)
         log.info("Playing interlude: {}".format(self.get_current_uri()))
-        log.debug("Play: State is {0}.".format(self.player.get_state()))
+        log.debug("Play: State is {0}.".format(self.player.get_state(0)))
 
     def pause(self):
-        self.player.set_state(gst.STATE_PAUSED)
-        log.debug("Pause: State is {0}.".format(self.player.get_state()))
+        self.player.set_state(Gst.State.PAUSED)
+        log.debug("Pause: State is {0}.".format(self.player.get_state(0)))
 
     def stop(self):
-        self.player.set_state(gst.STATE_NULL)
-        log.debug("Stop: State is {0}.".format(self.player.get_state()))
+        self.player.set_state(Gst.State.NULL)
+        log.debug("Stop: State is {0}.".format(self.player.get_state(0)))
 
     def prev(self):
         self.stop()
