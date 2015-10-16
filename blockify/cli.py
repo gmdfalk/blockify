@@ -18,20 +18,21 @@ import signal
 import subprocess
 import sys
 import time
-import blockifydbus
-import blocklist
-import util
-from gi import require_version
 
+from gi import require_version
 require_version('Gtk', '3.0')
 require_version('Wnck', '3.0')
-
 from gi.repository import Gtk
 from gi.repository import Wnck
-
 from gi.repository import GObject
 
-log = logging.getLogger("main")
+from blockify import dbusclient
+from blockify import blocklist
+from blockify import interludeplayer
+from blockify import util
+
+
+log = logging.getLogger("cli")
 
 
 class Blockify(object):
@@ -62,7 +63,7 @@ class Blockify(object):
         # The gst library used by interludeplayer for some reason modifies
         # argv, overwriting some of docopts functionality in the process,
         # so we import gst here, where docopts cannot be broken anymore.
-        import interludeplayer
+        #import interludeplayer
         self.player = interludeplayer.InterludePlayer(self)
 
         self.initialize_mute_method()
@@ -185,7 +186,7 @@ class Blockify(object):
 
     def init_dbus(self):
         try:
-            return blockifydbus.BlockifyDBus()
+            return dbusclient.DBusClient()
         except Exception as e:
             log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
             sys.exit()
@@ -581,15 +582,13 @@ class Blockify(object):
 def initialize(doc=__doc__):
     util.initialize(doc)
 
-    blockify = Blockify(blocklist.Blocklist())
-
-    return blockify
+    return Blockify(blocklist.Blocklist())
 
 
 def main():
     "Entry point for the CLI-version of Blockify."
-    blockify = initialize()
-    blockify.start()
+    cli = initialize()
+    cli.start()
 
 
 if __name__ == "__main__":

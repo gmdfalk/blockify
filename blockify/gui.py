@@ -32,18 +32,15 @@ import os
 import signal
 import urllib.request
 
-import blockify
 from gi import require_version
-
 require_version('Gtk', '3.0')
-
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GdkPixbuf
 from gi.repository import GObject
 
-import util
-
+from blockify import cli
+from blockify import util
 
 log = logging.getLogger("gui")
 
@@ -955,8 +952,8 @@ class BlockifyUI(Gtk.Window):
 
 def main():
     "Entry point for the GUI-version of Blockify."
-    blockifyUI = BlockifyUI(blockify.initialize(__doc__))
-    blockifyUI.start()
+    gui = BlockifyUI(cli.initialize(__doc__))
+    gui.start()
 
 
 if __name__ == "__main__":

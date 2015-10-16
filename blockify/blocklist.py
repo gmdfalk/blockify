@@ -2,7 +2,7 @@ import codecs
 import logging
 import os
 
-import util
+from blockify import util
 
 
 log = logging.getLogger("list")

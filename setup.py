@@ -1,11 +1,7 @@
 from os.path import dirname, join
 from blockify.util import VERSION
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
-
+from setuptools import setup, find_packages
 
 def read(filename):
     with open(join(dirname(__file__), filename)) as f:
@@ -17,18 +13,18 @@ _license = "MIT"
 
 
 setup(
-    name=_name,
-    description="Mute spotify advertisements.",
-    long_description=read("README.md"),
-    version=VERSION,
-    license=_license,
-    url="https://github.com/mikar/{}".format(_name),
-    author="Max Demian",
-    author_email="mikar@gmx.de",
-    packages=[_name, _name + "/data"],
-    package_data={_name + "/data": ["icon-*", "example_*"]},
+    name = _name,
+    description = "Mute spotify advertisements.",
+    long_description = read("README.md"),
+    version = VERSION,
+    license = _license,
+    url = "https://github.com/mikar/{}".format(_name),
+    author = "Max Falk",
+    author_email = "gmdfalk@gmail.com",
+    packages = find_packages(),
+    package_data = { _name : ['data/*']},
     install_package_data=True,
-    entry_points={
+    entry_points= {
                   "console_scripts": [
                       "{0} = {0}.{0}:main".format(_name),
                       "{0}-dbus = {0}.{0}dbus:main".format(_name),

@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 import re
 import urllib
 
@@ -11,7 +12,7 @@ require_version('Gst', '1.0')
 
 from gi.repository import Gst
 from gi.repository import Gtk
-import random
+
 from blockify import util
 
 

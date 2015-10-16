@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""blockifydbus
+"""dbusclient
 
 Usage:
-    blockifydbus (toggle | next | prev | stop | play | pause) [-v...] [options]
-    blockifydbus get [title | artist | length | status | all] [-v...] [options]
-    blockifydbus (openuri <uri> | seek <secs> | setpos <pos>) [-v...] [options]
+    dbusclient (toggle | next | prev | stop | play | pause) [-v...] [options]
+    dbusclient get [title | artist | length | status | all] [-v...] [options]
+    dbusclient (openuri <uri> | seek <secs> | setpos <pos>) [-v...] [options]
 
 Options:
     -l, --log=<path>  Enables logging to the logfile/-path specified.
     -q, --quiet       Don't print anything to stdout.
     -v                Verbosity of the logging module, up to -vvv.
     -h, --help        Show this help text.
-    --version         Show current version of blockifydbus.
+    --version         Show current version of dbusclient.
 """
 import logging
 import re
 
 import dbus
 
-import util
+from blockify import util
 
 
 log = logging.getLogger("dbus")
@@ -30,7 +30,7 @@ except ImportError:
     log.error("ImportError: Please install docopt to use the DBus CLI.")
 
 
-class BlockifyDBus(object):
+class DBusClient(object):
     "Wrapper for Spotify's DBus interface."
 
     def __init__(self, bus=None):
@@ -230,7 +230,7 @@ def main():
     "Entry point for the CLI DBus interface."
     args = docopt(__doc__, version="0.2")
     util.init_logger(args["--log"], args["-v"], args["--quiet"])
-    dbus = BlockifyDBus()
+    dbus = DBusClient()
 
     if args["toggle"]:
         dbus.playpause()
