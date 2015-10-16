@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 import codecs
 import logging
 import os
@@ -101,7 +101,7 @@ def get_default_options():
 def load_options():
     log.info("Loading configuration.")
     options = get_default_options()
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     try:
         config.read(CONFIG_FILE)
     except Exception as e:
@@ -141,7 +141,7 @@ def load_option(config, options, option_tuple):
 
 def save_options(CONFIG_DIR, options):
     configfile = os.path.join(CONFIG_DIR, CONFIG_FILE)
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     # Write out the sections in this order.
     sections = ["general", "cli", "gui", "interlude"]
     for section in sections:

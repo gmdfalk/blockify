@@ -50,7 +50,7 @@ class Blocklist(list):
                 for item in self:
                     if item.startswith(song):
                         return item
-                song = song[:len(song) / 2]
+                song = song[:int(len(song) / 2)]
 
     def get_timestamp(self):
         return os.path.getmtime(self.location)
