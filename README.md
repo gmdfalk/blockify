@@ -1,7 +1,8 @@
 # blockify
-Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.  
+Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.
 
-**This is a beta version to support Spotify v1.0.13 and higher.  
+**This is a beta version to support Spotify v1.0.13 and higher.
+New dependencies need to be installed because Blockify switched to Python 3 and Gstreamer1.0.
 It needs wmctrl to be installed and might have limited functionality.** 
 
 ## Installation
@@ -18,11 +19,12 @@ Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packag
 
 Example ArchLinux installation routine:  
 ``` bash
-mkdir blockify
+mkdir builds
+cd builds
+curl -L -O https://aur4.archlinux.org/cgit/aur.git/snapshot/blockify.tar.gz
+tar -xvf blockify.tar.gz
 cd blockify
-wget https://aur.archlinux.org/packages/bl/blockify/PKGBUILD
-makepkg
-sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
+makepkg -sri
 ```
 
 ##### Direct (pip/setup.py)
@@ -31,9 +33,9 @@ If there is no blockify package available on your distribution, you'll have to i
 First, the dependencies:  
 ``` bash
 # Dependencies on Ubuntu
-sudo apt-get install python-pip python-wnck python-gst0.10
+sudo apt-get install python-pip libwnck3 gst-python1.0 wmctrl
 # Dependencies on Fedora
-sudo dnf install python-dbus gstreamer-python gnome-python2-libwnck
+sudo dnf install python-dbus gstreamer-python libwnck3
 ```
 Then blockify itself:  
 ``` bash

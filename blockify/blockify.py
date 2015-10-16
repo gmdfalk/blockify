@@ -295,11 +295,11 @@ class Blockify(object):
         try:
             song_artist = self.dbus.get_song_artist()
             song_title = self.dbus.get_song_title()
-            # Avoid the attribute error if the dbus return a str
-            if not isinstance(song_artist, str):
+            try:
                 song_artist = song_artist.decode("utf-8")
-            if not isinstance(song_title, str):
                 song_title = song_title.decode("utf-8")
+            except AttributeError as e:
+                log.debug("AttributeError during ad detection: {}".format(e))
             dbus_song = song_artist + self.song_delimiter + song_title
             is_ad = self.current_song != dbus_song
             return is_ad

@@ -315,10 +315,8 @@ class BlockifyUI(Gtk.Window):
         self.autoresume_chk = Gtk.CheckButton("Autoresume")
         self.autoresume_chk.connect("clicked", self.on_autoresume)
 
-        self.interlude_slider = Gtk.HScale()
+        self.interlude_slider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 0.1)
         self.interlude_slider.set_sensitive(False)
-        self.interlude_slider.set_range(0, 100)
-        self.interlude_slider.set_increments(1, 10)
         self.interlude_slider.connect("value-changed", self.on_interlude_slider_change)
 
         self.b.player.bus.connect("message::tag", self.on_interlude_tag_changed)
@@ -554,23 +552,22 @@ class BlockifyUI(Gtk.Window):
         status = self.get_status_text()
         self.statuslabel.set_text(status)
         if not self.b.found:
-            # Avoid the attribute error if the dbus return a str
-            if isinstance(self.b.dbus.get_song_album(), str):
-                self.albumlabel.set_text(self.b.dbus.get_song_album())
-            else:
+            try:
                 self.albumlabel.set_text(self.b.dbus.get_song_album().decode("utf-8"))
+            except AttributeError as e:
+                self.albumlabel.set_text(self.b.dbus.get_song_album())
         else:
             self.albumlabel.set_text("N/A")
 
         artist, title = self.format_current_song()
-        if isinstance(artist, str):
-            self.artistlabel.set_text(artist)
-        else:
+        try:
             self.artistlabel.set_text(artist.decode("utf-8"))
-        if isinstance(title, str):
-            self.titlelabel.set_text(title)
-        else:
-            self.titlelabel.set_text(title.decode("utf-8"))
+        except AttributeError as e:
+            self.artistlabel.set_text(artist)
+        try:
+            self.titlelabel.set_text(artist.decode("utf-8"))
+        except AttributeError as e:
+            self.titlelabel.set_text(artist)
         # self.status_icon.set_tooltip("{0} - {1}\n{2}\nblockify v{3}".format(artist, title, status, blockify.VERSION))
 
     def update_buttons(self):
@@ -637,8 +634,8 @@ class BlockifyUI(Gtk.Window):
             return False
 
         try:
-            nanosecs, format = self.b.player.player.query_position(self.b.player.Gst.Format.TIME)
-            duration_nanosecs, format = self.b.player.player.query_duration(self.b.player.Gst.Format.TIME)
+            nanosecs = self.b.player.player.query_position(self.b.player.Gst.Format.TIME)[1]
+            duration_nanosecs = self.b.player.player.query_duration(self.b.player.Gst.Format.TIME)[1]
 
             # Block seek handler so we don't seek when we set_value().
             self.interlude_slider.handler_block_by_func(self.on_interlude_slider_change)
@@ -857,10 +854,10 @@ class BlockifyUI(Gtk.Window):
     def on_interlude_slider_change(self, slider):
         "When the interlude_slider was moved, update the song position accordingly."
         seek_time_secs = slider.get_value()
-        self.b.player.player.seek_simple(self.b.player.gst.FORMAT_TIME,
-                                         self.b.player.gst.SEEK_FLAG_FLUSH |
-                                         self.b.player.gst.SEEK_FLAG_KEY_UNIT,
-                                         seek_time_secs * self.b.player.gst.SECOND)
+        self.b.player.player.seek_simple(self.b.player.Gst.Format.TIME,
+                                         self.b.player.Gst.SeekFlags.FLUSH |
+                                         self.b.player.Gst.SeekFlags.KEY_UNIT,
+                                         seek_time_secs * self.b.player.Gst.SECOND)
 
     def on_togglecover_btn(self, widget):
         "Button that toggles cover art."
