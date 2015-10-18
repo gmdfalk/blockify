@@ -13,8 +13,8 @@ Blockify is a linux only application that allows you to automatically mute songs
 - Spotify > 1.0.12
 
 ##### Dependencies
-Before installing blockify, please make sure you have the appropriate dependencies installed.
-- pacman -S python pulseaudio wmctrl gst-python alsa-utils libwnck3 pygtk python-dbus python-setuptools python-gobject python-docopt
+Before installing blockify, please make sure you have the appropriate dependencies installed:  
+`pacman -S python pulseaudio wmctrl gst-python alsa-utils libwnck3 pygtk python-dbus python-setuptools python-gobject python-docopt`
 
 Package names are for ArchLinux and will probably differ slightly between distributions. 
 
