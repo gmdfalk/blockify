@@ -10,12 +10,11 @@ Blockify is a linux only application that allows you to automatically mute songs
 - Pulseaudio
 - Wmctrl
 - Gstreamer1.0 (including the plugins you need for the audio formats you want to be able to play as interlude music)
+- Spotify > 1.0.12
 
 ##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed.
-- Mandatory: gtk3 python-gobject alsa-utils gst-python libwnck3 python-dbus wmctrl
-- Optional (but highly recommended): pulseaudio python-docopt  
-- Installation tools: python-pip (preferred) OR python-setuptools  
+- pacman -S python pulseaudio wmctrl gst-python alsa-utils libwnck3 pygtk python-dbus python-setuptools python-gobject python-docopt
 
 Package names are for ArchLinux and will probably differ slightly between distributions. 
 
@@ -93,7 +92,7 @@ Blockify has a CLI/daemon that you can start with `blockify`.
 
 ##### GUI
 Alternatively, you can use the GUI with `blockify-ui` which spawns this window.  
-![ScreenShot](http://a.pomf.se/bimbza.jpg)
+![ScreenShot](http://i.imgur.com/N4l7KU9.jpg)
 - Play, Previous, Next: These buttons use dbus to send audio control commands to spotify.
 - Block/Unblock: Add/Remove the currently playing song to/from the blocklist.
 - Mute/Unmute: Mute/Unmute the current song. Only works if "Manual" checkbox is activated.
