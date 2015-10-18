@@ -92,7 +92,7 @@ Blockify has a CLI/daemon that you can start with `blockify`.
 
 ##### GUI
 Alternatively, you can use the GUI with `blockify-ui` which spawns this window.  
-![ScreenShot](http://i.imgur.com/N4l7KU9.jpg)
+![ScreenShot](http://i.imgur.com/c4oIZMX.jpg)
 - Play, Previous, Next: These buttons use dbus to send audio control commands to spotify.
 - Block/Unblock: Add/Remove the currently playing song to/from the blocklist.
 - Mute/Unmute: Mute/Unmute the current song. Only works if "Manual" checkbox is activated.
