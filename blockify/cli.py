@@ -384,7 +384,7 @@ class Blockify(object):
     def is_muted(self):
         for channel in self.channels:
             output = subprocess.check_output(["amixer", "get", channel])
-            if "[off]" in output:
+            if "[off]" in output.decode("utf-8"):
                 return True
         return False
 
