@@ -147,7 +147,7 @@ def save_options(CONFIG_DIR, options):
     for section in sections:
         config.add_section(section)
         for k, v in options[section].items():
-            config.set(section, k, v)
+            config.set(section, k, str(v))
 
     with codecs.open(configfile, "w", encoding="utf-8") as f:
         config.write(f)
