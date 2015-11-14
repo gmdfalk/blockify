@@ -723,8 +723,6 @@ class BlockifyUI(Gtk.Window):
         if not self.b.player.autoresume:
             self.b.player.autoresume = True
             self.b.player.manual_control = False
-            if not self.b.found:  # and not self.b.spotify_is_playing():
-                self.b.dbus.playpause()
         else:
             self.b.player.autoresume = False
 
