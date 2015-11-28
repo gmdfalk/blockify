@@ -43,6 +43,7 @@ Then blockify itself:
 ``` bash
 git clone https://github.com/mikar/blockify
 cd blockify
+git checkout -b legacy origin/legacy 
 sudo pip install .
 # Create optional desktop icon
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python -c 'import pkg_resources; print pkg_resources.resource_filename("blockify", "data/icon-red-512.png")')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
