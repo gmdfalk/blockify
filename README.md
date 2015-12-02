@@ -10,7 +10,7 @@ Blockify is a linux only application that allows you to automatically mute songs
 - Pulseaudio
 - Wmctrl
 - Gstreamer1.0 (including the plugins you need for the audio formats you want to be able to play as interlude music)
-- Spotify > 1.0.12 (to get the latest version follow the instructions given here [Spotify-Client-1-x-beta-] (https://community.spotify.com/t5/Spotify-Community-Blog/Spotify-Client-1-x-beta-for-Linux-has-been-released/ba-p/1147084.))
+- Spotify > 1.0.12 (to get the latest version follow the instructions given here [Spotify-Client-1-x-beta-] (https://community.spotify.com/t5/Spotify-Community-Blog/Spotify-Client-1-x-beta-for-Linux-has-been-released/ba-p/1147084))
 
 ##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed:  
