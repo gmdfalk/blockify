@@ -34,8 +34,8 @@ If there is no blockify package available on your distribution, you'll have to i
 
 First, the dependencies:  
 ``` bash
-# Dependencies on Ubuntu
-sudo apt-get install python-pip libwnck3 gst-python1.0 wmctrl
+# Dependencies on Ubuntu 14.04 LTS
+sudo apt-get install python3-pip libwnck-3-0 python3-gst-1.0 wmctrl
 # Dependencies on Fedora
 sudo dnf install python-dbus gstreamer-python libwnck3
 ```
