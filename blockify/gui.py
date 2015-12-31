@@ -933,6 +933,7 @@ class BlockifyUI(Gtk.Window):
                 self.editor.destroy()
 
     def on_toggleplay_btn(self, widget):
+        print(self.b.song_status)
         if not self.b.spotify_is_playing():
             self.b.player.try_resume_spotify_playback(True)
         else:
