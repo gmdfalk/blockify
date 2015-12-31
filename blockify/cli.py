@@ -20,6 +20,7 @@ import sys
 import time
 
 from gi import require_version
+
 require_version('Gtk', '3.0')
 require_version('Wnck', '3.0')
 from gi.repository import Gtk
@@ -240,7 +241,7 @@ class Blockify(object):
         return self.song_status == "Playing"
 
     def update(self):
-        "Main update routine, looped every self.update_interval milliseconds."
+        """Main update routine, looped every self.update_interval milliseconds."""
         if not self.suspend_blockify:
             # Determine if a commercial is running and act accordingly.
             self.found = self.find_ad()
@@ -251,10 +252,9 @@ class Blockify(object):
         return True
 
     def find_ad(self):
-        "Main loop. Checks for ads and mutes accordingly."
+        """Main loop. Checks for ads and mutes accordingly."""
         self.previous_song = self.current_song
         self.current_song = self.get_current_song()
-        # self.song_status = self.dbus.get_song_status()
 
         # Manual control is enabled so we exit here.
         if not self.automute:
@@ -292,76 +292,18 @@ class Blockify(object):
         # log.debug("Ad found: {0}".format(self.current_song))
         self.toggle_mute(1)
 
-    def current_song_is_ad(self):
-        "Compares the wnck song info to dbus song info."
-        try:
-            song_artist = self.dbus.get_song_artist()
-            song_title = self.dbus.get_song_title()
-            try:
-                song_artist = song_artist.decode("utf-8")
-                song_title = song_title.decode("utf-8")
-            except AttributeError as e:
-                log.debug("AttributeError during ad detection: {}".format(e))
-            dbus_song = song_artist + self.song_delimiter + song_title
-            is_ad = self.current_song != dbus_song
-            return is_ad
-        except TypeError as e:
-            # Spotify has technically stopped playing and sending dbus
-            # metadata so we get NoneType-errors.
-            # However, it might still play one last ad so we assume that
-            # is the case here.
-            log.debug("TypeError during ad detection: {}".format(e))
-            return True
-
     def unmute_with_delay(self):
         if not self.found:
             self.toggle_mute()
         return False
 
-    def find_spotify_window_wmctrl(self):
-        spotify_window = []
-        try:
-            pipe = subprocess.Popen(['wmctrl', '-lx'], stdout=subprocess.PIPE).stdout
-            window_list = pipe.read().decode("utf-8").split("\n")
-            for window in window_list:
-                if window.find("spotify.Spotify") >= 0:
-                    # current_song = " ".join(window.split()[5:])
-                    spotify_window.append(window)
-                    break
-
-        except OSError:
-            log.error("Please install wmctrl first! Exiting.")
-            sys.exit(1)
-
-        return spotify_window
-
-    def find_spotify_window(self):
-        "Libwnck list of currently open windows."
-        Gtk.init([])
-        # Get the current screen.
-        screen = Wnck.Screen.get_default()
-
-        # recommended per Wnck documentation
-        screen.force_update()
-
-        # Object list of windows in screen.
-        windows = screen.get_windows()
-
-        # Return the Spotify window or an empty list.
-        return [win.get_icon_name() for win in windows\
-                if len(windows) and "Spotify" in win.get_application().get_name()]
+    def current_song_is_ad(self):
+        """Compares the wnck song info to dbus song info."""
+        return self.dbus.get_song_title() and not self.dbus.get_song_artist()
 
     def get_current_song(self):
-        "Checks if a Spotify window exists and returns the current songname."
-        song = ""
-        spotify_window = self.find_spotify_window_wmctrl()
-        if spotify_window:
-            try:
-                song = " ".join(map(str, spotify_window[0].split()[4:]))
-            except Exception as e:
-                log.debug("Could not match spotify pid to sink pid: %s".format(e), exc_info=1)
-
-        return song
+        """Checks if a Spotify window exists and returns the current songname."""
+        return self.dbus.get_song_artist().decode("utf-8") + self.song_delimiter + self.dbus.get_song_title().decode("utf-8")
 
     def block_current(self):
         if self.current_song:
@@ -406,7 +348,7 @@ class Blockify(object):
         return state
 
     def alsa_mute(self, mode):
-        "Mute method for systems without Pulseaudio. Mutes sound system-wide."
+        """Mute method for systems without Pulseaudio. Mutes sound system-wide."""
         state = self.get_state(mode)
         if not state:
             return
@@ -415,7 +357,7 @@ class Blockify(object):
             subprocess.Popen(["amixer", "-q", "set", channel, state])
 
     def pulse_mute(self, mode):
-        "Used if pulseaudio is installed but no sinks are found. System-wide."
+        """Used if pulseaudio is installed but no sinks are found. System-wide."""
         state = self.get_state(mode)
         if not state:
             return
