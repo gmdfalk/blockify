@@ -130,5 +130,4 @@ fabric.properties
 *.un~
 Session.vim
 .netrwhist
-*~
 

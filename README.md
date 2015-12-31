@@ -8,13 +8,12 @@ Blockify is a linux only application that allows you to automatically mute songs
 ##### Basic Requirements:
 - Python3
 - Pulseaudio
-- Wmctrl
 - Gstreamer1.0 (including the plugins you need for the audio formats you want to be able to play as interlude music)
 - Spotify > 1.0.12 (to get the latest version follow the instructions given here [Spotify-Client-1-x-beta-] (https://community.spotify.com/t5/Spotify-Community-Blog/Spotify-Client-1-x-beta-for-Linux-has-been-released/ba-p/1147084))
 
 ##### Dependencies
 Before installing blockify, please make sure you have the appropriate dependencies installed:  
-`pacman -S python pulseaudio wmctrl gst-python alsa-utils libwnck3 pygtk python-dbus python-setuptools python-gobject python-docopt`
+`pacman -S python pulseaudio gst-python alsa-utils pygtk python-dbus python-setuptools python-gobject python-docopt`
 
 Package names are for ArchLinux and will probably differ slightly between distributions. 
 
@@ -35,9 +34,9 @@ If there is no blockify package available on your distribution, you'll have to i
 First, the dependencies:  
 ``` bash
 # Dependencies on Ubuntu
-sudo apt-get install python-pip libwnck3 gst-python1.0 wmctrl
+sudo apt-get install python-pip gst-python1.0
 # Dependencies on Fedora
-sudo dnf install python-dbus gstreamer-python libwnck3
+sudo dnf install python-dbus gstreamer-python
 ```
 Then blockify itself:  
 ``` bash
@@ -169,8 +168,9 @@ If you can't find or fix the issue you are having by yourself, you are welcome t
 
 
 ## Changelog
+- v3.1.0 (2015-12-31): Remove wmctrl dependency (see [issue #67](https://github.com/mikar/blockify/issues/67))
 - v3.0.0 (2015-10-16): Remove beta status and port to python3 and gstreamer1.0 (see [issue #59](https://github.com/mikar/blockify/issues/59)).
-- v2.0.1 (2015-10-05): (prerelease) Fix [issue #58](https://github.com/mikar/blockify/issues/58) and [issue #38](https://github.com/mikar/blockify/issues/38).  
+- v2.0.1 (2015-10-05): (prerelease) Fix [issue #58](https://github.com/mikar/blockify/issues/58) and [issue #38](https://github.com/mikar/blockify/issues/38).
 - v2.0.0 (2015-09-05): (prerelease) Added rudimentary support for Spotify v1.0 and higher. Fixed autoplay option.  
 - v1.9.0 (2015-08-15): Fix [issue #52](https://github.com/mikar/blockify/issues/52), introduce autoplay option and change start_spotify option to boolean type  
 - v1.8.8 (2015-07-11): Fix [issue #46](https://github.com/mikar/blockify/issues/46) and [issue #47](https://github.com/mikar/blockify/issues/47)  
