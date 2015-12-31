@@ -32,12 +32,10 @@ from blockify import blocklist
 from blockify import interludeplayer
 from blockify import util
 
-
 log = logging.getLogger("cli")
 
 
 class Blockify(object):
-
     def __init__(self, blocklist):
         self.blocklist = blocklist
         self.orglist = blocklist[:]
@@ -64,7 +62,7 @@ class Blockify(object):
         # The gst library used by interludeplayer for some reason modifies
         # argv, overwriting some of docopts functionality in the process,
         # so we import gst here, where docopts cannot be broken anymore.
-        #import interludeplayer
+        # import interludeplayer
         self.player = interludeplayer.InterludePlayer(self)
 
         self.initialize_mute_method()
@@ -303,7 +301,8 @@ class Blockify(object):
 
     def get_current_song(self):
         """Checks if a Spotify window exists and returns the current songname."""
-        return self.dbus.get_song_artist().decode("utf-8") + self.song_delimiter + self.dbus.get_song_title().decode("utf-8")
+        return self.dbus.get_song_artist().decode("utf-8") + self.song_delimiter + self.dbus.get_song_title().decode(
+                "utf-8")
 
     def block_current(self):
         if self.current_song:
@@ -366,9 +365,9 @@ class Blockify(object):
             subprocess.Popen(["amixer", "-qD", "pulse", "set", channel, state])
 
     def extract_pulse_sink_status(self, pacmd_out):
-        sink_status = ("", "")
+        sink_status = ("", "", "")  # index, playback_status, muted_value
         # Match muted_value and application.process.id values.
-        pattern = re.compile(r"(?: index|muted|application\.process\.id).*?(\w+)")
+        pattern = re.compile(r"(?: index|state|muted|application\.process\.id).*?(\w+)")
         # Put valid spotify PIDs in a list
         output = pacmd_out.decode("utf-8")
 
@@ -377,16 +376,17 @@ class Blockify(object):
         if len(spotify_sink_list) and self.spotify_pids:
             sink_infos = [pattern.findall(sink) for sink in spotify_sink_list]
             # Every third element per sublist is a key, the value is the preceding
-            # two elements in the form of a tuple - {pid : (index, muted_value)}
-            idxd = {sink_status[2]: (sink_status[0], sink_status[1]) for sink_status in sink_infos if len(sink_status) == 3}
+            # two elements in the form of a tuple - {pid : (index, playback_status, muted_value)}
+            idxd = {sink_status[3]: (sink_status[0], sink_status[1], sink_status[2]) for sink_status in sink_infos if
+                    4 == len(sink_status)}
 
             pid = [k for k in idxd.keys() if k in self.spotify_pids][0]
-            sink_status = idxd[pid]  # tuple of 2 elements: (index, muted_value)
+            sink_status = idxd[pid]
 
         return sink_status
 
     def pulsesink_mute(self, mode):
-        "Finds spotify's audio sink and toggles its mute state."
+        """Finds spotify's audio sink and toggles its mute state."""
         try:
             pacmd_out = subprocess.check_output(["pacmd", "list-sink-inputs"])
         except subprocess.CalledProcessError:
@@ -395,8 +395,8 @@ class Blockify(object):
             self.use_interlude_music = False
             return
 
-        index, muted_value = self.extract_pulse_sink_status(pacmd_out)
-
+        index, playback_state, muted_value = self.extract_pulse_sink_status(pacmd_out)
+        self.song_status = "Playing" if playback_state == "RUNNING" else "Paused"
         self.is_sink_muted = False if muted_value == self.pulse_unmuted_value else True
 
         if index:
