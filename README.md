@@ -39,6 +39,7 @@ sudo apt-get update
 sudo apt-get install spotify-client
 # Install blockify dependencies
 sudo apt-get install git python3-docopt python3-pip python-configparser python-gst-1.0
+sudo pip3 install requests
 ```
 
 Install routine:  
