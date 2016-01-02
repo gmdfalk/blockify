@@ -31,19 +31,22 @@ makepkg -sri
 ##### Direct (pip/setup.py)
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
 
-First, the dependencies:  
-``` bash
-# Dependencies on Ubuntu
-sudo apt-get install python-pip gst-python1.0
-# Dependencies on Fedora
-sudo dnf install python-dbus gstreamer-python
+Preparation (for Ubuntu):  
+```bash
+# Install Spotify beta
+echo deb http://repository.spotify.com testing non-free | sudo tee /etc/apt/sources.list.d/spotify.list
+sudo apt-get update
+sudo apt-get install spotify-client
+# Install blockify dependencies
+sudo apt-get install git python3-docopt python3-pip python-configparser python-gst-1.0
 ```
-Then blockify itself:  
-``` bash
+
+Install routine:  
+```bash
+# Install blockify
 git clone https://github.com/mikar/blockify
 cd blockify
-sudo pip install .
-# Create optional desktop icon
+sudo pip3 install .
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python3 -c 'import pkg_resources; print(pkg_resources.resource_filename("blockify", "data/icon-red-512.png"))')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
 
