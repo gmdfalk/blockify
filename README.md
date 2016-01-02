@@ -37,8 +37,7 @@ echo deb http://repository.spotify.com testing non-free | sudo tee /etc/apt/sour
 sudo apt-get update
 sudo apt-get install spotify-client
 # Install blockify dependencies
-sudo apt-get install git python3-docopt python3-pip python-configparser python-gst-1.0
-sudo pip3 install requests
+sudo apt-get install git python3-requests python3-docopt python3-pip python3-gst-1.0 python-configparser
 ```
 
 Install routine:  
@@ -82,9 +81,9 @@ Blockify accepts several signals:
 
 Example usages:
 ```bash
-pkill -USR1 -f "python2.*blockify"
-pkill -RTMIN+1 -f "python2.*blockify"
-alias btoggle='pkill -RTMIN+2 -f "python2.*blockify"'
+pkill -USR1 -f "python.*blockify"
+pkill -RTMIN+1 -f "python.*blockify"
+alias btoggle='pkill -RTMIN+2 -f "python.*blockify"'
 ```
 Bind to keys for fun and profit.
 
