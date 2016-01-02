@@ -22,8 +22,7 @@ Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packag
 
 Example ArchLinux installation routine:  
 ``` bash
-curl -L -O https://aur4.archlinux.org/cgit/aur.git/snapshot/blockify.tar.gz
-tar -xvf blockify.tar.gz
+git clone https://aur.archlinux.org/blockify.git
 cd blockify
 makepkg -sri
 ```
