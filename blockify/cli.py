@@ -16,7 +16,6 @@ import os
 import re
 import signal
 import subprocess
-import sys
 import time
 
 from gi import require_version
@@ -52,12 +51,14 @@ class Blockify(object):
         self.song_delimiter = " - "  # u" \u2013 "
         self.found = False
         self.current_song = ""
+        self.current_song_artist = ""
+        self.current_song_title = ""
         self.previous_song = ""
         self.song_status = ""
         self.is_fully_muted = False
         self.is_sink_muted = False
-        self.dbus = self.init_dbus()
-        self.channels = self.init_channels()
+        self.dbus = self.initialize_dbus()
+        self.channels = self.initialize_channels()
         # The gst library used by interludeplayer for some reason modifies
         # argv, overwriting some of docopts functionality in the process,
         # so we import gst here, where docopts cannot be broken anymore.
@@ -82,13 +83,13 @@ class Blockify(object):
 
         if not util.CONFIG["general"]["start_spotify"]:
             log.info("Exiting. Bye.")
-            sys.exit()
+            Gtk.main_quit()
 
         self.start_spotify()
         if not self.check_for_spotify_process():
             log.error("Failed to start Spotify!")
             log.info("Exiting. Bye.")
-            sys.exit()
+            Gtk.main_quit()
 
     def is_localized_pulseaudio(self):
         """Pulseaudio versions below 7.0 are localized."""
@@ -144,14 +145,14 @@ class Blockify(object):
 
     def check_for_blockify_process(self):
         try:
-            pid = subprocess.check_output(["pgrep", "-f", "python.*blockify"])
+            pid = subprocess.check_output(["pgrep", "-f", "^python.*blockify"])
         except subprocess.CalledProcessError:
             # No blockify process found. Great, this is what we want.
             pass
         else:
             if pid.strip().decode("utf-8") != str(os.getpid()):
                 log.error("A blockify process is already running. Exiting.")
-                sys.exit()
+                Gtk.main_quit()
 
     def check_for_spotify_process(self):
         try:
@@ -172,7 +173,7 @@ class Blockify(object):
                     log.info("Spotify launched!")
                     break
 
-    def init_channels(self):
+    def initialize_channels(self):
         channel_list = ["Master"]
         amixer_output = subprocess.check_output("amixer")
         if "'Speaker',0" in amixer_output.decode("utf-8"):
@@ -182,12 +183,12 @@ class Blockify(object):
 
         return channel_list
 
-    def init_dbus(self):
+    def initialize_dbus(self):
         try:
             return dbusclient.DBusClient()
         except Exception as e:
             log.error("Cannot connect to DBus. Exiting.\n ({}).".format(e))
-            sys.exit()
+            Gtk.main_quit()
 
     def refresh_spotify_process_state(self):
         """Check if Spotify is running periodically. If it's not, suspend blockify."""
@@ -255,7 +256,7 @@ class Blockify(object):
     def find_ad(self):
         """Main loop. Checks for ads and mutes accordingly."""
         self.previous_song = self.current_song
-        self.current_song = self.get_current_song()
+        self.update_current_song_info()
 
         # Manual control is enabled so we exit here.
         if not self.automute:
@@ -299,11 +300,12 @@ class Blockify(object):
         return False
 
     def current_song_is_ad(self):
-        return self.dbus.get_song_title() and not self.dbus.get_song_artist()
+        return self.current_song_title and not self.current_song_artist
 
-    def get_current_song(self):
-        return self.dbus.get_song_artist().decode("utf-8") + self.song_delimiter + self.dbus.get_song_title().decode(
-                "utf-8")
+    def update_current_song_info(self):
+        self.current_song_artist = self.dbus.get_song_artist().decode("utf-8")
+        self.current_song_title = self.dbus.get_song_title().decode("utf-8")
+        self.current_song = self.current_song_artist + self.song_delimiter + self.current_song_title
 
     def block_current(self):
         if self.current_song:
@@ -464,7 +466,7 @@ class Blockify(object):
         self.player.toggle_autoresume()
 
     def bind_signals(self):
-        "Catch signals because it seems like a great idea, right? ... Right?"
+        """Catch signals because it seems like a great idea, right? ... Right?"""
         signal.signal(signal.SIGINT, self.signal_stop_received)  # 9
         signal.signal(signal.SIGTERM, self.signal_stop_received)  # 15
 
@@ -481,7 +483,7 @@ class Blockify(object):
         signal.signal(signal.SIGRTMIN + 12, self.signal_playpause_interlude_received)  # 46
         signal.signal(signal.SIGRTMIN + 13, self.signal_toggle_autoresume_received)  # 47
 
-    def stop(self):
+    def prepare_stop(self):
         log.info("Exiting safely. Bye.")
         # Stop the interlude player.
         if self.use_interlude_music:
@@ -492,10 +494,13 @@ class Blockify(object):
             self.blocklist.save()
         # Unmute before exiting.
         self.toggle_mute(2)
-        sys.exit()
+
+    def stop(self):
+        self.prepare_stop()
+        Gtk.main_quit()
 
     def toggle_block(self):
-        "Block/unblock the current song."
+        """Block/unblock the current song."""
         if self.found:
             self.unblock_current()
         else:
@@ -529,7 +534,7 @@ def initialize(doc=__doc__):
 
 
 def main():
-    "Entry point for the CLI-version of Blockify."
+    """Entry point for the CLI-version of Blockify."""
     cli = initialize()
     cli.start()
 

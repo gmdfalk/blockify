@@ -15,11 +15,6 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# TODO: More testing.
-# TODO: Different GUI-modes (minimal, full)?
-# TODO: Notepad: Use ListStore instead of TextView?
-# TODO: Notepad: Undo/Redo Ctrl+Z, Ctrl+Y, Fix Ctrl+D to completely delete line.
-# TODO: Handle http://example.com/playlist.m3u?
 import codecs
 import datetime
 import logging
@@ -28,6 +23,7 @@ import signal
 import urllib.request
 
 from gi import require_version
+
 require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
@@ -41,6 +37,7 @@ log = logging.getLogger("gui")
 
 class Notepad(Gtk.Window):
     """A tiny text editor to modify the blocklist."""
+
     def __init__(self):
 
         super(Notepad, self).__init__()
@@ -161,11 +158,14 @@ class Notepad(Gtk.Window):
 
 class BlockifyUI(Gtk.Window):
     """PyQT4 interface for blockify."""
+
     def __init__(self, blockify):
         super(BlockifyUI, self).__init__()
 
         # Initialize blockify.
         self.b = blockify
+        self.b.current_song_artist = ""
+        self.b.current_song_title = ""
 
         # Images used for interlude media buttons.
         # Gtk.IconSize.BUTTON
@@ -211,6 +211,8 @@ class BlockifyUI(Gtk.Window):
 
         self.show_all()
         self.set_states()
+
+        self.play_interlude_button_active = self.pause_img == self.play_interlude_btn.get_image()
         log.info("Blockify-UI initialized.")
 
     def create_tray(self):
@@ -242,7 +244,7 @@ class BlockifyUI(Gtk.Window):
 
         toggleplay_menuitem = Gtk.MenuItem("Toggle Play")
         toggleplay_menuitem.show()
-        toggleplay_menuitem.connect("activate", self.on_toggleplay_btn)
+        toggleplay_menuitem.connect("activate", self.on_toggle_play_btn)
         menu.append(toggleplay_menuitem)
 
         prevsong_menuitem = Gtk.MenuItem("Previous Song")
@@ -280,7 +282,7 @@ class BlockifyUI(Gtk.Window):
 
     def create_interlude_player(self):
         interludelabel = "Disable" if self.b.use_interlude_music else "Enable"
-        self.toggle_interlude_btn = Gtk.Button(interludelabel + " Player")
+        self.toggle_interlude_btn = Gtk.Button(interludelabel + " InterludePlayer")
         self.toggle_interlude_btn.connect("clicked", self.on_toggle_interlude_btn)
         self.prev_interlude_btn = Gtk.Button()
         self.prev_interlude_btn.set_image(self.prev_img)
@@ -314,8 +316,8 @@ class BlockifyUI(Gtk.Window):
         self.b.player.player.connect("audio-changed", self.on_interlude_audio_changed)
 
     def create_buttons(self):
-        self.toggleplay_btn = Gtk.Button("Play/Pause")
-        self.toggleplay_btn.connect("clicked", self.on_toggleplay_btn)
+        self.toggle_play_btn = Gtk.Button("Play/Pause")
+        self.toggle_play_btn.connect("clicked", self.on_toggle_play_btn)
         self.prev_btn = Gtk.Button("Previous")
         self.prev_btn.connect("clicked", self.on_prev_btn)
         self.next_btn = Gtk.Button("Next")
@@ -332,12 +334,12 @@ class BlockifyUI(Gtk.Window):
         self.automute_chk.connect("clicked", self.on_automute_chk)
 
         self.toggle_cover_btn = Gtk.Button("Toggle Cover")
-        self.toggle_cover_btn.connect("clicked", self.on_togglecover_btn)
+        self.toggle_cover_btn.connect("clicked", self.on_toggle_cover_btn)
         self.autohide_cover_chk = Gtk.CheckButton("Autohide")
         self.autohide_cover_chk.connect("clicked", self.on_autohidecover_chk)
 
-        self.togglelist_btn = Gtk.ToggleButton("Open List")
-        self.togglelist_btn.connect("clicked", self.on_togglelist)
+        self.toggle_list_btn = Gtk.ToggleButton("Open List")
+        self.toggle_list_btn.connect("clicked", self.on_toggle_list)
 
         self.exit_btn = Gtk.Button("Exit")
         self.exit_btn.connect("clicked", self.on_exit_btn)
@@ -345,58 +347,59 @@ class BlockifyUI(Gtk.Window):
         self.toggle_mute_btn.set_sensitive(False)
 
     def create_layout(self):
-        main = Gtk.VBox()
+        main_window = Gtk.VBox()
 
-        main.add(self.coverimage)
-        main.add(self.artistlabel)
-        main.add(self.titlelabel)
-        main.add(self.albumlabel)
-        main.add(self.statuslabel)
-        main.add(self.toggleplay_btn)
+        main_window.add(self.coverimage)
+        main_window.add(self.artistlabel)
+        main_window.add(self.titlelabel)
+        main_window.add(self.albumlabel)
+        main_window.add(self.statuslabel)
+        main_window.add(self.toggle_play_btn)
 
-        controlbuttons = Gtk.HBox(True)
-        controlbuttons.add(self.prev_btn)
-        controlbuttons.add(self.next_btn)
-        main.pack_start(controlbuttons, True, True, 0)
+        control_buttons = Gtk.HBox(True)
+        control_buttons.add(self.prev_btn)
+        control_buttons.add(self.next_btn)
+        main_window.pack_start(control_buttons, True, True, 0)
 
-        blockbuttons = Gtk.HBox(True)
-        blockbuttons.add(self.toggle_block_btn)
-        blockbuttons.add(self.autodetect_chk)
-        main.pack_start(blockbuttons, True, True, 0)
+        block_buttons = Gtk.HBox(True)
+        block_buttons.add(self.toggle_block_btn)
+        block_buttons.add(self.autodetect_chk)
+        main_window.pack_start(block_buttons, True, True, 0)
 
-        mutebuttons = Gtk.HBox(True)
-        mutebuttons.add(self.toggle_mute_btn)
-        mutebuttons.add(self.automute_chk)
-        main.pack_start(mutebuttons, True, True, 0)
+        mute_buttons = Gtk.HBox(True)
+        mute_buttons.add(self.toggle_mute_btn)
+        mute_buttons.add(self.automute_chk)
+        main_window.pack_start(mute_buttons, True, True, 0)
 
-        coverbuttons = Gtk.HBox(True)
-        coverbuttons.add(self.toggle_cover_btn)
-        coverbuttons.add(self.autohide_cover_chk)
-        main.pack_start(coverbuttons, True, True, 0)
+        cover_buttons = Gtk.HBox(True)
+        cover_buttons.add(self.toggle_cover_btn)
+        cover_buttons.add(self.autohide_cover_chk)
+        main_window.pack_start(cover_buttons, True, True, 0)
 
-        main.add(self.togglelist_btn)
-        main.add(self.exit_btn)
-        main.add(self.toggle_interlude_btn)
+        main_window.add(self.toggle_list_btn)
+        main_window.add(self.exit_btn)
+        main_window.add(self.toggle_interlude_btn)
 
-        interludebuttons = Gtk.HBox(False)
-        interludebuttons.add(self.prev_interlude_btn)
-        interludebuttons.add(self.play_interlude_btn)
-        interludebuttons.add(self.next_interlude_btn)
-        interludebuttons.add(self.open_playlist_btn)
-        interludebuttons.add(self.shuffle_interludes_btn)
-        interludebuttons.add(self.autoresume_chk)
+        interlude_buttons = Gtk.HBox(False)
+        interlude_buttons.add(self.prev_interlude_btn)
+        interlude_buttons.add(self.play_interlude_btn)
+        interlude_buttons.add(self.next_interlude_btn)
+        interlude_buttons.add(self.open_playlist_btn)
+        interlude_buttons.add(self.shuffle_interludes_btn)
+        interlude_buttons.add(self.autoresume_chk)
+
         self.interlude_box = Gtk.VBox()
         self.interlude_box.add(self.interlude_label)
         self.interlude_box.add(self.interlude_slider)
-        self.interlude_box.add(interludebuttons)
-        main.add(self.interlude_box)
+        self.interlude_box.add(interlude_buttons)
+        main_window.add(self.interlude_box)
 
-        self.add(main)
+        self.add(main_window)
 
     def set_states(self):
         checkboxes = [self.autodetect_chk, self.automute_chk, self.autohide_cover_chk, self.autoresume_chk]
         values = [util.CONFIG["general"]["autodetect"], util.CONFIG["general"]["automute"],
-               util.CONFIG["gui"]["autohide_cover"], util.CONFIG["interlude"]["autoresume"]]
+                  util.CONFIG["gui"]["autohide_cover"], util.CONFIG["interlude"]["autoresume"]]
 
         for i in range(len(checkboxes) - 1):
             checkboxes[i].set_active(values[i])
@@ -429,7 +432,7 @@ class BlockifyUI(Gtk.Window):
 
     def stop(self, *args):
         """Cleanly shut down, unmuting sound and saving the blocklist."""
-        self.b.stop()
+        self.b.prepare_stop()
         log.debug("Exiting GUI.")
         Gtk.main_quit()
 
@@ -447,7 +450,7 @@ class BlockifyUI(Gtk.Window):
 
     def signal_playpause_received(self, sig, hdl):
         log.debug("Signal {} received. Toggling play state.".format(sig))
-        self.on_toggleplay_btn(self.toggleplay_btn)
+        self.on_toggle_play_btn(self.toggle_play_btn)
 
     def signal_toggle_block_received(self, sig, hdl):
         log.debug("Signal {} received. Toggling blocked state.".format(sig))
@@ -488,8 +491,8 @@ class BlockifyUI(Gtk.Window):
 
     def show_about_dialogue(self, widget):
         about = Gtk.AboutDialog()
-        about.set_destroy_with_parent (True)
-        about.set_icon_name ("blockify")
+        about.set_destroy_with_parent(True)
+        about.set_icon_name("blockify")
         about.set_name("blockify")
         about.set_version(util.VERSION)
         about.set_website("http://github.com/mikar/blockify")
@@ -510,15 +513,83 @@ class BlockifyUI(Gtk.Window):
             self.b.adjust_interlude()
 
             self.update_labels()
-            self.update_buttons()
             self.update_icons()
-            # Cover art is not a priority, so let gtk decide when exactly we handle them.
-            GObject.idle_add(self.update_cover)
+            self.update_buttons()
+            if not self.previous_cover_file or (self.b.current_song != self.b.previous_song):
+                # Cover art is not a priority, so let gtk decide when exactly we handle them.
+                GObject.idle_add(self.update_cover)
         else:
             self.artistlabel.set_text("No Spotify process found!")
 
         # Always return True to keep the update thread active.
         return True
+
+    def update_buttons(self):
+        """Correct the state of the GUI buttons"""
+        self.update_toggle_block_button()
+        self.update_toggle_play_button()
+        self.update_toggle_list_button()
+        self.update_play_interlude_button()
+        self.update_autoresume_check()
+
+    def update_play_interlude_button(self):
+        if self.b.use_interlude_music:
+            state = self.play_interlude_button_active
+            interlude_is_playing = self.b.player.is_playing()
+            icon = ""
+            if interlude_is_playing and not state:
+                icon = self.pause_img
+            elif not interlude_is_playing and state:
+                icon = self.play_img
+            if icon:
+                self.play_interlude_btn.set_image(icon)
+                self.play_interlude_button_active = not state
+
+    def update_autoresume_check(self):
+        state = self.autoresume_chk.get_active()
+        if self.b.player.autoresume and not state:
+            self.b.player.autoresume = False
+            self.autoresume_chk.set_active(True)
+        elif not self.b.player.autoresume and state:
+            self.b.player.autoresume = True
+            self.autoresume_chk.set_active(False)
+
+    def update_toggle_list_button(self):
+        """Correct state of Open/Close Blocklist toggle button"""
+        label = ""
+        state = self.toggle_list_btn.get_active()
+        if self.editor:
+            if not self.editor.get_visible() and state:
+                label = "Open Blocklist"
+            elif self.editor.get_visible() and not state:
+                label = "Close Blocklist"
+        if label:
+            self.fix_button_state(self.toggle_list_btn, label)
+            self.toggle_list_btn.set_active(not state)
+
+    def update_toggle_play_button(self):
+        label = ""
+        spotify_is_playing = self.b.spotify_is_playing()
+        state = self.toggle_play_btn.get_label() == "Pause"
+        if spotify_is_playing and not state:
+            label = "Pause"
+        elif not spotify_is_playing and state:
+            label = "Play"
+        if label:
+            self.fix_button_state(self.toggle_play_btn, label)
+
+    def update_toggle_block_button(self):
+        label = ""
+        state = self.toggle_block_btn.get_label() == "Unblock"
+        if self.b.found and not state:
+            label = "Unblock"
+            title = "Blockify (blocked)"
+        elif not self.b.found and state:
+            label = "Block"
+            title = "Blockify"
+        if label:
+            self.fix_button_state(self.toggle_block_btn, label)
+            self.set_title(title)
 
     def update_cover(self):
         if not self.use_cover_art:
@@ -544,61 +615,16 @@ class BlockifyUI(Gtk.Window):
                 self.disable_cover()
 
     def update_labels(self):
-        status = self.get_status_text()
-        self.statuslabel.set_text(status)
-        album_text = "(blocked)"
-        if not self.b.found:
-            try:
-                album_text = self.b.dbus.get_song_album().decode("utf-8")
-            except AttributeError as e:
-                album_text = "N/A"
-        self.albumlabel.set_text(album_text)
+        artist, title, album = self.format_current_song_info()
+        status = self.format_status_text()
 
-        artist, title = self.format_current_song()
         self.artistlabel.set_text(artist)
         self.titlelabel.set_text(title)
-        self.status_icon.set_tooltip_text("{0} - {1}\n{2}\n{3}\nblockify v{4}".format(artist, title, album_text, status, util.VERSION))
+        self.albumlabel.set_text(album)
+        self.statuslabel.set_text(status)
 
-    def update_buttons(self):
-        # Correct the state of the Block/Unblock toggle button.
-        if self.b.found:
-            self.toggle_block_btn.set_label("Unblock")
-            self.set_title("Blockify (blocked)")
-        else:
-            self.toggle_block_btn.set_label("Block")
-            self.set_title("Blockify")
-
-        if self.b.current_song and self.b.spotify_is_playing():
-            self.toggleplay_btn.set_label("Pause")
-        else:
-            self.toggleplay_btn.set_label("Play")
-
-        if self.coverimage.get_visible():
-            self.toggle_cover_btn.set_label("Hide Cover")
-        else:
-            self.toggle_cover_btn.set_label("Show Cover")
-
-        if self.b.player.autoresume and not self.autoresume_chk.get_active():
-            self.b.player.autoresume = False  # Inverse the state to avoid a toggle loop
-            self.autoresume_chk.set_active(True)
-        elif not self.b.player.autoresume and self.autoresume_chk.get_active():
-            self.b.player.autoresume = True  # Inverse the state to avoid a toggle loop
-            self.autoresume_chk.set_active(False)
-
-        # Correct state of Open/Close List toggle button.
-        if self.editor:
-            if not self.editor.get_visible() and self.togglelist_btn.get_active():
-                self.togglelist_btn.set_active(False)
-        if self.togglelist_btn.get_active():
-            self.togglelist_btn.set_label("Close List")
-        else:
-            self.togglelist_btn.set_label("Open List")
-
-        if self.b.use_interlude_music:
-            if self.b.player.is_playing():
-                self.play_interlude_btn.set_image(self.pause_img)
-            else:
-                self.play_interlude_btn.set_image(self.play_img)
+        self.status_icon.set_tooltip_text("{0} - {1}\n{2}\n{3}\nblockify v{4}".format(artist, title, album, status,
+                                                                                      util.VERSION))
 
     def update_icons(self):
         if self.b.found and not self.statusicon_found:
@@ -640,20 +666,24 @@ class BlockifyUI(Gtk.Window):
         # Continue calling every self.slider_update_interval milliseconds.
         return True
 
-    def format_current_song(self):
-        song = self.b.current_song
+    def fix_button_state(self, button, label):
+        button.set_label(label)
 
-        try:
-            artist, title = song.split(self.b.song_delimiter)
-        except (ValueError, IndexError):
-            artist = self.b.dbus.get_song_artist().decode("utf-8")
-            title = self.b.dbus.get_song_title().decode("utf-8")
+    def format_current_song_info(self):
+        artist = self.b.current_song_artist
+        title = self.b.current_song_title
+        album = self.b.dbus.get_song_album().decode("utf-8")
 
-        # Sometimes song.split returns None, catch it here.
-        if not artist or not title:
-            artist, title = "No song playing?", song
+        if self.b.found:
+            artist = "Ad detected"
+            album = "(blocked)"
+        else:
+            if not artist or not title:
+                artist = "No song playing?"
+            if not album:
+                album = "N/A"
 
-        return artist, title
+        return artist, title, album
 
     def get_cover_art(self):
         cover_file = ""
@@ -670,7 +700,7 @@ class BlockifyUI(Gtk.Window):
 
         return cover_file
 
-    def get_status_text(self):
+    def format_status_text(self):
         status = ""
         song_length = self.b.dbus.get_song_length()
 
@@ -718,7 +748,7 @@ class BlockifyUI(Gtk.Window):
             self.b.player.pause()
             if not self.b.found and not self.b.current_song:  # or not self.b.spotify_is_playing()
                 self.b.dbus.play()
-                
+
     def on_delete_event(self, window, event):
         self.hide_on_delete()
         return True
@@ -745,7 +775,7 @@ class BlockifyUI(Gtk.Window):
         else:
             self.enable_interlude_box()
 
-    def on_interlude_audio_changed (self, player):
+    def on_interlude_audio_changed(self, player):
         """Audio source for interlude music has changed."""
         log.info("Interlude track changed to {}.".format(self.b.player.get_current_uri()))
         GObject.timeout_add(self.slider_update_interval, self.update_slider)
@@ -754,12 +784,13 @@ class BlockifyUI(Gtk.Window):
             uri = os.path.basename(uri)
         self.interlude_label.set_text(uri)
 
-    def on_interlude_tag_changed (self, bus, message):
+    def on_interlude_tag_changed(self, bus, message):
         """Read and display tag information from AudioPlayer.player.bus."""
         taglist = message.parse_tag()
         if taglist.get_string_index("artist", 0)[0]:
             try:
-                label = taglist.get_string_index("artist", 0)[1][0] + " - " + taglist.get_string_index("artist", 0)[1][0]
+                label = taglist.get_string_index("artist", 0)[1][0] + " - " + taglist.get_string_index("artist", 0)[1][
+                    0]
                 if len(label) > 5:
                     self.interlude_label.set_text(label)
             except KeyError as e:
@@ -792,10 +823,10 @@ class BlockifyUI(Gtk.Window):
             return
 
         dialog = Gtk.FileChooserDialog("Load playlist or audio folder/file",
-                                        None,
-                                        Gtk.FileChooserAction.OPEN,
-                                        (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+                                       None,
+                                       Gtk.FileChooserAction.OPEN,
+                                       (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         dialog.set_default_response(Gtk.ResponseType.OK)
 
         dialog.set_current_folder(util.CONFIG_DIR)
@@ -842,7 +873,7 @@ class BlockifyUI(Gtk.Window):
                                          self.b.player.Gst.SeekFlags.KEY_UNIT,
                                          seek_time_secs * self.b.player.Gst.SECOND)
 
-    def on_togglecover_btn(self, widget):
+    def on_toggle_cover_btn(self, widget):
         """Button that toggles cover art."""
         if self.coverimage.get_visible():
             self.use_cover_art = False
@@ -911,7 +942,7 @@ class BlockifyUI(Gtk.Window):
                 self.toggle_mute_btn.set_active(False)
             self.toggle_mute_btn.set_label("Mute")
 
-    def on_togglelist(self, widget):
+    def on_toggle_list(self, widget):
         if widget.get_active():
             widget.set_label("Close List")
             self.editor = Notepad()
@@ -920,7 +951,7 @@ class BlockifyUI(Gtk.Window):
                 widget.set_label("Open List")
                 self.editor.destroy()
 
-    def on_toggleplay_btn(self, widget):
+    def on_toggle_play_btn(self, widget):
         if not self.b.spotify_is_playing():
             self.b.player.try_resume_spotify_playback(True)
         else:

@@ -31,7 +31,7 @@ except ImportError:
 
 
 class DBusClient(object):
-    "Wrapper for Spotify's DBus interface."
+    """Wrapper for Spotify's DBus interface."""
 
     def __init__(self, bus=None):
         self.obj_path = "/org/mpris/MediaPlayer2"
@@ -59,7 +59,7 @@ class DBusClient(object):
             log.error("Could not connect to Spotify dbus session: {}".format(e))
 
     def get_property(self, key):
-        "Gets the value from any available property."
+        """Gets the value from any available property."""
         prop = None
         try:
             prop = self.properties.Get(self.player_path, key)
@@ -69,7 +69,7 @@ class DBusClient(object):
         return prop
 
     def set_property(self, key, value):
-        "Sets the value for any available property."
+        """Sets the value for any available property."""
         try:
             self.properties.Set(self.player_path, key, value)
         except Exception as e:
@@ -77,42 +77,42 @@ class DBusClient(object):
             log.warn("Cannot Set Property: {}".format(e))
 
     def playpause(self):
-        "Toggles the current song between Play and Pause."
+        """Toggles the current song between Play and Pause."""
         try:
             self.player.PlayPause()
         except Exception as e:
             log.warn("Cannot Play/Pause: {}".format(e))
 
     def play(self):
-        "Tries to play the current title."
+        """Tries to play the current title."""
         try:
             self.player.Play()
         except Exception as e:
             log.warn("Cannot Play: {}".format(e))
 
     def pause(self):
-        "Tries to pause the current title."
+        """Tries to pause the current title."""
         try:
             self.player.Pause()
         except Exception as e:
             log.warn("Cannot Pause: {}".format(e))
 
     def stop(self):
-        "Tries to stop playback. PlayPause is probably preferable."
+        """Tries to stop playback. PlayPause is probably preferable."""
         try:
             self.player.Stop()
         except Exception as e:
             log.warn("Cannot Stop playback: {}".format(e))
 
     def next(self):
-        "Tries to skip to next song."
+        """Tries to skip to next song."""
         try:
             self.player.Next()
         except Exception as e:
             log.warn("Cannot Go Next: {}".format(e))
 
     def prev(self):
-        "Tries to go back to last song."
+        """Tries to go back to last song."""
         try:
             self.player.Previous()
         except Exception as e:
@@ -133,14 +133,14 @@ class DBusClient(object):
 
 
     def seek(self, seconds):
-        "Skips n seconds forward."
+        """Skips n seconds forward."""
         try:
             self.player.Seek(seconds)
         except Exception as e:
             log.warn("Cannot Seek: {}".format(e))
 
     def get_art_url(self):
-        "Get album cover"
+        """Get album cover"""
         url = ""
         try:
             metadata = self.get_property("Metadata")
@@ -150,7 +150,7 @@ class DBusClient(object):
         return url
 
     def get_song_status(self):
-        "Get current PlaybackStatus (Paused/Playing...)."
+        """Get current PlaybackStatus (Paused/Playing...)."""
         status = ""
         try:
             status = self.get_property("PlaybackStatus")
@@ -160,7 +160,7 @@ class DBusClient(object):
         return status
 
     def get_song_length(self):
-        "Gets the length of current song from metadata (in seconds)."
+        """Gets the length of current song from metadata (in seconds)."""
         length = 0
         try:
             metadata = self.get_property("Metadata")
@@ -171,7 +171,7 @@ class DBusClient(object):
         return length
 
     def get_song_title(self):
-        "Gets title of current song from metadata"
+        """Gets title of current song from metadata"""
         title = ""
         try:
             metadata = self.get_property("Metadata")
@@ -182,7 +182,7 @@ class DBusClient(object):
         return title
 
     def get_song_album(self):
-        "Gets album of current song from metadata"
+        """Gets album of current song from metadata"""
         album = ""
         try:
             metadata = self.get_property("Metadata")
@@ -193,7 +193,7 @@ class DBusClient(object):
         return album
 
     def get_song_artist(self):
-        "Gets the artist of current song from metadata"
+        """Gets the artist of current song from metadata"""
         artist = ""
         try:
             metadata = self.get_property("Metadata")
@@ -204,7 +204,7 @@ class DBusClient(object):
         return artist
 
     def print_info(self):
-        "Print all the DBus info we can get our hands on."
+        """Print all the DBus info we can get our hands on."""
         try:
             metadata = self.get_property("Metadata")
 
@@ -227,7 +227,7 @@ class DBusClient(object):
 
 
 def main():
-    "Entry point for the CLI DBus interface."
+    """Entry point for the CLI DBus interface."""
     args = docopt(__doc__, version="0.2")
     util.init_logger(args["--log"], args["-v"], args["--quiet"])
     dbus = DBusClient()
