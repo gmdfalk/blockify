@@ -93,7 +93,7 @@ Blockify has a CLI/daemon that you can start with `blockify`.
 
 ##### GUI
 Alternatively, you can use the GUI with `blockify-ui` which spawns this window.  
-![ScreenShot](http://i.imgur.com/c4oIZMX.jpg)
+![ScreenShot](gui_screenshot.png)
 - Play, Previous, Next: These buttons use dbus to send audio control commands to spotify.
 - Block/Unblock: Add/Remove the currently playing song to/from the blocklist.
 - Mute/Unmute: Mute/Unmute the current song. Only works if "Manual" checkbox is activated.
@@ -170,6 +170,7 @@ If you can't find or fix the issue you are having by yourself, you are welcome t
 
 
 ## Changelog
+- v3.3.0 (2016-01-03): Add tray icon toolip, fix playback button and title status functionality and add missing gui screenshot.
 - v3.2.1 (2016-01-03): Remove unnecessary imports and other cleanups.
 - v3.2.0 (2015-12-31): Reintroduce playback status (see [issue #68](https://github.com/mikar/blockify/issues/68))
 - v3.1.0 (2015-12-31): Remove wmctrl dependency (see [issue #67](https://github.com/mikar/blockify/issues/67))

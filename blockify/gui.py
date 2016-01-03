@@ -439,15 +439,15 @@ class BlockifyUI(Gtk.Window):
 
     def signal_prev_received(self, sig, hdl):
         log.debug("Signal {} received. Playing previous interlude.".format(sig))
-        self.on_prev_btn()
+        self.on_prev_btn(self.prev_btn)
 
     def signal_next_received(self, sig, hdl):
         log.debug("Signal {} received. Playing next song.".format(sig))
-        self.on_next_btn()
+        self.on_next_btn(self.next_btn)
 
     def signal_playpause_received(self, sig, hdl):
         log.debug("Signal {} received. Toggling play state.".format(sig))
-        self.on_toggleplay_btn()
+        self.on_toggleplay_btn(self.toggleplay_btn)
 
     def signal_toggle_block_received(self, sig, hdl):
         log.debug("Signal {} received. Toggling blocked state.".format(sig))
@@ -546,24 +546,18 @@ class BlockifyUI(Gtk.Window):
     def update_labels(self):
         status = self.get_status_text()
         self.statuslabel.set_text(status)
+        album_text = "(blocked)"
         if not self.b.found:
             try:
-                self.albumlabel.set_text(self.b.dbus.get_song_album().decode("utf-8"))
+                album_text = self.b.dbus.get_song_album().decode("utf-8")
             except AttributeError as e:
-                self.albumlabel.set_text(self.b.dbus.get_song_album())
-        else:
-            self.albumlabel.set_text("N/A")
+                album_text = "N/A"
+        self.albumlabel.set_text(album_text)
 
         artist, title = self.format_current_song()
-        try:
-            self.artistlabel.set_text(artist.decode("utf-8"))
-        except AttributeError as e:
-            self.artistlabel.set_text(artist)
-        try:
-            self.titlelabel.set_text(artist.decode("utf-8"))
-        except AttributeError as e:
-            self.titlelabel.set_text(artist)
-        # self.status_icon.set_tooltip("{0} - {1}\n{2}\nblockify v{3}".format(artist, title, status, blockify.VERSION))
+        self.artistlabel.set_text(artist)
+        self.titlelabel.set_text(title)
+        self.status_icon.set_tooltip_text("{0} - {1}\n{2}\n{3}\nblockify v{4}".format(artist, title, album_text, status, util.VERSION))
 
     def update_buttons(self):
         # Correct the state of the Block/Unblock toggle button.
@@ -650,10 +644,10 @@ class BlockifyUI(Gtk.Window):
         song = self.b.current_song
 
         try:
-            artist, title = song.split(" {} ".format(self.b.song_delimiter))
+            artist, title = song.split(self.b.song_delimiter)
         except (ValueError, IndexError):
-            artist = self.b.dbus.get_song_artist()
-            title = self.b.dbus.get_song_title()
+            artist = self.b.dbus.get_song_artist().decode("utf-8")
+            title = self.b.dbus.get_song_title().decode("utf-8")
 
         # Sometimes song.split returns None, catch it here.
         if not artist or not title:
@@ -700,6 +694,31 @@ class BlockifyUI(Gtk.Window):
             self.coverimage.hide()
             self.restore_size()
 
+    def disable_interlude_box(self):
+        self.b.use_interlude_music = False
+        self.interlude_box.hide()
+        self.b.player.pause()
+        self.b.dbus.play()
+        self.toggle_interlude_btn.set_label("Enable player")
+        self.restore_size()
+
+    def enable_interlude_box(self):
+        self.b.use_interlude_music = True
+        self.interlude_box.show()
+        self.toggle_interlude_btn.set_label("Disable player")
+        self.restore_size()
+
+    def toggle_interlude(self):
+        if not self.b.player.is_playing():
+            self.b.player.manual_control = False
+            self.b.dbus.pause()
+            self.b.player.play()
+        else:
+            self.b.player.manual_control = True
+            self.b.player.pause()
+            if not self.b.found and not self.b.current_song:  # or not self.b.spotify_is_playing()
+                self.b.dbus.play()
+                
     def on_delete_event(self, window, event):
         self.hide_on_delete()
         return True
@@ -719,20 +738,6 @@ class BlockifyUI(Gtk.Window):
             self.b.player.manual_control = False
         else:
             self.b.player.autoresume = False
-
-    def disable_interlude_box(self):
-        self.b.use_interlude_music = False
-        self.interlude_box.hide()
-        self.b.player.pause()
-        self.b.dbus.play()
-        self.toggle_interlude_btn.set_label("Enable player")
-        self.restore_size()
-
-    def enable_interlude_box(self):
-        self.b.use_interlude_music = True
-        self.interlude_box.show()
-        self.toggle_interlude_btn.set_label("Disable player")
-        self.restore_size()
 
     def on_toggle_interlude_btn(self, widget):
         if self.b.use_interlude_music:
@@ -759,17 +764,6 @@ class BlockifyUI(Gtk.Window):
                     self.interlude_label.set_text(label)
             except KeyError as e:
                 log.debug("Exception when trying to set interlude label: {}.".format(e))
-
-    def toggle_interlude(self):
-        if not self.b.player.is_playing():
-            self.b.player.manual_control = False
-            self.b.dbus.pause()
-            self.b.player.play()
-        else:
-            self.b.player.manual_control = True
-            self.b.player.pause()
-            if not self.b.found and not self.b.current_song:  # or not self.b.spotify_is_playing()
-                self.b.dbus.play()
 
     def on_play_interlude_btn(self, widget):
         """Interlude play button."""
@@ -926,20 +920,19 @@ class BlockifyUI(Gtk.Window):
                 widget.set_label("Open List")
                 self.editor.destroy()
 
-    def on_toggleplay_btn(self):
-        print(self.b.song_status)
+    def on_toggleplay_btn(self, widget):
         if not self.b.spotify_is_playing():
             self.b.player.try_resume_spotify_playback(True)
         else:
             self.b.dbus.playpause()
 
-    def on_next_btn(self):
+    def on_next_btn(self, widget):
         self.b.next()
 
-    def on_prev_btn(self):
+    def on_prev_btn(self, widget):
         self.b.prev()
 
-    def on_exit_btn(self):
+    def on_exit_btn(self, widget):
         self.stop()
 
 
