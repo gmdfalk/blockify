@@ -303,8 +303,8 @@ class Blockify(object):
         return self.current_song_title and not self.current_song_artist
 
     def update_current_song_info(self):
-        self.current_song_artist = self.dbus.get_song_artist().decode("utf-8")
-        self.current_song_title = self.dbus.get_song_title().decode("utf-8")
+        self.current_song_artist = self.dbus.get_song_artist()
+        self.current_song_title = self.dbus.get_song_title()
         self.current_song = self.current_song_artist + self.song_delimiter + self.current_song_title
 
     def block_current(self):

@@ -124,13 +124,11 @@ class DBusClient(object):
         except Exception as e:
             log.warn("Cannot Set Position: {}".format(e))
 
-
     def open_uri(self, uri):
         try:
             self.player.OpenUri(uri)
         except Exception as e:
             log.warn("Cannot Open URI: {}".format(e))
-
 
     def seek(self, seconds):
         """Skips n seconds forward."""
@@ -144,7 +142,7 @@ class DBusClient(object):
         url = ""
         try:
             metadata = self.get_property("Metadata")
-            url = metadata["mpris:artUrl"].encode("utf-8")
+            url = metadata["mpris:artUrl"]
         except Exception as e:
             log.error("Cannot fetch album cover: {}".format(e))
         return url
@@ -175,7 +173,7 @@ class DBusClient(object):
         title = ""
         try:
             metadata = self.get_property("Metadata")
-            title = metadata["xesam:title"].encode("utf-8")
+            title = metadata["xesam:title"]
         except Exception as e:
             log.warn("Cannot get song title: {}".format(e))
 
@@ -186,7 +184,7 @@ class DBusClient(object):
         album = ""
         try:
             metadata = self.get_property("Metadata")
-            album = metadata["xesam:album"].encode("utf-8")
+            album = metadata["xesam:album"]
         except Exception as e:
             log.warn("Cannot get song album: {}".format(e))
 
@@ -197,7 +195,7 @@ class DBusClient(object):
         artist = ""
         try:
             metadata = self.get_property("Metadata")
-            artist = metadata["xesam:artist"][0].encode("utf-8")
+            artist = metadata["xesam:artist"][0]
         except Exception as e:
             log.warn("Cannot get song artist: {}".format(e))
 
@@ -228,7 +226,7 @@ class DBusClient(object):
 
 def main():
     """Entry point for the CLI DBus interface."""
-    args = docopt(__doc__, version="0.2")
+    args = docopt(__doc__, version="0.3")
     util.init_logger(args["--log"], args["-v"], args["--quiet"])
     dbus = DBusClient()
 
