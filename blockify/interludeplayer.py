@@ -2,7 +2,6 @@ import logging
 import os
 import random
 import re
-import urllib
 
 from gi.repository import GObject
 
@@ -141,7 +140,7 @@ class InterludePlayer(object):
 
     def try_resume_spotify_playback(self, ignore_player=False):
         log.info("Trying to resume spotify playback.")
-        if (self.is_playing() or ignore_player) and not self.b.found:
+        if self.is_playing() or ignore_player:
             self.pause()
             self.b.dbus.play()
 
