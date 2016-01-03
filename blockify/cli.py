@@ -22,15 +22,14 @@ import time
 from gi import require_version
 
 require_version('Gtk', '3.0')
-require_version('Wnck', '3.0')
 from gi.repository import Gtk
-from gi.repository import Wnck
 from gi.repository import GObject
 
 from blockify import dbusclient
 from blockify import blocklist
 from blockify import interludeplayer
 from blockify import util
+
 
 log = logging.getLogger("cli")
 
@@ -208,6 +207,10 @@ class Blockify(object):
 
         return True
 
+    def resume_blockify(self):
+        self.suspend_blockify = False
+        return False
+
     def start(self):
         self.bind_signals()
         # Force unmute to properly initialize unmuted state
@@ -296,11 +299,9 @@ class Blockify(object):
         return False
 
     def current_song_is_ad(self):
-        """Compares the wnck song info to dbus song info."""
         return self.dbus.get_song_title() and not self.dbus.get_song_artist()
 
     def get_current_song(self):
-        """Checks if a Spotify window exists and returns the current songname."""
         return self.dbus.get_song_artist().decode("utf-8") + self.song_delimiter + self.dbus.get_song_title().decode(
                 "utf-8")
 

@@ -11,7 +11,7 @@ try:
 except ImportError:
     log.error("ImportError: Please install docopt to use the CLI.")
 
-VERSION = "3.2.0"
+VERSION = "3.2.1"
 CONFIG = None
 CONFIG_DIR = os.path.expanduser("~/.config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
@@ -21,7 +21,7 @@ THUMBNAIL_DIR = os.path.join(CONFIG_DIR, "thumbnails")
 
 
 def init_logger(logpath=None, loglevel=0, quiet=False):
-    "Initializes the logging module."
+    """Initializes the logging module."""
     logger = logging.getLogger()
 
     # Cap loglevel at 3 to avoid index errors.
@@ -53,7 +53,7 @@ def init_logger(logpath=None, loglevel=0, quiet=False):
 
 
 def init_config_dir():
-    "Determine if a config dir for blockify exists and if not, create it."
+    """Determine if a config dir for blockify exists and if not, create it."""
     if not os.path.isdir(CONFIG_DIR):
         log.info("Creating config directory.")
         os.makedirs(CONFIG_DIR)
@@ -128,9 +128,9 @@ def load_option(config, options, option_tuple):
     section_name, option_name, option_type = option_tuple[0], option_tuple[1], option_tuple[2]
     try:
         option = None
-        if (option_type == "bool"):
+        if option_type == "bool":
             option = config.getboolean(section_name, option_name)
-        elif (option_type == "int"):
+        elif option_type == "int":
             option = config.getint(section_name, option_name)
         else:
             option = config.get(section_name, option_name)
@@ -139,8 +139,8 @@ def load_option(config, options, option_tuple):
         log.error("Could not parse option %s for section %s. Using default value.", option_name, section_name)
 
 
-def save_options(CONFIG_DIR, options):
-    configfile = os.path.join(CONFIG_DIR, CONFIG_FILE)
+def save_options(config_dir, options):
+    configfile = os.path.join(config_dir, CONFIG_FILE)
     config = configparser.ConfigParser()
     # Write out the sections in this order.
     sections = ["general", "cli", "gui", "interlude"]

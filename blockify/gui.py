@@ -15,16 +15,11 @@ Options:
     -h, --help        Show this help text.
     --version         Show current version of blockify.
 """
-# FIXME: Cover art download broken after temporarily losing internet connection.
-# TODO: Handle http://example.com/playlist.m3u?
-# TODO: Write some unit tests, slacko.
-# TODO: Try experimental mode suggested by spam0cal to skip the last
-#       second of each song to skip ads altogether (could not verify this).
-# TODO: Continuous update of tray icon tooltip.
+# TODO: More testing.
 # TODO: Different GUI-modes (minimal, full)?
-# TODO: Try xlib for minimized window detection. Probably won't help.
 # TODO: Notepad: Use ListStore instead of TextView?
 # TODO: Notepad: Undo/Redo Ctrl+Z, Ctrl+Y, Fix Ctrl+D to completely delete line.
+# TODO: Handle http://example.com/playlist.m3u?
 import codecs
 import datetime
 import logging
@@ -35,7 +30,6 @@ import urllib.request
 from gi import require_version
 require_version('Gtk', '3.0')
 from gi.repository import Gtk
-from gi.repository import Gdk
 from gi.repository import GdkPixbuf
 from gi.repository import GObject
 
@@ -46,7 +40,7 @@ log = logging.getLogger("gui")
 
 
 class Notepad(Gtk.Window):
-    "A tiny text editor to modify the blocklist."
+    """A tiny text editor to modify the blocklist."""
     def __init__(self):
 
         super(Notepad, self).__init__()
@@ -89,7 +83,7 @@ class Notepad(Gtk.Window):
         return key, mod
 
     def create_keybinds(self):
-        "Register Ctrl+Q/W to quit and Ctrl+S to save the blocklist."
+        """Register Ctrl+Q/W to quit and Ctrl+S to save the blocklist."""
         q_key, q_mod = self.split_accelerator("<Control>q")
         w_key, w_mod = self.split_accelerator("<Control>w")
         s_key, s_mod = self.split_accelerator("<Control>s")
@@ -111,15 +105,15 @@ class Notepad(Gtk.Window):
         self.add_accel_group(edit_group)
 
     def undo(self, *args):
-        "Ctrl+Z, undo the last text change."
+        """Ctrl+Z, undo the last text change."""
         pass
 
     def redo(self, *args):
-        "Ctrl+Y, redo the last text change."
+        """Ctrl+Y, redo the last text change."""
         pass
 
     def delete_line(self, *args):
-        "Ctrl+D, delete the current line."
+        """Ctrl+D, delete the current line."""
         textbuffer = self.textview.get_buffer()
         mark_at_cursor = textbuffer.get_insert()
         iter_at_cursor = textbuffer.get_iter_at_mark(mark_at_cursor)
@@ -132,13 +126,13 @@ class Notepad(Gtk.Window):
         textbuffer.delete(line_start, line_end)
 
     def select_all(self, *args):
-        "Ctrl+A, select all text in the buffer."
+        """Ctrl+A, select all text in the buffer."""
         textbuffer = self.textview.get_buffer()
         first, last = textbuffer.get_bounds()
         textbuffer.select_range(first, last)
 
     def destroy(self, *args):
-        "Overloading destroy to untoggle the Open List button."
+        """Overloading destroy to untoggle the Open List button."""
         super(Notepad, self).destroy()
 
     def open_file(self, *args):
@@ -166,7 +160,7 @@ class Notepad(Gtk.Window):
 
 
 class BlockifyUI(Gtk.Window):
-    "PyQT4 interface for blockify."
+    """PyQT4 interface for blockify."""
     def __init__(self, blockify):
         super(BlockifyUI, self).__init__()
 
@@ -413,10 +407,14 @@ class BlockifyUI(Gtk.Window):
             self.disable_interlude_box()
 
     def start(self):
-        "Start the main update routine."
+        """Start the main update routine."""
         self.b.toggle_mute(2)
         self.bind_signals()
+        self.start_main_loops()
 
+        Gtk.main()
+
+    def start_main_loops(self):
         GObject.timeout_add(self.b.spotify_refresh_interval, self.b.refresh_spotify_process_state)
         # Start and loop the main update routine once every X ms.
         # To influence responsiveness or CPU usage, decrease/increase self.update_interval.
@@ -427,10 +425,10 @@ class BlockifyUI(Gtk.Window):
 
         log.info("Blockify-UI started.")
 
-        Gtk.main()
+        return False
 
     def stop(self, *args):
-        "Cleanly shut down, unmuting sound and saving the blocklist."
+        """Cleanly shut down, unmuting sound and saving the blocklist."""
         self.b.stop()
         log.debug("Exiting GUI.")
         Gtk.main_quit()
@@ -441,15 +439,15 @@ class BlockifyUI(Gtk.Window):
 
     def signal_prev_received(self, sig, hdl):
         log.debug("Signal {} received. Playing previous interlude.".format(sig))
-        self.on_prev_btn(self.prev_btn)
+        self.on_prev_btn()
 
     def signal_next_received(self, sig, hdl):
         log.debug("Signal {} received. Playing next song.".format(sig))
-        self.on_next_btn(self.next_btn)
+        self.on_next_btn()
 
     def signal_playpause_received(self, sig, hdl):
         log.debug("Signal {} received. Toggling play state.".format(sig))
-        self.on_toggleplay_btn(self.toggleplay_btn)
+        self.on_toggleplay_btn()
 
     def signal_toggle_block_received(self, sig, hdl):
         log.debug("Signal {} received. Toggling blocked state.".format(sig))
@@ -495,15 +493,15 @@ class BlockifyUI(Gtk.Window):
         about.set_name("blockify")
         about.set_version(util.VERSION)
         about.set_website("http://github.com/mikar/blockify")
-        about.set_copyright("(c) 2014 Max Demian")
+        about.set_copyright("(c) 2016 Max Falk")
         about.set_license("The MIT License (MIT)")
-        about.set_comments(("Blocks Spotify commercials"))
-        about.set_authors(["Max Demian <mikar@gmx.de>", "Jesse Maes <kebertyx@gmail.com>"])
+        about.set_comments("Blocks Spotify commercials")
+        about.set_authors(["Max Falk <gmdfalk@gmail.com>"])
         about.run()
         about.destroy()
 
     def update(self):
-        "Main GUI loop at specific time interval (see self.update_interval)."
+        """Main GUI loop at specific time interval (see self.update_interval)."""
         if not self.b.suspend_blockify:
             # Call the main update function of blockify and assign return value
             # (True/False) depending on whether a song to be blocked was found.
@@ -576,10 +574,10 @@ class BlockifyUI(Gtk.Window):
             self.toggle_block_btn.set_label("Block")
             self.set_title("Blockify")
 
-#         if self.b.current_song:  # and self.b.spotify_is_playing()
-#             self.toggleplay_btn.set_label("Pause")
-#         else:
-#             self.toggleplay_btn.set_label("Play")
+        if self.b.current_song and self.b.spotify_is_playing():
+            self.toggleplay_btn.set_label("Pause")
+        else:
+            self.toggleplay_btn.set_label("Play")
 
         if self.coverimage.get_visible():
             self.toggle_cover_btn.set_label("Hide Cover")
@@ -650,14 +648,9 @@ class BlockifyUI(Gtk.Window):
 
     def format_current_song(self):
         song = self.b.current_song
-        # For whatever reason, Spotify doesn't use a normal hyphen but a
-        # slightly longer one. This is its unicode code point.
-        delimiter = u"\u2013"  # \xe2\x80\x93 is the bytestring.
 
-        # We prefer the current_song variable as source for artist, title but
-        # should that fail, try getting those from DBus.
         try:
-            artist, title = song.split(" {} ".format(delimiter))
+            artist, title = song.split(" {} ".format(self.b.song_delimiter))
         except (ValueError, IndexError):
             artist = self.b.dbus.get_song_artist()
             title = self.b.dbus.get_song_title()
@@ -680,14 +673,15 @@ class BlockifyUI(Gtk.Window):
             if not os.path.exists(cover_file):
                 log.debug("Downloading cover art for {0} ({1})".format(self.b.current_song, cover_hash))
                 urllib.request.urlretrieve(cover_url, cover_file)
+
         return cover_file
 
     def get_status_text(self):
         status = ""
-        songlength = self.b.dbus.get_song_length()
+        song_length = self.b.dbus.get_song_length()
 
-        if songlength:
-            m, s = divmod(songlength, 60)
+        if song_length:
+            m, s = divmod(song_length, 60)
             r = self.b.dbus.get_property("Metadata")["xesam:autoRating"]
             status = "{}m{}s, {} ({})".format(m, s, r, self.b.song_status)
 
@@ -747,7 +741,7 @@ class BlockifyUI(Gtk.Window):
             self.enable_interlude_box()
 
     def on_interlude_audio_changed (self, player):
-        "Audio source for interlude music has changed."
+        """Audio source for interlude music has changed."""
         log.info("Interlude track changed to {}.".format(self.b.player.get_current_uri()))
         GObject.timeout_add(self.slider_update_interval, self.update_slider)
         uri = self.b.player.get_current_uri()
@@ -756,7 +750,7 @@ class BlockifyUI(Gtk.Window):
         self.interlude_label.set_text(uri)
 
     def on_interlude_tag_changed (self, bus, message):
-        "Read and display tag information from AudioPlayer.player.bus."
+        """Read and display tag information from AudioPlayer.player.bus."""
         taglist = message.parse_tag()
         if taglist.get_string_index("artist", 0)[0]:
             try:
@@ -778,28 +772,28 @@ class BlockifyUI(Gtk.Window):
                 self.b.dbus.play()
 
     def on_play_interlude_btn(self, widget):
-        "Interlude play button."
+        """Interlude play button."""
         if self.b.use_interlude_music:
             self.toggle_interlude()
 
     def on_prev_interlude_btn(self, widget):
-        "Interlude previous button."
+        """Interlude previous button."""
         if self.b.use_interlude_music:
             self.b.player.prev()
 
     def on_next_interlude_btn(self, widget):
-        "Interlude next button."
+        """Interlude next button."""
         if self.b.use_interlude_music:
             self.b.player.next()
 
     def on_shuffle_interludes_btn(self, widget):
-        "Interlude open playlist button."
+        """Interlude open playlist button."""
         if self.b.use_interlude_music:
             self.b.player.shuffle()
             self.b.player.show_playlist()
 
     def on_open_playlist_btn(self, widget):
-        "Interlude open playlist button."
+        """Interlude open playlist button."""
         if not self.b.use_interlude_music:
             return
 
@@ -847,7 +841,7 @@ class BlockifyUI(Gtk.Window):
         dialog.destroy()
 
     def on_interlude_slider_change(self, slider):
-        "When the interlude_slider was moved, update the song position accordingly."
+        """When the interlude_slider was moved, update the song position accordingly."""
         seek_time_secs = slider.get_value()
         self.b.player.player.seek_simple(self.b.player.Gst.Format.TIME,
                                          self.b.player.Gst.SeekFlags.FLUSH |
@@ -855,7 +849,7 @@ class BlockifyUI(Gtk.Window):
                                          seek_time_secs * self.b.player.Gst.SECOND)
 
     def on_togglecover_btn(self, widget):
-        "Button that toggles cover art."
+        """Button that toggles cover art."""
         if self.coverimage.get_visible():
             self.use_cover_art = False
             self.disable_cover()
@@ -879,7 +873,7 @@ class BlockifyUI(Gtk.Window):
             log.debug("Disabled cover autohide.")
 
     def on_toggle_block_btn(self, widget):
-        "Button to block/unblock the current song."
+        """Button to block/unblock the current song."""
         self.b.toggle_block()
         if self.b.found:
             widget.set_label("Block")
@@ -912,7 +906,7 @@ class BlockifyUI(Gtk.Window):
             self.toggle_block_btn.set_sensitive(False)
             self.b.toggle_mute(2)
             log.debug("Disabled automute.")
-        # Nasty togglebuttonses. Always need correcting.
+        # Correct toggle button state ...
         if self.b.is_sink_muted or self.b.is_fully_muted:
             self.toggle_mute_btn.set_label("Unmute")
             if not self.toggle_mute_btn.get_active():
@@ -932,25 +926,25 @@ class BlockifyUI(Gtk.Window):
                 widget.set_label("Open List")
                 self.editor.destroy()
 
-    def on_toggleplay_btn(self, widget):
+    def on_toggleplay_btn(self):
         print(self.b.song_status)
         if not self.b.spotify_is_playing():
             self.b.player.try_resume_spotify_playback(True)
         else:
             self.b.dbus.playpause()
 
-    def on_next_btn(self, widget):
+    def on_next_btn(self):
         self.b.next()
 
-    def on_prev_btn(self, widget):
+    def on_prev_btn(self):
         self.b.prev()
 
-    def on_exit_btn(self, widget):
+    def on_exit_btn(self):
         self.stop()
 
 
 def main():
-    "Entry point for the GUI-version of Blockify."
+    """Entry point for the GUI-version of Blockify."""
     gui = BlockifyUI(cli.initialize(__doc__))
     gui.start()
 

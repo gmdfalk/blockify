@@ -170,6 +170,7 @@ If you can't find or fix the issue you are having by yourself, you are welcome t
 
 
 ## Changelog
+- v3.2.1 (2016-01-03): Remove unnecessary imports and other cleanups.
 - v3.2.0 (2015-12-31): Reintroduce playback status (see [issue #68](https://github.com/mikar/blockify/issues/68))
 - v3.1.0 (2015-12-31): Remove wmctrl dependency (see [issue #67](https://github.com/mikar/blockify/issues/67))
 - v3.0.0 (2015-10-16): Remove beta status and port to python3 and gstreamer1.0 (see [issue #59](https://github.com/mikar/blockify/issues/59)).
