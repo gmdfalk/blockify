@@ -172,6 +172,7 @@ If you can't find or fix the issue you are having by yourself, you are welcome t
 
 
 ## Changelog
+- v3.3.1 (2016-01-03): Fix interlude player crashes ([issue #84](https://github.com/mikar/blockify/issues/84)).
 - v3.3.0 (2016-01-03): Enable profiling, improve GUI performance, fix playback button & title status functionality and add tray icon toolip.
 - v3.2.1 (2016-01-03): Remove unnecessary imports and other cleanups.
 - v3.2.0 (2015-12-31): Reintroduce playback status (see [issue #68](https://github.com/mikar/blockify/issues/68))
