@@ -22,8 +22,7 @@ Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packag
 
 Example ArchLinux installation routine:  
 ``` bash
-curl -L -O https://aur4.archlinux.org/cgit/aur.git/snapshot/blockify.tar.gz
-tar -xvf blockify.tar.gz
+git clone https://aur.archlinux.org/blockify.git
 cd blockify
 makepkg -sri
 ```
@@ -38,8 +37,7 @@ echo deb http://repository.spotify.com testing non-free | sudo tee /etc/apt/sour
 sudo apt-get update
 sudo apt-get install spotify-client
 # Install blockify dependencies
-sudo apt-get install git python3-docopt python3-pip python-configparser python-gst-1.0
-sudo pip3 install requests
+sudo apt-get install git python3-requests python3-docopt python3-pip python3-gst-1.0 python-configparser
 ```
 
 Install routine:  
@@ -83,9 +81,9 @@ Blockify accepts several signals:
 
 Example usages:
 ```bash
-pkill -USR1 -f "python2.*blockify"
-pkill -RTMIN+1 -f "python2.*blockify"
-alias btoggle='pkill -RTMIN+2 -f "python2.*blockify"'
+pkill -USR1 -f "python.*blockify"
+pkill -RTMIN+1 -f "python.*blockify"
+alias btoggle='pkill -RTMIN+2 -f "python.*blockify"'
 ```
 Bind to keys for fun and profit.
 
@@ -172,6 +170,7 @@ If you can't find or fix the issue you are having by yourself, you are welcome t
 
 
 ## Changelog
+- v3.2.1 (2016-01-03): Remove unnecessary imports and other cleanups.
 - v3.2.0 (2015-12-31): Reintroduce playback status (see [issue #68](https://github.com/mikar/blockify/issues/68))
 - v3.1.0 (2015-12-31): Remove wmctrl dependency (see [issue #67](https://github.com/mikar/blockify/issues/67))
 - v3.0.0 (2015-10-16): Remove beta status and port to python3 and gstreamer1.0 (see [issue #59](https://github.com/mikar/blockify/issues/59)).

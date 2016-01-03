@@ -5,22 +5,23 @@ import re
 import urllib
 
 from gi.repository import GObject
+
 GObject.threads_init()
 
 from gi import require_version
+
 require_version('Gst', '1.0')
 
 from gi.repository import Gst
-from gi.repository import Gtk
 
 from blockify import util
-
 
 log = logging.getLogger("player")
 
 
 class InterludePlayer(object):
-    "A simple gstreamer audio player to play interlude music."
+    """A simple gstreamer audio player to play interlude music."""
+
     def __init__(self, blockify):
         Gst.init(None)
         self.Gst = Gst
@@ -29,26 +30,26 @@ class InterludePlayer(object):
         self.temp_autoresume = False
         self.temp_disable = False
         self._index = 0
+        self.max_index = 0
+        self.playlist = []
         self._autoresume = util.CONFIG["interlude"]["autoresume"]
         self.playback_delay = util.CONFIG["interlude"]["playback_delay"]
         # Automatically resume spotify playback after n seconds.
         self.radio_timeout = util.CONFIG["interlude"]["radio_timeout"]
         self.uri_rx = re.compile("[A-Za-z]+:\/\/")
-        self.formats = ["mp3", "mp4", "flac", "wav", "wma", "ogg", "avi", "mov", "mpg", "flv", "wmv", \
-                        "spx", "3gp", "b-mtp", "aac", "aiff", "raw", "midi", "ulaw", "alaw", "gsm" ]
+        self.formats = ["mp3", "mp4", "flac", "wav", "wma", "ogg", "avi", "mov", "mpg", "flv", "wmv",
+                        "spx", "3gp", "b-mtp", "aac", "aiff", "raw", "midi", "ulaw", "alaw", "gsm"]
         self.player = Gst.ElementFactory.make("playbin", "player")
         self.player.connect("about-to-finish", self.on_about_to_finish)
         # Get and watch the bus. We use this in blockify-ui.
         self.bus = self.player.get_bus()
         self.bus.add_signal_watch()
-        # self.bus.connect("message::tag", self.on_tag_changed)
-        # self.bus.connect("message::eos", self.on_finish)
         # Finally, load the playlist file.
         log.info("InterludePlayer initialized.")
         self.load_playlist(self.parse_playlist(), util.CONFIG["interlude"]["start_shuffled"])
 
     def load_playlist(self, playlist, shuffle=False):
-        "Read the music to be played instead of commercials into a list."
+        """Read the music to be played instead of commercials into a list."""
         log.debug("Loading playlist.")
         self.playlist = playlist
         self.max_index = len(self.playlist) - 1
@@ -100,12 +101,8 @@ class InterludePlayer(object):
 
         return playlist
 
-    def path2url(self, path):
-        "Properly translate a string to a file URI (i.e. space to %20)."
-        return urllib.parse.urljoin("file:", urllib.pathname2url(path))
-
     def on_about_to_finish(self, player):
-        "Song is ending. What do we do?"
+        """Song is ending. What do we do?"""
         self.queue_next()
         log.debug("Interlude song finished. Queued: {}.".format(self.get_current_uri()))
         if not self.autoresume and not self.b.spotify_is_playing():
@@ -118,13 +115,13 @@ class InterludePlayer(object):
         return self.playlist[self.index]
 
     def is_radio(self):
-        "Spot radio tracks so we can deal with them appropriately."
+        """Spot radio tracks so we can deal with them appropriately."""
         uri = self.get_current_uri()
         # We assume the URI is a radio station if it doesn't have a file ending we associate with (audio) files.
         return uri.startswith("http://") and not any([uri.endswith("." + fmt) for fmt in self.formats])
 
     def is_valid_uri(self, item):
-        "Determine if a item in the playlist file is a valid URI."
+        """Determine if a item in the playlist file is a valid URI."""
         # Lines we exclude right away, these are either:
         # * comments
         # * invalid (empty)
@@ -133,7 +130,7 @@ class InterludePlayer(object):
 
         item = item.lower()
         # Lines we include as these are likely to be valid URIs.
-#         inclusions = [item.startswith("file://"), item.startswith("http://"), item.startswith("mms://")]
+        #         inclusions = [item.startswith("file://"), item.startswith("http://"), item.startswith("mms://")]
 
         # If item is a file uri, make sure it has a valid (audio/video) format.
         valid_format = [True]
@@ -155,7 +152,8 @@ class InterludePlayer(object):
             log.info("Switched from radio back to Spotify.")
             return True
         else:
-            log.info("Tried to switch from radio to Spotify but commercial still playing. Will resume when commercial ends.")
+            log.info(
+                "Tried to switch from radio to Spotify but commercial still playing. Will resume when commercial ends.")
             self.temp_autoresume = True
 
         return False
@@ -178,7 +176,7 @@ class InterludePlayer(object):
             self.autoresume = True
 
     def toggle_music(self):
-        "Method that gets called every update_interval ms via update()."
+        """Method that gets called every update_interval ms via update()."""
         # In some cases (autodetection), we are going to delay toggling a bit,
         # see b.find_ads() and self.play_with_delay().
         if self.temp_disable:
@@ -239,14 +237,8 @@ class InterludePlayer(object):
         self.play()
 
     def shuffle(self):
-#         uri = self.get_current_uri()
         random.shuffle(self.playlist)
         log.info("Playlist was shuffled.")
-        # Adjust index to make sure self.get_current_uri() returns the current song.
-#         try:
-#             self.index = self.playlist.index(uri)
-#         except ValueError:
-#             self.index = 0
 
     def queue_next(self):
         self.index += 1
@@ -262,7 +254,6 @@ class InterludePlayer(object):
             uri = self.get_current_uri()
             log.debug("Setting interlude to: {0}".format(uri))
             self.player.set_property("uri", uri)
-
 
     @property
     def autoresume(self):
