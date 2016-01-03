@@ -97,8 +97,10 @@ Alternatively, you can use the GUI with `blockify-ui` which spawns this window.
 - Play, Previous, Next: These buttons use dbus to send audio control commands to spotify.
 - Block/Unblock: Add/Remove the currently playing song to/from the blocklist.
 - Mute/Unmute: Mute/Unmute the current song. Only works if "Manual" checkbox is activated.
-- Manual: Disables automatic mute of ads and instead allows you to mute manually.
+- Mute (manual): Disables automatic mute of ads and instead allows you to mute manually.
 - Show/Hide Cover: Enable/Disable display of cover art image.
+- Autodetect: Let blockify automatically detect ads or switch to manual blocklist-style.
+- Automute: Let blockify automatically handle mute or switch to manual muting.
 - Autohide: If this option is checked, the cover art will be automatically hidden whenever a commercial is playing.
 - Open/Close List: Opens a small popup text editor with the blocklist opened where you can edit and save it. Keybinds: Control-S (save), Control-W/Q (close), Control-D (delete current line).
 - Exit: Stop blockify cleanly, i.e. unmute sinks, update blocklist and generally clean up.
