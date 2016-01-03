@@ -266,9 +266,8 @@ class BlockifyUI(Gtk.Window):
         exit_menuitem.show()
         menu.append(exit_menuitem)
         exit_menuitem.connect("activate", self.on_exit_btn)
-
-        menu.popup(None, None, Gtk.status_icon_position_menu,
-                   event_button, event_time, self.status_icon)
+        menu.popup(None, None, Gtk.StatusIcon.position_menu,
+                   self.status_icon, event_button, event_time)
 
     def create_labels(self):
         self.albumlabel = Gtk.Label()
@@ -672,7 +671,7 @@ class BlockifyUI(Gtk.Window):
     def format_current_song_info(self):
         artist = self.b.current_song_artist
         title = self.b.current_song_title
-        album = self.b.dbus.get_song_album().decode("utf-8")
+        album = self.b.dbus.get_song_album()
 
         if self.b.found:
             artist = "Ad detected"
@@ -687,7 +686,7 @@ class BlockifyUI(Gtk.Window):
 
     def get_cover_art(self):
         cover_file = ""
-        cover_hash = os.path.basename(self.b.dbus.get_art_url().decode("utf-8"))
+        cover_hash = os.path.basename(self.b.dbus.get_art_url())
 
         if cover_hash:
             # The url spotify gets its cover images from. Filename is a hash, the last part of metadata["artUrl"]
