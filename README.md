@@ -79,13 +79,31 @@ Blockify accepts several signals:
 * SIGRTMIN+12(46): Toggle play/pause the current interlude song.
 * SIGRTMIN+13(47): Toggle interlude autoresume.
 
-Example usages:
+To easily use these signals add the following function to your .bashrc:
 ```bash
-pkill -USR1 -f "python.*blockify"
-pkill -RTMIN+1 -f "python.*blockify"
-alias btoggle='pkill -RTMIN+2 -f "python.*blockify"'
+bl() {
+    local signal
+    local cmd
+    case "$1" in
+        "") blockify-dbus get song && return 0;;
+        ex) signal='TERM';;       # Exit
+        b) signal='USR1';;        # Block
+        u) signal='USR2';;        # Unblock
+        p) signal='RTMIN';;       # Previous song
+        n) signal='RTMIN+1';;     # Next song
+        t) signal='RTMIN+2';;     # Toggle play song
+        tb) signal='RTMIN+3';;    # Toggle block song
+        pi) signal='RTMIN+10';;   # Previous interlude song
+        ni) signal='RTMIN+11';;   # Next interlude song
+        ti) signal='RTMIN+12';;   # Toggle play interlude song
+        tir) signal='RTMIN+13';;  # Toggle interlude resume
+        *) echo "Bad option" && return 0;;
+    esac
+    pkill --signal "$signal" -f 'python.*blockify'
+}
 ```
-Bind to keys for fun and profit.
+
+Then use it via e.g. `bl t` to toggle playback.
 
 ##### CLI
 Blockify has a CLI/daemon that you can start with `blockify`.  
