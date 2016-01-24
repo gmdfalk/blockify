@@ -85,7 +85,7 @@ bl() {
     local signal
     local cmd
     case "$1" in
-        "") blockify-dbus get song && return 0;;
+        "") blockify-dbus get && return 0;;
         ex) signal='TERM';;       # Exit
         b) signal='USR1';;        # Block
         u) signal='USR2';;        # Unblock
@@ -103,7 +103,7 @@ bl() {
 }
 ```
 
-Then use it via e.g. `bl t` to toggle playback.
+Then use it via e.g. `bl` to get current song info or `bl t` to toggle playback.
 
 ##### CLI
 Blockify has a CLI/daemon that you can start with `blockify`.  
