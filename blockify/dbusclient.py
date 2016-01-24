@@ -173,7 +173,7 @@ class DBusClient(object):
         title = self.get_song_title()
         album = self.get_song_album()
 
-        return "{} - {} ({})".format(artist, title, album)
+        return "{} - {} [{}]".format(artist, title, album)
 
     def get_song_title(self):
         """Gets title of current song from metadata"""
