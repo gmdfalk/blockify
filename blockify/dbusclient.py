@@ -3,7 +3,7 @@
 
 Usage:
     dbusclient (toggle | next | prev | stop | play | pause) [-v...] [options]
-    dbusclient get [title | artist | length | status | all] [-v...] [options]
+    dbusclient get [song | title | artist | album | length | status | all] [-v...] [options]
     dbusclient (openuri <uri> | seek <secs> | setpos <pos>) [-v...] [options]
 
 Options:
@@ -168,6 +168,13 @@ class DBusClient(object):
 
         return length
 
+    def get_song(self):
+        artist = self.get_song_artist()
+        title = self.get_song_title()
+        album = self.get_song_album()
+
+        return "{} - {} ({})".format(artist, title, album)
+
     def get_song_title(self):
         """Gets title of current song from metadata"""
         title = ""
@@ -250,7 +257,9 @@ def main():
     elif args["setpos"]:
         dbus.set_pos(args["<pos>"])
 
-    if args["title"]:
+    if args["song"]:
+        print(dbus.get_song())
+    elif args["title"]:
         print(dbus.get_song_title())
     elif args["artist"]:
         print(dbus.get_song_artist())
@@ -265,12 +274,8 @@ def main():
             print("{}m{}s ({})".format(m, s, length))
         else:
             rating = dbus.get_property("Metadata")["xesam:autoRating"]
-            artist = dbus.get_song_artist()
-            title = dbus.get_song_title()
-            album = dbus.get_song_album()
-            state = dbus.get_song_status()
-            print("{} - {} ({}), {}m{}s, {} ({})".format(artist, title, album,
-                                                         m, s, rating, state))
+            song = dbus.get_song()
+            print("{}, {}m{}s, {}".format(song, m, s, rating))
 
 
 if __name__ == "__main__":
