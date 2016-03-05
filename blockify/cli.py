@@ -327,9 +327,12 @@ class Blockify(object):
 
     def is_muted(self):
         for channel in self.channels:
-            output = subprocess.check_output(["amixer", "get", channel])
-            if "[off]" in output.decode("utf-8"):
-                return True
+            try:
+                output = subprocess.check_output(["amixer", "get", channel])
+                if "[off]" in output.decode("utf-8"):
+                    return True
+            except subprocess.CalledProcessError:
+                pass
         return False
 
     def get_state(self, mode):
@@ -355,8 +358,7 @@ class Blockify(object):
         if not state:
             return
 
-        for channel in self.channels:
-            subprocess.Popen(["amixer", "-q", "set", channel, state])
+        self.update_audio_channel_state(["amixer", "-q", "set"], state)
 
     def pulse_mute(self, mode):
         """Used if pulseaudio is installed but no sinks are found. System-wide."""
@@ -364,8 +366,14 @@ class Blockify(object):
         if not state:
             return
 
+        self.update_audio_channel_state(["amixer", "-qD", "pulse", "set"], state)
+
+    def update_audio_channel_state(self, command, state):
         for channel in self.channels:
-            subprocess.Popen(["amixer", "-qD", "pulse", "set", channel, state])
+            try:
+                subprocess.Popen(command + [channel, state])
+            except subprocess.CalledProcessError:
+                pass
 
     def extract_pulse_sink_status(self, pacmd_out):
         sink_status = ("", "", "")  # index, playback_status, muted_value
