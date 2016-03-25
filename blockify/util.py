@@ -55,19 +55,19 @@ def init_logger(logpath=None, loglevel=0, quiet=False):
 def init_config_dir():
     """Determine if a config dir for blockify exists and if not, create it."""
     if not os.path.isdir(CONFIG_DIR):
-        log.info("Creating config directory.")
         os.makedirs(CONFIG_DIR)
+        log.info("Created config directory %s.", CONFIG_DIR)
 
     if not os.path.isdir(THUMBNAIL_DIR):
-        log.info("Creating thumbnail directory.")
         os.makedirs(THUMBNAIL_DIR)
+        log.info("Created thumbnail directory %s.", THUMBNAIL_DIR)
 
     if not os.path.isfile(CONFIG_FILE):
-        save_options(CONFIG_DIR, get_default_options())
+        save_options(CONFIG_FILE, get_default_options())
 
 
 def get_default_options():
-    options = {
+    return {
         "general": {
             "autodetect": True,
             "automute": True,
@@ -97,8 +97,6 @@ def get_default_options():
         }
     }
 
-    return options
-
 
 def load_options():
     log.info("Loading configuration.")
@@ -110,18 +108,19 @@ def load_options():
         log.error("Could not read config file: {}. Using default options.".format(e))
     else:
         for section_name, section_value in options.items():
-            for option_name, option_value in  section_value.items():
-                option = read_option(config, section_name, option_name, option_value)
+            for option_name, option_value in section_value.items():
+                option = read_option(config, section_name, option_name, option_value,
+                                     options[section_name][option_name])
                 if option is not None:
                     options[section_name][option_name] = option
         if not options["interlude"]["playlist"]:
             options["interlude"]["playlist"] = PLAYLIST_FILE
-        log.info("Configuration file loaded from {}.".format(CONFIG_FILE))
+        log.info("Configuration loaded.")
 
     return options
 
 
-def read_option(config, section_name, option_name, option_value):
+def read_option(config, section_name, option_name, option_value, default_option_value):
     option = None
     try:
         if isinstance(option_value, bool):
@@ -131,25 +130,25 @@ def read_option(config, section_name, option_name, option_value):
         else:
             option = config.get(section_name, option_name)
     except Exception:
-        log.error("Could not parse option %s for section %s. Using default value.", option_name, section_name)
+        log.error("Could not parse option %s for section %s. Using default value %s.", option_name, section_name,
+                  default_option_value)
 
     return option
 
 
-def save_options(config_dir, options):
-    configfile = os.path.join(config_dir, CONFIG_FILE)
+def save_options(config_file, options):
     config = configparser.ConfigParser()
-    # Write out the sections in this order.
+    # Write out the sections in this order. Using options keys would be unpredictable.
     sections = ["general", "cli", "gui", "interlude"]
     for section in sections:
         config.add_section(section)
         for k, v in options[section].items():
             config.set(section, k, str(v))
 
-    with codecs.open(configfile, "w", encoding="utf-8") as f:
+    with codecs.open(config_file, "w", encoding="utf-8") as f:
         config.write(f)
 
-    log.info("Configuration file written to {}.".format(configfile))
+    log.info("Configuration written to {}.".format(config_file))
 
 
 def initialize(doc):
@@ -159,8 +158,10 @@ def initialize(doc):
     except NameError:
         init_logger()
 
+    # Set up the configuration directory & files, if necessary.
+    init_config_dir()
+
     global CONFIG
     CONFIG = load_options()
 
-    # Set up the configuration directory & files, if necessary.
-    init_config_dir()
+
