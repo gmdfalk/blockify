@@ -71,9 +71,9 @@ def get_default_options():
         "general": {
             "autodetect": True,
             "automute": True,
-            "autoplay": False,
+            "autoplay": True,
             "substring_search": False,
-            "start_spotify": False
+            "start_spotify": True
         },
         "cli": {
             "update_interval": 200,
@@ -84,7 +84,7 @@ def get_default_options():
             "unmute_delay": 650,
             "use_cover_art": True,
             "autohide_cover": False,
-            "start_minimized": False
+            "start_minimized": True
         },
         "interlude": {
             "use_interlude_music": True,

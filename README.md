@@ -5,17 +5,11 @@ Blockify is a linux only application that allows you to automatically mute songs
 
 
 ## Installation
-### Basic Requirements:
+### Basic Requirements
 - Python3
 - Pulseaudio
 - Gstreamer1.0 (including the plugins you need for the audio formats you want to be able to play as interlude music)
 - Spotify > 1.0.12 (to get the latest version follow the instructions given here [Spotify-Client-1-x-beta-] (https://community.spotify.com/t5/Spotify-Community-Blog/Spotify-Client-1-x-beta-for-Linux-has-been-released/ba-p/1147084))
-
-### Dependencies
-Before installing blockify, please make sure you have the appropriate dependencies installed:  
-`pacman -S python pulseaudio gst-python alsa-utils pygtk python-dbus python-setuptools python-gobject python-docopt`
-
-Package names are for ArchLinux and will probably differ slightly between distributions. 
 
 ### Prepackaged
 
@@ -34,6 +28,11 @@ Available in the [openSUSE build service](https://build.opensuse.org/package/sho
 
 ### Manual (pip/setup.py)
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
+
+Before installing blockify, please make sure you have the appropriate dependencies installed:
+`pacman -S python pulseaudio gst-python alsa-utils pygtk python-dbus python-setuptools python-gobject python-docopt`
+
+Package names are for ArchLinux and will probably differ slightly between distributions.
 
 Preparation (for Ubuntu):  
 ```bash
