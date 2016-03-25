@@ -83,7 +83,8 @@ def get_default_options():
             "update_interval": 350,
             "unmute_delay": 650,
             "use_cover_art": True,
-            "autohide_cover": False
+            "autohide_cover": False,
+            "start_minimized": False
         },
         "interlude": {
             "use_interlude_music": True,
@@ -107,16 +108,11 @@ def load_options():
     except Exception as e:
         log.error("Could not read config file: {}. Using default options.".format(e))
     else:
-        option_tuples = [
-            ("general", "autodetect", "bool"), ("general", "automute", "bool"), ("general", "autoplay", "bool"),
-            ("general", "start_spotify", "bool"), ("general", "substring_search", "bool"),
-            ("cli", "update_interval", "int"), ("cli", "unmute_delay", "int"),
-            ("gui", "use_cover_art", "bool"), ("gui", "autohide_cover", "bool"), ("gui", "update_interval", "int"), ("gui", "unmute_delay", "int"),
-            ("interlude", "use_interlude_music", "bool"), ("interlude", "start_shuffled", "bool"), ("interlude", "autoresume", "bool"),
-            ("interlude", "radio_timeout", "int"), ("interlude", "playback_delay", "int"), ("interlude", "playlist", "str")
-        ]
-        for option_tuple in option_tuples:
-            load_option(config, options, option_tuple)
+        for section_name, section_value in options.items():
+            for option_name, option_value in  section_value.items():
+                option = read_option(config, section_name, option_name, option_value)
+                if option is not None:
+                    options[section_name][option_name] = option
         if not options["interlude"]["playlist"]:
             options["interlude"]["playlist"] = PLAYLIST_FILE
         log.info("Configuration file loaded from {}.".format(CONFIG_FILE))
@@ -124,19 +120,19 @@ def load_options():
     return options
 
 
-def load_option(config, options, option_tuple):
-    section_name, option_name, option_type = option_tuple[0], option_tuple[1], option_tuple[2]
+def read_option(config, section_name, option_name, option_value):
+    option = None
     try:
-        option = None
-        if option_type == "bool":
+        if isinstance(option_value, bool):
             option = config.getboolean(section_name, option_name)
-        elif option_type == "int":
+        elif isinstance(option_value, int):
             option = config.getint(section_name, option_name)
         else:
             option = config.get(section_name, option_name)
-        options[section_name][option_name] = option
     except Exception:
         log.error("Could not parse option %s for section %s. Using default value.", option_name, section_name)
+
+    return option
 
 
 def save_options(config_dir, options):

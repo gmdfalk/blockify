@@ -181,6 +181,7 @@ class BlockifyUI(Gtk.Window):
         self.use_cover_art = util.CONFIG["gui"]["use_cover_art"]
         self.autohide_cover = util.CONFIG["gui"]["autohide_cover"]
         self.b.unmute_delay = util.CONFIG["gui"]["unmute_delay"]
+
         self.previous_cover_file = ""
 
         self.editor = None
@@ -209,7 +210,8 @@ class BlockifyUI(Gtk.Window):
         # "Trap" the exit.
         self.connect("destroy", self.stop)
 
-        self.show_all()
+        if not util.CONFIG["gui"]["start_minimized"]:
+            self.show_all()
         self.set_states()
 
         self.play_interlude_button_active = self.pause_img == self.play_interlude_btn.get_image()
@@ -235,39 +237,35 @@ class BlockifyUI(Gtk.Window):
         self.connect("delete-event", self.on_delete_event)
 
     def create_traymenu(self, event_button, event_time):
-        menu = Gtk.Menu()
+        self.menu = Gtk.Menu()
 
         toggleblock_menuitem = Gtk.MenuItem("Toggle Block")
-        toggleblock_menuitem.show()
-        menu.append(toggleblock_menuitem)
         toggleblock_menuitem.connect("activate", self.on_toggle_block_btn)
+        self.menu.append(toggleblock_menuitem)
 
         toggleplay_menuitem = Gtk.MenuItem("Toggle Play")
-        toggleplay_menuitem.show()
         toggleplay_menuitem.connect("activate", self.on_toggle_play_btn)
-        menu.append(toggleplay_menuitem)
+        self.menu.append(toggleplay_menuitem)
 
         prevsong_menuitem = Gtk.MenuItem("Previous Song")
-        prevsong_menuitem.show()
         prevsong_menuitem.connect("activate", self.on_prev_btn)
-        menu.append(prevsong_menuitem)
+        self.menu.append(prevsong_menuitem)
 
         nextsong_menuitem = Gtk.MenuItem("Next Song")
-        nextsong_menuitem.show()
         nextsong_menuitem.connect("activate", self.on_next_btn)
-        menu.append(nextsong_menuitem)
+        self.menu.append(nextsong_menuitem)
 
         about_menuitem = Gtk.MenuItem("About")
-        about_menuitem.show()
-        menu.append(about_menuitem)
+        self.menu.append(about_menuitem)
         about_menuitem.connect("activate", self.show_about_dialogue)
 
         exit_menuitem = Gtk.MenuItem("Exit")
-        exit_menuitem.show()
-        menu.append(exit_menuitem)
+        self.menu.append(exit_menuitem)
         exit_menuitem.connect("activate", self.on_exit_btn)
-        menu.popup(None, None, Gtk.StatusIcon.position_menu,
-                   self.status_icon, event_button, event_time)
+
+        self.menu.show_all()
+
+        self.menu.popup(None, None, None, self.status_icon, event_button, event_time)
 
     def create_labels(self):
         self.albumlabel = Gtk.Label()
@@ -788,8 +786,7 @@ class BlockifyUI(Gtk.Window):
         taglist = message.parse_tag()
         if taglist.get_string_index("artist", 0)[0]:
             try:
-                label = taglist.get_string_index("artist", 0)[1][0] + " - " + taglist.get_string_index("artist", 0)[1][
-                    0]
+                label = taglist.get_string_index("artist", 0)[1][0] + " - " + taglist.get_string_index("artist", 0)[1][0]
                 if len(label) > 5:
                     self.interlude_label.set_text(label)
             except KeyError as e:
@@ -951,10 +948,9 @@ class BlockifyUI(Gtk.Window):
                 self.editor.destroy()
 
     def on_toggle_play_btn(self, widget):
-        if not self.b.spotify_is_playing():
-            self.b.player.try_resume_spotify_playback(True)
-        else:
-            self.b.dbus.playpause()
+        self.b.dbus.playpause()
+        if self.b.spotify_is_playing():
+            self.b.player.pause()
 
     def on_next_btn(self, widget):
         self.b.next()
