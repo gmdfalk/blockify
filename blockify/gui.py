@@ -210,8 +210,9 @@ class BlockifyUI(Gtk.Window):
         # "Trap" the exit.
         self.connect("destroy", self.stop)
 
-        if not util.CONFIG["gui"]["start_minimized"]:
-            self.show_all()
+        self.show_all()
+        if util.CONFIG["gui"]["start_minimized"]:
+            self.hide()
         self.set_states()
 
         self.play_interlude_button_active = self.pause_img == self.play_interlude_btn.get_image()

@@ -21,6 +21,7 @@ import time
 from gi import require_version
 
 require_version('Gtk', '3.0')
+
 from gi.repository import Gtk
 from gi.repository import GObject
 
@@ -28,7 +29,6 @@ from blockify import dbusclient
 from blockify import blocklist
 from blockify import interludeplayer
 from blockify import util
-
 
 log = logging.getLogger("cli")
 
@@ -165,7 +165,10 @@ class Blockify(object):
     def start_spotify(self):
         if util.CONFIG["general"]["start_spotify"]:
             log.info("Starting Spotify ...")
-            subprocess.Popen(['/usr/bin/spotify'])
+            spotify_command = "spotify"
+            if util.CONFIG["general"]["detach_spotify"]:
+                spotify_command += " &"
+            os.system(spotify_command)
             for _ in range(20):
                 time.sleep(1)
                 spotify_is_running = self.check_for_spotify_process()

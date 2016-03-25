@@ -73,7 +73,8 @@ def get_default_options():
             "automute": True,
             "autoplay": True,
             "substring_search": False,
-            "start_spotify": True
+            "start_spotify": True,
+            "detach_spotify": False
         },
         "cli": {
             "update_interval": 200,
