@@ -16,6 +16,7 @@ import os
 import re
 import signal
 import subprocess
+import sys
 import time
 
 from gi import require_version
@@ -50,6 +51,7 @@ class Blockify(object):
         self.pulse_unmuted_value = ""
         self.song_delimiter = " - "  # u" \u2013 "
         self.found = False
+        self.current_song_from_window_title = ""
         self.current_song = ""
         self.current_song_artist = ""
         self.current_song_title = ""
@@ -256,6 +258,22 @@ class Blockify(object):
         # Always return True to keep looping this method.
         return True
 
+    def find_spotify_window(self):
+        spotify_window = []
+        try:
+            pipe = subprocess.Popen(['wmctrl', '-lx'], stdout=subprocess.PIPE).stdout
+            window_list = pipe.read().decode("utf-8").split("\n")
+            for window in window_list:
+                if window.find("spotify.Spotify") >= 0:
+                    # current_song = " ".join(window.split()[5:])
+                    spotify_window.append(window)
+                    break
+        except OSError:
+            log.error("Please install wmctrl first! Exiting.")
+            self.stop()
+
+        return spotify_window
+
     def find_ad(self):
         """Main loop. Checks for ads and mutes accordingly."""
         self.previous_song = self.current_song
@@ -302,13 +320,33 @@ class Blockify(object):
             self.toggle_mute()
         return False
 
+    # Audio ads typically have no artist information (via DBus) and/or "/ad/" in their spotify url.
+    # Video ads have no DBus information whatsoever so they are determined via window title (wmctrl).
     def current_song_is_ad(self):
-        return self.current_song_title and not self.current_song_artist
+
+        no_artist = self.current_song_title and not self.current_song_artist
+        ad_url = "/ad/" in self.dbus.get_spotify_url()
+        title_mismatch = self.spotify_is_playing() and self.current_song != self.current_song_from_window_title
+
+        return no_artist or ad_url or title_mismatch
 
     def update_current_song_info(self):
         self.current_song_artist = self.dbus.get_song_artist()
         self.current_song_title = self.dbus.get_song_title()
         self.current_song = self.current_song_artist + self.song_delimiter + self.current_song_title
+        self.current_song_from_window_title = self.get_current_song_from_window_title()
+
+    def get_current_song_from_window_title(self):
+        """Checks if a Spotify window exists and returns the current songname."""
+        song = ""
+        spotify_window = self.find_spotify_window()
+        if spotify_window:
+            try:
+                song = " ".join(map(str, spotify_window[0].split()[4:]))
+            except Exception as e:
+                log.debug("Could not match spotify pid to sink pid: %s".format(e), exc_info=1)
+
+        return song
 
     def block_current(self):
         if self.current_song:

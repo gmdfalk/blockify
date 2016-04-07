@@ -6,10 +6,18 @@ Blockify is a linux only application that allows you to automatically mute songs
 
 ## Installation
 ### Basic Requirements
-- Python3
-- Pulseaudio
-- Gstreamer1.0 (including the plugins you need for the audio formats you want to be able to play as interlude music)
-- Spotify > 1.0.12 (to get the latest version follow the instructions given here [Spotify-Client-1-x-beta-] (https://community.spotify.com/t5/Spotify-Community-Blog/Spotify-Client-1-x-beta-for-Linux-has-been-released/ba-p/1147084))
+
+Mandatory:
+  - Python3
+  - Spotify > 1.0.12 (to get the latest version follow the instructions given here [Spotify-Client-1-x-beta-] (https://community.spotify.com/t5/Spotify-Community-Blog/Spotify-Client-1-x-beta-for-Linux-has-been-released/ba-p/1147084))
+  - wmtrcl (provides information about the Spotify window)
+
+Optional but highly recommended:
+  - Pulseaudio (allows muting Spotify instead of all system sound)
+  - Gstreamer1.0 (used to play music of your choice during muted ads. Requires pulseaudio.)
+
+Optional:
+  - docopt (provides a command-line interface for blockify and blockify-ui)
 
 ### Prepackaged
 
@@ -30,7 +38,7 @@ Available in the [openSUSE build service](https://build.opensuse.org/package/sho
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
 
 Before installing blockify, please make sure you have the appropriate dependencies installed:
-`pacman -S python pulseaudio gst-python alsa-utils pygtk python-dbus python-setuptools python-gobject python-docopt`
+`pacman -S git python-pip gst-python pulseaudio alsa-utils pygtk python-dbus python-gobject python-docopt wmctrl`
 
 Package names are for ArchLinux and will probably differ slightly between distributions.
 
@@ -41,7 +49,7 @@ echo deb http://repository.spotify.com testing non-free | sudo tee /etc/apt/sour
 sudo apt-get update
 sudo apt-get install spotify-client
 # Install blockify dependencies
-sudo apt-get install git python3-requests python3-docopt python3-pip python3-gst-1.0 python-configparser
+sudo apt-get install git python3-pip python3-gst-1.0 python3-requests python3-docopt wmctrl
 ```
 
 Install routine:  
@@ -85,29 +93,40 @@ Blockify accepts several signals:
 
 To easily use these signals add the following function to your .bashrc:
 ```bash
-bl() {
+bb() {
     local signal
     local cmd
+    [[ "$#" -lt 1 ]] && echo "Usage: bb ( b[lock] | u[nblock] | p[revious] | n[ext] | t[oggle] | t[oggle]b[lock] |...)"  && return 0
     case "$1" in
-        "") blockify-dbus get && return 0;;
-        ex) signal='TERM';;       # Exit
-        b) signal='USR1';;        # Block
-        u) signal='USR2';;        # Unblock
-        p) signal='RTMIN';;       # Previous song
-        n) signal='RTMIN+1';;     # Next song
-        t) signal='RTMIN+2';;     # Toggle play song
-        tb) signal='RTMIN+3';;    # Toggle block song
-        pi) signal='RTMIN+10';;   # Previous interlude song
-        ni) signal='RTMIN+11';;   # Next interlude song
-        ti) signal='RTMIN+12';;   # Toggle play interlude song
-        tir) signal='RTMIN+13';;  # Toggle interlude resume
+        '')  blockify-dbus get 2>/dev/null && return 0;;
+        ex|exit)
+            signal='TERM';;       # Exit
+        b|block)
+            signal='USR1';;       # Block
+        u|unblock)
+            signal='USR2';;       # Unblock
+        p|previous)
+            signal='RTMIN';;      # Previous song
+        n|next)
+            signal='RTMIN+1';;    # Next song
+        t|toggle)
+            signal='RTMIN+2';;    # Toggle play song
+        tb|toggleblock)
+            signal='RTMIN+3';;    # Toggle block song
+        ip|iprevious)
+            signal='RTMIN+10';;   # Previous interlude song
+        in|inext)
+            signal='RTMIN+11';;   # Next interlude song
+        it|itoggle)
+            signal='RTMIN+12';;   # Toggle play interlude song
+        itr|itoggleresume)
+            signal='RTMIN+13';;   # Toggle interlude resume
         *) echo "Bad option" && return 0;;
     esac
     pkill --signal "$signal" -f 'python.*blockify'
 }
 ```
-
-Then use it via e.g. `bl` to get current song info or `bl t` to toggle playback.
+Then use it via e.g. `bb` to get current song info or `bb t` to toggle playback.
 
 #### CLI
 Blockify has a CLI/daemon that you can start with `blockify`.  

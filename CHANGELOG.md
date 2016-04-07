@@ -1,5 +1,6 @@
 # Changelog
 
+- v3.5.0 (2016-04-08): Reintroduce wmctrl to catch video ads ([issue #89](https://github.com/mikar/blockify/issues/89)) and block some audio ads more reliably. Fix encoding issues ([issue #95](https://github.com/mikar/blockify/issues/95)).
 - v3.4.0 (2016-03-25): Fix play/pause toggle button, right click on tray [issue #83](https://github.com/mikar/blockify/issues/83) and add start_minimized option [issue #93](https://github.com/mikar/blockify/issues/93).
 - v3.3.1 (2016-01-03): Fix interlude player crashes ([issue #84](https://github.com/mikar/blockify/issues/84)).
 - v3.3.0 (2016-01-03): Enable profiling, improve GUI performance, fix playback button & title status functionality and add tray icon toolip.
