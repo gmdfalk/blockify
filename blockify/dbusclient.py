@@ -66,6 +66,7 @@ class DBusClient(object):
         except dbus.exceptions.DBusException as e:
             self.connect_to_spotify_dbus(None)
             log.error("Failed to get DBus property: {}".format(e))
+
         return prop
 
     def set_property(self, key, value):
@@ -142,16 +143,17 @@ class DBusClient(object):
         url = ""
         try:
             metadata = self.get_property("Metadata")
-            url = metadata["mpris:artUrl"]
+            url = str(metadata["mpris:artUrl"], "utf-8")
         except Exception as e:
-            log.error("Cannot fetch album cover: {}".format(e))
+            log.error("Cannot fetch album cover url: {}".format(e))
+
         return url
 
     def get_song_status(self):
         """Get current PlaybackStatus (Paused/Playing...)."""
         status = ""
         try:
-            status = self.get_property("PlaybackStatus")
+            status = str(self.get_property("PlaybackStatus"), "utf-8")
         except Exception as e:
             log.warn("Cannot get PlaybackStatus: {}".format(e))
 
@@ -180,7 +182,7 @@ class DBusClient(object):
         title = ""
         try:
             metadata = self.get_property("Metadata")
-            title = metadata["xesam:title"]
+            title = str(metadata["xesam:title"], "utf-8")
         except Exception as e:
             log.warn("Cannot get song title: {}".format(e))
 
@@ -191,7 +193,7 @@ class DBusClient(object):
         album = ""
         try:
             metadata = self.get_property("Metadata")
-            album = metadata["xesam:album"]
+            album = str(metadata["xesam:album"], "utf-8")
         except Exception as e:
             log.warn("Cannot get song album: {}".format(e))
 
@@ -202,7 +204,7 @@ class DBusClient(object):
         artist = ""
         try:
             metadata = self.get_property("Metadata")
-            artist = metadata["xesam:artist"][0]
+            artist = str(metadata["xesam:artist"][0], "utf-8")
         except Exception as e:
             log.warn("Cannot get song artist: {}".format(e))
 
