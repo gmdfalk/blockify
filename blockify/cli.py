@@ -324,11 +324,14 @@ class Blockify(object):
     # Video ads have no DBus information whatsoever so they are determined via window title (wmctrl).
     def current_song_is_ad(self):
 
-        no_artist = self.current_song_title and not self.current_song_artist
-        ad_url = "/ad/" in self.dbus.get_spotify_url()
+        missing_artist = self.current_song_title and not self.current_song_artist
+        has_ad_url = "/ad/" in self.dbus.get_spotify_url()
         title_mismatch = self.spotify_is_playing() and self.current_song != self.current_song_from_window_title
 
-        return no_artist or ad_url or title_mismatch
+        # log.debug("missing_artist: {0}, has_ad_url: {1}, title_mismatch: {2}".format(missing_artist, has_ad_url,
+        #                                                                             title_mismatch))
+
+        return missing_artist or has_ad_url or title_mismatch
 
     def update_current_song_info(self):
         self.current_song_artist = self.dbus.get_song_artist()
