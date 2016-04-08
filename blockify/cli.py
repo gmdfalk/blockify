@@ -259,15 +259,13 @@ class Blockify(object):
         return True
 
     def find_spotify_window(self):
-        spotify_window = []
+        spotify_window = None
         try:
             pipe = subprocess.Popen(['wmctrl', '-lx'], stdout=subprocess.PIPE).stdout
             window_list = pipe.read().decode("utf-8").split("\n")
             for window in window_list:
-                if window.find("spotify.Spotify") >= 0:
-                    # current_song = " ".join(window.split()[5:])
-                    spotify_window.append(window)
-                    break
+                if "spotify.Spotify" in window:
+                    return window
         except OSError:
             log.error("Please install wmctrl first! Exiting.")
             self.stop()
@@ -345,9 +343,9 @@ class Blockify(object):
         spotify_window = self.find_spotify_window()
         if spotify_window:
             try:
-                song = " ".join(map(str, spotify_window[0].split()[4:]))
+                song = " ".join(spotify_window.split()[4:])
             except Exception as e:
-                log.debug("Could not match spotify pid to sink pid: %s".format(e), exc_info=1)
+                log.debug("Could not extract song info from Spotify window title: {0}".format(e), exc_info=1)
 
         return song
 
