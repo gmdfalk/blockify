@@ -25,7 +25,7 @@ setup(
     author_email="gmdfalk@gmail.com",
     packages=find_packages(),
     package_data={_name: ["data/*"]},
-    install_package_data=True,
+    include_package_data=True,
     entry_points={
         "console_scripts": [
             "{0} = {0}.cli:main".format(_name),
