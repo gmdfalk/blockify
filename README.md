@@ -21,7 +21,7 @@ Optional but highly recommended:
 Optional:
   - docopt (provides a command-line interface for blockify and blockify-ui)
 
-On ArchLinux, you can install all dependencies as follows:
+On ArchLinux, you can install all dependencies as follows:  
 `pacman -S git python-pip gst-python pulseaudio alsa-utils pygtk python-dbus python-gobject python-docopt wmctrl`
 
 ### Package Manager
