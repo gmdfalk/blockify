@@ -16,22 +16,21 @@ import os
 import re
 import signal
 import subprocess
-import sys
 import time
+
+from blockify import util
+
+log = logging.getLogger("cli")
 
 from gi import require_version
 
 require_version('Gtk', '3.0')
-
 from gi.repository import Gtk
 from gi.repository import GObject
 
-from blockify import dbusclient
 from blockify import blocklist
+from blockify import dbusclient
 from blockify import interludeplayer
-from blockify import util
-
-log = logging.getLogger("cli")
 
 
 class Blockify(object):
@@ -169,6 +168,7 @@ class Blockify(object):
             log.info("Starting Spotify ...")
             spotify_command = "spotify"
             if util.CONFIG["general"]["detach_spotify"]:
+                log.debug("Attempting to detach Spotify.")
                 spotify_command += " &"
             os.system(spotify_command)
             for _ in range(20):
@@ -578,9 +578,16 @@ class Blockify(object):
 
 
 def initialize(doc=__doc__):
-    util.initialize(doc)
+    try:
+        args = util.docopt(doc, version="blockify {}".format(util.VERSION))
+    except NameError:
+        args = None
+    util.initialize(args)
 
-    return Blockify(blocklist.Blocklist())
+    _blocklist = blocklist.Blocklist()
+    cli = Blockify(_blocklist)
+
+    return cli
 
 
 def main():

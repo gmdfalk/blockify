@@ -20,14 +20,7 @@ import dbus
 
 from blockify import util
 
-
 log = logging.getLogger("dbus")
-
-
-try:
-    from docopt import docopt
-except ImportError:
-    log.error("ImportError: Please install docopt to use the DBus CLI.")
 
 
 class DBusClient(object):
@@ -243,10 +236,9 @@ class DBusClient(object):
             log.error("Could not get properties: {}".format(e))
 
 
-
 def main():
     """Entry point for the CLI DBus interface."""
-    args = docopt(__doc__, version="0.3")
+    args = util.docopt(__doc__, version="0.3")
     util.init_logger(args["--log"], args["-v"], args["--quiet"])
     dbus = DBusClient()
 

@@ -4,12 +4,11 @@ import os
 
 from blockify import util
 
-
 log = logging.getLogger("list")
 
 
 class Blocklist(list):
-    "List extended to store (manually) blocked songs/ads persisently."
+    """List extended to store (manually) blocked songs/ads persisently."""
     # Could subclass UserList.UserList here instead which inherits from
     # collections.MutableSequence. In Python3 it's collections.UserList.
 

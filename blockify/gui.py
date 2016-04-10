@@ -22,6 +22,10 @@ import os
 import signal
 import urllib.request
 
+from blockify import util
+
+log = logging.getLogger("gui")
+
 from gi import require_version
 
 require_version('Gtk', '3.0')
@@ -30,9 +34,6 @@ from gi.repository import GdkPixbuf
 from gi.repository import GObject
 
 from blockify import cli
-from blockify import util
-
-log = logging.getLogger("gui")
 
 
 class Notepad(Gtk.Window):
@@ -787,7 +788,8 @@ class BlockifyUI(Gtk.Window):
         taglist = message.parse_tag()
         if taglist.get_string_index("artist", 0)[0]:
             try:
-                label = taglist.get_string_index("artist", 0)[1][0] + " - " + taglist.get_string_index("artist", 0)[1][0]
+                label = taglist.get_string_index("artist", 0)[1][0] + " - " + taglist.get_string_index("artist", 0)[1][
+                    0]
                 if len(label) > 5:
                     self.interlude_label.set_text(label)
             except KeyError as e:
@@ -965,7 +967,8 @@ class BlockifyUI(Gtk.Window):
 
 def main():
     """Entry point for the GUI-version of Blockify."""
-    gui = BlockifyUI(cli.initialize(__doc__))
+    _cli = cli.initialize(__doc__)
+    gui = BlockifyUI(_cli)
     gui.start()
 
 

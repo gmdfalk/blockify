@@ -9,9 +9,9 @@ log = logging.getLogger("util")
 try:
     from docopt import docopt
 except ImportError:
-    log.error("ImportError: Please install docopt to use the CLI.")
+    log.error("ImportError: Please install docopt to use the DBus CLI.")
 
-VERSION = "3.5.0"
+VERSION = "3.6.0"
 CONFIG = None
 CONFIG_DIR = os.path.expanduser("~/.config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
@@ -151,11 +151,10 @@ def save_options(config_file, options):
     log.info("Configuration written to {}.".format(config_file))
 
 
-def initialize(doc):
-    try:
-        args = docopt(doc, version=VERSION)
+def initialize(args):
+    if args:
         init_logger(args["--log"], args["-v"], args["--quiet"])
-    except NameError:
+    else:
         init_logger()
 
     # Set up the configuration directory & files, if necessary.
@@ -163,5 +162,3 @@ def initialize(doc):
 
     global CONFIG
     CONFIG = load_options()
-
-

@@ -2,6 +2,6 @@
 Name=Blockify
 Comment=Blocks Spotify commercials
 Exec=blockify-ui
-Icon=data/icon-red-512.png
+Icon=icon-red-512.png
 Type=Application
 Categories=AudioVideo

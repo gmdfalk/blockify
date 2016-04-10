@@ -57,7 +57,7 @@ Install routine:
 # Install blockify
 git clone https://github.com/mikar/blockify
 cd blockify
-sudo pip3 install .
+sudo pip3 install -r requirements.txt
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python3 -c 'import pkg_resources; print(pkg_resources.resource_filename("blockify", "data/icon-red-512.png"))')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
 

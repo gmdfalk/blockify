@@ -3,26 +3,24 @@ import os
 import random
 import re
 
-from gi.repository import GObject
-
-GObject.threads_init()
-
-from gi import require_version
-
-require_version('Gst', '1.0')
-
-from gi.repository import Gst
-
 from blockify import util
 
 log = logging.getLogger("player")
+
+from gi.repository import GObject
+from gi import require_version
+
+require_version('Gst', '1.0')
+from gi.repository import Gst
+
+GObject.threads_init()
+Gst.init(None)
 
 
 class InterludePlayer(object):
     """A simple gstreamer audio player to play interlude music."""
 
     def __init__(self, blockify):
-        Gst.init(None)
         self.Gst = Gst
         self.b = blockify
         self.manual_control = False
