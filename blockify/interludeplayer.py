@@ -14,13 +14,13 @@ require_version('Gst', '1.0')
 from gi.repository import Gst
 
 GObject.threads_init()
-Gst.init(None)
 
 
 class InterludePlayer(object):
     """A simple gstreamer audio player to play interlude music."""
 
     def __init__(self, blockify):
+        Gst.init(None)
         self.Gst = Gst
         self.b = blockify
         self.manual_control = False

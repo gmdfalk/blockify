@@ -3,7 +3,7 @@
 
 Usage:
     dbusclient (toggle | next | prev | stop | play | pause) [-v...] [options]
-    dbusclient get [song | title | artist | album | length | status | all] [-v...] [options]
+    dbusclient get [song | title | artist | album | status | all] [-v...] [options]
     dbusclient (openuri <uri> | seek <secs> | setpos <pos>) [-v...] [options]
 
 Options:
@@ -214,73 +214,75 @@ class DBusClient(object):
 
         return artist
 
-    def print_info(self):
-        """Print all the DBus info we can get our hands on."""
-        try:
-            metadata = self.get_property("Metadata")
 
-            d_keys = list(metadata.keys())
-            d_keys.sort()
+def print_all(dbus_client):
+    """Print all the DBus info we can get our hands on."""
+    try:
+        metadata = dbus_client.get_property("Metadata")
 
-            for k in d_keys:
-                d = k.split(":")[1]
+        d_keys = list(metadata.keys())
+        d_keys.sort()
 
-                if d == "artist":
-                    print("{0}\t\t= {1}".format(d, metadata[k][0]))
-                # elif d == "length":
-                elif len(d) < 7:
-                    print("{0}\t\t= {1}".format(d, metadata[k]))
-                else:
-                    print("{0}\t= {1}".format(d, metadata[k]))
-        except AttributeError as e:
-            log.error("Could not get properties: {}".format(e))
+        for k in d_keys:
+            d = k.split(":")[1]
+
+            if d == "artist":
+                print("{0}\t\t= {1}".format(d, metadata[k][0]))
+            # elif d == "length":
+            elif len(d) < 7:
+                print("{0}\t\t= {1}".format(d, metadata[k]))
+            else:
+                print("{0}\t= {1}".format(d, metadata[k]))
+    except AttributeError as e:
+        log.error("Could not get properties: {}".format(e))
+
+
+def print_song(dbus_client):
+    length = dbus_client.get_song_length()
+    m, s = divmod(length, 60)
+    rating = dbus_client.get_property("Metadata")["xesam:autoRating"]
+    song = dbus_client.get_song()
+    print("{}, {}m{}s, {}".format(song, m, s, rating))
+
+
+def wrap_action(action, *args):
+    return {"action": action, "args": args}
 
 
 def main():
     """Entry point for the CLI DBus interface."""
-    args = util.docopt(__doc__, version="0.3")
+    args = util.docopt(__doc__, version="0.4.0")
     util.init_logger(args["--log"], args["-v"], args["--quiet"])
-    dbus = DBusClient()
+    dbus_client = DBusClient()
 
-    if args["toggle"]:
-        dbus.playpause()
-    elif args["next"]:
-        dbus.next()
-    elif args["prev"]:
-        dbus.prev()
-    elif args["play"]:
-        dbus.play()
-    elif args["pause"]:
-        dbus.pause()
-    elif args["stop"]:
-        dbus.stop()
+    args_mapper = {
+        "setpos": wrap_action(dbus_client.set_position, args["<pos>"]),
+        "openuri": wrap_action(dbus_client.open_uri, args["<uri>"]),
+        "seek": wrap_action(dbus_client.seek, args["<secs>"]),
+        "toggle": wrap_action(dbus_client.playpause),
+        "next": wrap_action(dbus_client.next),
+        "prev": wrap_action(dbus_client.prev),
+        "play": wrap_action(dbus_client.play),
+        "pause": wrap_action(dbus_client.pause),
+        "stop": wrap_action(dbus_client.pause),
+        "song": wrap_action(dbus_client.get_song),
+        "title": wrap_action(dbus_client.get_song_title),
+        "artist": wrap_action(dbus_client.get_song_artist),
+        "status": wrap_action(dbus_client.get_song_status),
+        "all": wrap_action(print_all, dbus_client),
+    }
 
-    if args["openuri"]:
-        dbus.open_uri(args["<uri>"])
-    elif args["seek"]:
-        dbus.seek(args["<secs>"])
-    elif args["setpos"]:
-        dbus.set_pos(args["<pos>"])
+    for arg_key, arg_value in args.items():
+        action_info = args_mapper.get(arg_key, None)
+        if arg_value and action_info:
+            action = action_info.get("action", None)
+            if action:
+                action_args = action_info.get("args", None)
+                action(*action_args) if action_args else action()
 
-    if args["song"]:
-        print(dbus.get_song())
-    elif args["title"]:
-        print(dbus.get_song_title())
-    elif args["artist"]:
-        print(dbus.get_song_artist())
-    elif args["status"]:
-        print(dbus.get_song_status())
-    elif args["all"]:
-        dbus.print_info()
-    elif args["get"]:
-        length = dbus.get_song_length()
-        m, s = divmod(length, 60)
-        if args["length"]:
-            print("{}m{}s ({})".format(m, s, length))
-        else:
-            rating = dbus.get_property("Metadata")["xesam:autoRating"]
-            song = dbus.get_song()
-            print("{}, {}m{}s, {}".format(song, m, s, rating))
+    # Since get can have follow-up actions it has to be handled last and separately.
+    if args.get("get", None):
+        print_song(dbus_client)
 
 
 if __name__ == "__main__":
