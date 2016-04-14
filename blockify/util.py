@@ -11,7 +11,7 @@ try:
 except ImportError:
     log.error("ImportError: Please install docopt to use the DBus CLI.")
 
-VERSION = "3.6.0"
+VERSION = "3.6.1"
 CONFIG = None
 CONFIG_DIR = os.path.expanduser("~/.config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")

@@ -34,8 +34,5 @@ setup(
         "gui_scripts": [
             "{0}-ui = {0}.gui:main".format(_name),
         ],
-    },
-    install_requires=[
-        "dbus-python"
-    ]
+    }
 )
