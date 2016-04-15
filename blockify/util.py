@@ -27,7 +27,6 @@ def init_logger(logpath=None, loglevel=0, quiet=False):
     # Cap loglevel at 3 to avoid index errors.
     if loglevel > 3:
         loglevel = 3
-    # Apply loglevel.
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logger.setLevel(levels[loglevel])
 
@@ -105,7 +104,7 @@ def load_options():
     try:
         config.read(CONFIG_FILE)
     except Exception as e:
-        log.error("Could not read config file: {}. Using default options.".format(e))
+        log.warn("Could not read config file: {}. Using default options.".format(e))
     else:
         for section_name, section_value in options.items():
             for option_name, option_value in section_value.items():
@@ -130,8 +129,8 @@ def read_option(config, section_name, option_name, option_value, default_option_
         else:
             option = config.get(section_name, option_name)
     except Exception:
-        log.error("Could not parse option %s for section %s. Using default value %s.", option_name, section_name,
-                  default_option_value)
+        log.warn("Could not parse option %s for section %s. Using default value %s.", option_name, section_name,
+                 default_option_value)
 
     return option
 

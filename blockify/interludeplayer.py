@@ -94,7 +94,7 @@ class InterludePlayer(object):
             # Maximum Recursion Depth exceeded, most likely.
             log.error("Faulty playlist source: {}".format(e))
         except Exception as e:
-            log.error("Could not parse playlist source: {}".format(e))
+            log.warn("Could not parse playlist source: {}".format(e))
 
         return playlist
 
