@@ -324,6 +324,12 @@ class Blockify(object):
 
         missing_artist = self.current_song_title and not self.current_song_artist
         has_ad_url = "/ad/" in self.dbus.get_spotify_url()
+
+        # Since there is no reliable way to determine playback status of Spotify when not using pulseaudio,
+        # we return here with a trimmed version of ad detection. At the very least, this won't mute video ads.
+        if self.mutemethod != self.pulsesink_mute:
+            return missing_artist or has_ad_url
+
         title_mismatch = self.spotify_is_playing() and self.current_song != self.current_song_from_window_title
 
         # log.debug("missing_artist: {0}, has_ad_url: {1}, title_mismatch: {2}".format(missing_artist, has_ad_url,
