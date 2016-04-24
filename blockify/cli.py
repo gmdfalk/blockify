@@ -18,6 +18,8 @@ import signal
 import subprocess
 import time
 
+import sys
+
 from blockify import util
 
 log = logging.getLogger("cli")
@@ -548,12 +550,13 @@ class Blockify(object):
         # Save the list only if it changed during runtime.
         if self.blocklist != self.orglist:
             self.blocklist.save()
-        # Unmute before exiting.
-        self.toggle_mute(2)
 
     def stop(self):
         self.prepare_stop()
         Gtk.main_quit()
+        # Unmute before exiting.
+        self.toggle_mute(2)
+        sys.exit()
 
     def toggle_block(self):
         """Block/unblock the current song."""
