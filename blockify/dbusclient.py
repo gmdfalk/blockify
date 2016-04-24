@@ -252,7 +252,7 @@ def wrap_action(action, *args):
 
 def main():
     """Entry point for the CLI DBus interface."""
-    args = util.docopt(__doc__, version="0.4.0")
+    args = util.docopt(__doc__, version="0.4.1")
     util.init_logger(args["--log"], args["-v"], args["--quiet"])
     dbus_client = DBusClient()
 
