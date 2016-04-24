@@ -3,7 +3,7 @@
 
 Usage:
     dbusclient (toggle | next | prev | stop | play | pause) [-v...] [options]
-    dbusclient get [song | title | artist | album | status | all] [-v...] [options]
+    dbusclient get [song | title | artist | album | length | status | all] [-v...] [options]
     dbusclient (openuri <uri> | seek <secs> | setpos <pos>) [-v...] [options]
 
 Options:
@@ -17,6 +17,7 @@ import logging
 import re
 
 import dbus
+import sys
 
 from blockify import util
 
@@ -266,8 +267,10 @@ def main():
         "pause": wrap_action(dbus_client.pause),
         "stop": wrap_action(dbus_client.pause),
         "song": wrap_action(dbus_client.get_song),
-        "title": wrap_action(dbus_client.get_song_title),
+        "album": wrap_action(dbus_client.get_song_album),
         "artist": wrap_action(dbus_client.get_song_artist),
+        "length": wrap_action(dbus_client.get_song_length),
+        "title": wrap_action(dbus_client.get_song_title),
         "status": wrap_action(dbus_client.get_song_status),
         "all": wrap_action(print_all, dbus_client),
     }
@@ -278,7 +281,9 @@ def main():
             action = action_info.get("action", None)
             if action:
                 action_args = action_info.get("args", None)
-                action(*action_args) if action_args else action()
+                # Execute action and print return value, if any.
+                print(action(*action_args)) if action_args else print(action())
+                sys.exit()
 
     # Since get can have follow-up actions it has to be handled last and separately.
     if args.get("get", None):
