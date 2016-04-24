@@ -20,6 +20,7 @@ import datetime
 import logging
 import os
 import signal
+import sys
 import urllib.request
 
 from blockify import util
@@ -434,6 +435,7 @@ class BlockifyUI(Gtk.Window):
         self.b.prepare_stop()
         log.debug("Exiting GUI.")
         Gtk.main_quit()
+        sys.exit()
 
     def signal_stop_received(self, sig, hdl):
         log.debug("{} received. Exiting safely.".format(sig))
