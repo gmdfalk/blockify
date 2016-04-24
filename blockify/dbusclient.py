@@ -281,8 +281,9 @@ def main():
             action = action_info.get("action", None)
             if action:
                 action_args = action_info.get("args", None)
-                # Execute action and print return value, if any.
-                print(action(*action_args)) if action_args else print(action())
+                result = action(*action_args) if action_args else action()
+                if result:
+                    print(result)
                 sys.exit()
 
     # Since get can have follow-up actions it has to be handled last and separately.
