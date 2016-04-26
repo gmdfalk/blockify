@@ -5,17 +5,24 @@ from setuptools import setup, find_packages
 
 
 def read(filename):
-    with open(join(dirname(__file__), filename)) as f:
-        return f.read()
+    text = ""
+    try:
+        with open(join(dirname(__file__), filename)) as f:
+            text = f.read()
+    except Exception as e:
+        text = "{0}: {1}".format(e, filename)
+
+    return text
 
 
 _name = "blockify"
 _license = "MIT"
+_description = read("README.rst")
 
 setup(
     name=_name,
     description="Mute spotify advertisements.",
-    long_description=read("README.md"),
+    long_description=_description,
     keywords=["spotify", "music", "commercials", "adblock"],
     version=VERSION,
     license=_license,

@@ -15,9 +15,9 @@ Options:
 """
 import logging
 import re
+import sys
 
 import dbus
-import sys
 
 from blockify import util
 
