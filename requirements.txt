@@ -1,4 +1,0 @@
-blockify==3.6.2
-dbus-python==1.2.4
-docopt==0.6.2
-wmctrl==0.3
