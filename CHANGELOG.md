@@ -1,6 +1,6 @@
 # Changelog
 
-- v3.6.2 (2016-04-26): Fix pypi installation ([issue #99](https://github.com/mikar/blockify/issues/99)) and include README.rst.
+- v3.6.2 (2016-05-08): Fix issue where pulse sink would sometimes not be unmuted on exit, fix false positive ad detection on pause for people not using pulseaudio sinks ([issue #97](https://github.com/mikar/blockify/issues/97)), fix pypi installation ([issue #99](https://github.com/mikar/blockify/issues/99)), include README.rst, remove requirements.txt and reimplement dbusclient.py CLI.
 - v3.6.1 (2016-04-11): Fix Gst initialization in interlude player, refactor dbusclient CLI and improve some documentation.
 - v3.6.0 (2016-04-10): Published blockify to PyPI, made it virtualenv compatible (still requires --system-site-packages for gi.repository) and refactored the import structure.
 - v3.5.0 (2016-04-08): Reintroduce wmctrl to catch video ads ([issue #89](https://github.com/mikar/blockify/issues/89)) and block some audio ads more reliably. Fix encoding issues ([issue #95](https://github.com/mikar/blockify/issues/95)).
