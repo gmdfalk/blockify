@@ -26,12 +26,6 @@ On ArchLinux, you can install all dependencies as follows:
 
 ### Package Manager
 
-#### PyPI
-
-Available here: https://pypi.python.org/pypi/blockify/3.6.0
-
-`sudo pip3 install blockify` should do the trick but some dependencies will still need to be installed because they are simply not available via PyPI (see [Basic Requirements](#Basic Requirements)).
-
 #### Arch Linux
 
 Available via AUR here: https://aur.archlinux.org/packages/?O=0&K=blockify

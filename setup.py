@@ -17,7 +17,7 @@ def read(filename):
 
 _name = "blockify"
 _license = "MIT"
-_description = read("README.rst")
+_description = read("README.md")
 
 setup(
     name=_name,
