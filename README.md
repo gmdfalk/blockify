@@ -1,10 +1,9 @@
 # blockify
 Blockify is a linux only application that allows you to automatically mute songs and advertisements in Spotify.  
 
-**Blockify < v2.0.0 (master branch) does not support the Spotify beta client (version 1.0.0 and higher).   
-If you need support for Spotify v1.0.13 and higher, use the pre-release of Blockify (v2.0.0 and higher) or clone the spotify-beta branch directly.
-Be aware, however, that this pre-release is in beta status, too, and is not backward compatible to Spotify < 1.0.13.
-The pre-release requires wmctrl to be installed.**
+**This branch only supports the 'stable' version of Spotify (0.9.17)**
+
+If you need support for the later versions of Spotify, use the master branch.
 
 ## Installation
 ##### Dependencies
@@ -16,15 +15,16 @@ Before installing blockify, please make sure you have the appropriate dependenci
 Package names are for ArchLinux and will probably differ slightly between distributions. 
 
 ##### Automatic
-Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). You can choose between a stable version ([blockify](https://aur.archlinux.org/packages/blockify/)) or the development version ([blockify-git](https://aur.archlinux.org/packages/blockify-git/)).  
+Arch-Linux users can find blockify in the [AUR](https://aur.archlinux.org/packages/?O=0&K=blockify). To install this branch (with support for Spotify 0.9.17), you 
+should use ([blockify-legacy](https://aur.archlinux.org/packages/blockify-legacy/)).
 
 Example ArchLinux installation routine:  
 ``` bash
-mkdir blockify
-cd blockify
-wget https://aur.archlinux.org/packages/bl/blockify/PKGBUILD
+mkdir blockify-legacy
+cd blockify-legacy
+wget -O PKGBUILD https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=blockify-legacy
 makepkg
-sudo pacman -U blockify-X.Y-Z-any.pkg.tar.xz
+sudo pacman -U blockify-legacy-X.Y-Z-any.pkg.tar.xz
 ```
 
 ##### Direct (pip/setup.py)
@@ -181,7 +181,7 @@ Further guesses for why your blockify doesn't work:
 * If there's already a blockify process running, it won't start.  
 
 ## Known Issues
-- Blockify currently does not support Spotify 1.0.0 and higher.
+- Blockify-legacy currently does not support Spotify 1.0.0 and higher. For later versions, use the master branch.
 - If Spotify is minimized to the system tray, ad detection will not work.
 - If DBus/Notifications are disabled, ad detection will not work.
 
