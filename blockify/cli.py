@@ -588,7 +588,7 @@ class Blockify(object):
 def initialize(doc=__doc__):
     try:
         args = util.docopt(doc, version="blockify {}".format(util.VERSION))
-    except NameError:
+    except Exception:
         args = None
     util.initialize(args)
 
