@@ -84,7 +84,7 @@ def get_default_options():
             "unmute_delay": 650,
             "use_cover_art": True,
             "autohide_cover": False,
-            "start_minimized": True
+            "start_minimized": False
         },
         "interlude": {
             "use_interlude_music": True,
