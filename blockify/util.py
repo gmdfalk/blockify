@@ -11,7 +11,7 @@ try:
 except ImportError:
     log.error("ImportError: Please install docopt to use the DBus CLI.")
 
-VERSION = "3.6.2"
+VERSION = "3.6.3"
 CONFIG = None
 CONFIG_DIR = os.path.expanduser("~/.config/blockify")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "blockify.ini")
@@ -73,7 +73,8 @@ def get_default_options():
             "autoplay": True,
             "substring_search": False,
             "start_spotify": True,
-            "detach_spotify": False
+            "detach_spotify": False,
+            "use_window_title": True
         },
         "cli": {
             "update_interval": 200,
