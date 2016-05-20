@@ -342,7 +342,8 @@ class Blockify(object):
         self.current_song_artist = self.dbus.get_song_artist()
         self.current_song_title = self.dbus.get_song_title()
         self.current_song = self.current_song_artist + self.song_delimiter + self.current_song_title
-        self.current_song_from_window_title = self.get_current_song_from_window_title()
+        if util.CONFIG["general"]["use_window_title"]:
+            self.current_song_from_window_title = self.get_current_song_from_window_title()
 
     def get_current_song_from_window_title(self):
         """Checks if a Spotify window exists and returns the current songname."""
