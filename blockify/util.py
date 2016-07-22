@@ -20,6 +20,21 @@ PLAYLIST_FILE = os.path.join(CONFIG_DIR, "playlist.m3u")
 THUMBNAIL_DIR = os.path.join(CONFIG_DIR, "thumbnails")
 
 
+class StreamToLogger(object):
+    """
+    Fake file-like stream object that redirects writes to a logger instance.
+    From http://www.electricmonk.nl/log/2011/08/14/redirect-stdout-and-stderr-to-a-logger-in-python/
+    """
+
+    def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+
+    def write(self, buf):
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.log_level, line.rstrip())
+
+
 def init_logger(logpath=None, loglevel=0, quiet=False):
     """Initializes the logging module."""
     logger = logging.getLogger()
@@ -40,6 +55,11 @@ def init_logger(logpath=None, loglevel=0, quiet=False):
         logger.addHandler(console_handler)
         log.debug("Added logging console handler.")
         log.info("Loglevel is {} (10=DEBUG, 20=INFO, 30=WARN).".format(levels[loglevel]))
+
+        # Redirect all stderr to a logger so that we can capture it in the logfile.
+        stderr_logger = logging.getLogger("stderr")
+        stream_logger = StreamToLogger(stderr_logger, logging.ERROR)
+        sys.stderr = stream_logger
     if logpath:
         try:
             logfile = os.path.abspath(logpath)

@@ -1,0 +1,44 @@
+2016-07-22 12:06:21 DEBUG    util     Added logging file handler: /media/shared/OneDrive/projects/python/blockify/logfile.
+2016-07-22 12:06:21 INFO     util     Loading configuration.
+2016-07-22 12:06:21 INFO     util     Configuration loaded.
+2016-07-22 12:06:21 INFO     list     Blocklist loaded from /home/max/.config/blockify/blocklist.txt.
+2016-07-22 12:06:21 ERROR    cli      No spotify process found.
+2016-07-22 12:06:21 INFO     cli      Starting Spotify ...
+2016-07-22 12:06:21 DEBUG    cli      Attempting to detach Spotify.
+2016-07-22 12:06:22 INFO     cli      Spotify launched!
+2016-07-22 12:06:22 INFO     player   InterludePlayer initialized.
+2016-07-22 12:06:22 DEBUG    player   Loading playlist.
+2016-07-22 12:06:22 DEBUG    player   Stop: State is (<enum GST_STATE_CHANGE_SUCCESS of type Gst.StateChangeReturn>, state=<enum GST_STATE_NULL of type Gst.State>, pending=<enum GST_STATE_VOID_PENDING of type Gst.State>).
+2016-07-22 12:06:22 DEBUG    player   Setting interlude to: file:///home/max/.config/blockify/mark_ronson-uptown_funk.mp3
+2016-07-22 12:06:22 INFO     player   Playlist loaded (Length: 2).
+2016-07-22 12:06:22 INFO     player   Playlist: ['mark_ronson-uptown_funk.mp3', 'sia-chandelier.mp3']
+2016-07-22 12:06:22 DEBUG    cli      Mute method is pulse sink.
+2016-07-22 12:06:22 INFO     cli      Blockify initialized.
+2016-07-22 12:06:22 INFO     cli      Blockify started.
+2016-07-22 12:06:22 ERROR    stderr   err
+2016-07-22 12:06:22 ERROR    stderr   err
+2016-07-22 12:06:22 ERROR    stderr   err
+2016-07-22 12:06:22 ERROR    stderr   err
+2016-07-22 12:06:23 ERROR    stderr   err
+2016-07-22 12:06:23 ERROR    stderr   err
+2016-07-22 12:06:23 ERROR    stderr   err
+2016-07-22 12:06:23 ERROR    stderr   err
+2016-07-22 12:06:23 ERROR    stderr   err
+2016-07-22 12:06:24 ERROR    stderr   err
+2016-07-22 12:06:24 ERROR    stderr   err
+2016-07-22 12:06:24 ERROR    stderr   err
+2016-07-22 12:06:24 ERROR    stderr   err
+2016-07-22 12:06:24 ERROR    stderr   err
+2016-07-22 12:06:25 ERROR    stderr   err
+2016-07-22 12:06:25 ERROR    stderr   err
+2016-07-22 12:06:25 ERROR    stderr   err
+2016-07-22 12:06:25 ERROR    stderr   err
+2016-07-22 12:06:25 ERROR    stderr   err
+2016-07-22 12:06:26 ERROR    stderr   err
+2016-07-22 12:06:26 ERROR    stderr   err
+2016-07-22 12:06:26 ERROR    stderr   err
+2016-07-22 12:06:26 ERROR    stderr   err
+2016-07-22 12:06:26 ERROR    stderr   err
+2016-07-22 12:06:27 ERROR    stderr   err
+2016-07-22 12:06:27 DEBUG    cli      2 received. Exiting safely.
+2016-07-22 12:06:27 INFO     cli      Exiting safely. Bye.
