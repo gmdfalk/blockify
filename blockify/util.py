@@ -97,11 +97,11 @@ def get_default_options():
             "use_window_title": True
         },
         "cli": {
-            "update_interval": 200,
+            "update_interval": 350,
             "unmute_delay": 700
         },
         "gui": {
-            "update_interval": 350,
+            "update_interval": 500,
             "unmute_delay": 650,
             "use_cover_art": True,
             "autohide_cover": False,
