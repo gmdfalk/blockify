@@ -604,6 +604,6 @@ def main():
     cli = initialize()
     cli.start()
 
-
 if __name__ == "__main__":
     main()
+

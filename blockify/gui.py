@@ -496,7 +496,7 @@ class BlockifyUI(Gtk.Window):
         about.set_icon_name("blockify")
         about.set_name("blockify")
         about.set_version(util.VERSION)
-        about.set_website("http://github.com/mikar/blockify")
+        about.set_website("http://github.com/serialoverflow/blockify")
         about.set_copyright("(c) 2016 Max Falk")
         about.set_license("The MIT License (MIT)")
         about.set_comments("Blocks Spotify commercials")

@@ -61,7 +61,7 @@ sudo apt-get install git python3-pip python3-gst-1.0 python3-requests python3-do
 Install routine:  
 ```bash
 # Install blockify
-git clone https://github.com/mikar/blockify
+git clone https://github.com/serialoverflow/blockify
 cd blockify
 sudo pip3 install .
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python3 -c 'import pkg_resources; print(pkg_resources.resource_filename("blockify", "data/icon-red-512.png"))')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
@@ -164,7 +164,7 @@ Alternatively, you can use the GUI with `blockify-ui` which spawns this window.
 
 #### Configuration
 
-Please see the provided [example_blockify.ini](https://github.com/mikar/blockify/blob/master/blockify/data/example_blockify.ini) on what settings are available and their purpose.  
+Please see the provided [example_blockify.ini](https://github.com/serialoverflow/blockify/blob/master/blockify/data/example_blockify.ini) on what settings are available and their purpose.  
 Blockify automatically creates a configuration file at `$HOME/.config/blockify/blockify.ini` if you don't have one already. It will also tell you via ERROR-logging messages, if you configuration file is faulty or incomplete, in which case the options that could be read will be merged with the default options you see in example_blockify.ini but you'll still want to fix your configuration file.  
 
 #### Interlude Music
