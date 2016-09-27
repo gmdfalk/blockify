@@ -55,7 +55,7 @@ echo deb http://repository.spotify.com testing non-free | sudo tee /etc/apt/sour
 sudo apt-get update
 sudo apt-get install spotify-client
 # Install blockify dependencies
-sudo apt-get install git python3-pip python3-gst-1.0 python3-requests python3-docopt wmctrl
+sudo apt-get install git python3-pip python3-gst-1.0 python3-requests python3-docopt python3-setuptools wmctrl
 ```
 
 Install routine:  
