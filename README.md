@@ -103,8 +103,6 @@ To easily use these signals add the following function to your .bashrc:
 ```bash
 bb() {
     local signal
-    local cmd
-    [[ "$#" -lt 1 ]] && echo "Usage: bb ( b[lock] | u[nblock] | p[revious] | n[ext] | t[oggle] | t[oggle]b[lock] |...)"  && return 0
     case "$1" in
         '')  blockify-dbus get 2>/dev/null && return 0;;
         ex|exit)
@@ -129,7 +127,7 @@ bb() {
             signal='RTMIN+12';;   # Toggle play interlude song
         itr|itoggleresume)
             signal='RTMIN+13';;   # Toggle interlude resume
-        *) echo "Bad option" && return 0;;
+        *) echo "Usage: bb ( b[lock] | u[nblock] | p[revious] | n[ext] | t[oggle] | t[oggle]b[lock] |...)" && return 0;;
     esac
     pkill --signal "$signal" -f 'python.*blockify'
 }
