@@ -61,9 +61,7 @@ sudo apt-get install git python3-pip python3-gst-1.0 python3-requests python3-do
 Install routine:  
 ```bash
 # Install blockify
-git clone https://github.com/serialoverflow/blockify
-cd blockify
-sudo pip3 install .
+sudo pip3 install git+https://github.com/serialoverflow/blockify
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python3 -c 'import pkg_resources; print(pkg_resources.resource_filename("blockify", "data/icon-red-512.png"))')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
 
