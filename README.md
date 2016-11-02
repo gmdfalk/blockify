@@ -44,6 +44,15 @@ makepkg -sri
 
 Available in the [openSUSE build service](https://build.opensuse.org/package/show/home:fusion809/blockify).
 
+#### Debian
+
+```bash
+    #sudo apt-get install gir1.2-gstreamer0.10 gir1.2-gstreamer1.0 python-gst-1.0
+    sudo apt-get install libdbus-1-dev libdbus-glib-1-dev
+    sudo pip3 install dbus-python
+    sudo pip3 install git+https://github.com/serialoverflow/blockify
+```
+
 ### Manual (pip/setup.py)
 
 If there is no blockify package available on your distribution, you'll have to install it directly via one of pythons many installation tools.  
