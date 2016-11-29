@@ -47,7 +47,7 @@ Available in the [openSUSE build service](https://build.opensuse.org/package/sho
 #### Debian
 
 ```bash
-    #sudo apt-get install gir1.2-gstreamer0.10 gir1.2-gstreamer1.0 python-gst-1.0
+    sudo apt-get install gir1.2-gstreamer-0.10 gir1.2-gstreamer-1.0 python-gst-1.0
     sudo apt-get install libdbus-1-dev libdbus-glib-1-dev
     sudo pip3 install dbus-python
     sudo pip3 install git+https://github.com/serialoverflow/blockify
