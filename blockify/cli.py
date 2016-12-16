@@ -432,7 +432,7 @@ class Blockify(object):
         # Put valid spotify PIDs in a list
         output = pacmd_out.decode("utf-8")
 
-        spotify_sink_list = [" index: " + i for i in output.split("index: ") if "spotify" in i]
+        spotify_sink_list = [" index: " + i for i in output.split("index: ") if "Spotify" in i]
 
         if len(spotify_sink_list) and self.spotify_pids:
             sink_infos = [pattern.findall(sink) for sink in spotify_sink_list]
