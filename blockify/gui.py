@@ -225,13 +225,8 @@ class BlockifyUI(Gtk.Window):
 
         self.blue_icon_file = os.path.join(basedir, "data/icon-blue-32.png")
         self.red_icon_file = os.path.join(basedir, "data/icon-red-32.png")
-        #pixbuf_blue = GdkPixbuf.Pixbuf.new_from_file(self.blue_icon_file)
-        #pixbuf_red = GdkPixbuf.Pixbuf.new_from_file(self.red_icon_file)
-        #self.blue_icon_buf = pixbuf_blue.scale_simple(16, 16, GdkPixbuf.InterpType.BILINEAR)
-        #self.red_icon_buf = pixbuf_red.scale_simple(16, 16, GdkPixbuf.InterpType.BILINEAR)
 
         self.status_icon = Gtk.StatusIcon()
-        #self.status_icon.set_from_pixbuf(self.blue_icon_buf)
         self.status_icon.set_from_file(self.blue_icon_file)
         self.set_icon_from_file(self.blue_icon_file)
 
