@@ -12,7 +12,7 @@ Blockify is a linux only application that allows you to automatically mute songs
 Mandatory:
   - Python3
   - Spotify > 1.0.12 (to get the latest version follow the instructions given here [Spotify-Client-1-x-beta-] (https://community.spotify.com/t5/Spotify-Community-Blog/Spotify-Client-1-x-beta-for-Linux-has-been-released/ba-p/1147084))
-  - wmtrcl (provides information about the Spotify window)
+  - wmctrl (provides information about the Spotify window)
   - alsa-utils
   - PyGObject 3
   - GTK+ 3
