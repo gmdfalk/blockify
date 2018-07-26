@@ -626,11 +626,11 @@ class BlockifyUI(Gtk.Window):
     def update_icons(self):
         if self.b.found and not self.statusicon_found:
             self.set_icon_from_file(self.red_icon_file)
-            self.status_icon.set_from_pixbuf(self.red_icon_buf)
+            #self.status_icon.set_from_pixbuf(self.red_icon_buf)
             self.statusicon_found = True
         elif not self.b.found and self.statusicon_found:
             self.set_icon_from_file(self.blue_icon_file)
-            self.status_icon.set_from_pixbuf(self.blue_icon_buf)
+            #self.status_icon.set_from_pixbuf(self.blue_icon_buf)
             self.statusicon_found = False
 
     def update_slider(self):
