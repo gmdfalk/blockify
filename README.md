@@ -71,12 +71,28 @@ sudo apt-get install spotify-client
 sudo apt-get install git python3-pip python3-gst-1.0 python3-requests python3-docopt python3-setuptools wmctrl
 ```
 
-Install routine:  
+Preparation (for Fedora):
+```bash
+# Install rpmfusion repos: https://rpmfusion.org/Configuration#Command_Line_Setup_using_rpm
+dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+# Install snapd: https://www.spotify.com/it/download/linux/
+dnf install -y snapd
+# Install spotify from the snap store
+snap install spotify
+
+# Install blockify dependencies
+dnf install -y git python3-pip python3-gstreamer1 python3-devel python3-requests python3-docopt python3-setuptools wmctrl
+```
+
+Install blockify:  
 ```bash
 # Install blockify
 sudo pip3 install git+https://github.com/serialoverflow/blockify
 echo -e '[Desktop Entry]\nName=Blockify\nComment=Blocks Spotify commercials\nExec=blockify-ui\nIcon='$(python3 -c 'import pkg_resources; print(pkg_resources.resource_filename("blockify", "data/icon-red-512.png"))')'\nType=Application\nCategories=AudioVideo' | sudo tee /usr/share/applications/blockify.desktop
 ```
+
+If you want to install blockify only for your user, use `pip3 install --user git+https://github.com/serialoverflow/blockify`.
+
 
 ## Usage
 
